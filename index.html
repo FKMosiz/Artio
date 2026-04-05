@@ -227,31 +227,33 @@ async function callClaude(prompt,maxTokens=400){
 // ——— VOICE ———
 let recognition=null;
 let voiceBuffer="";
+let lastResultIndex=0;
 function startVoiceGeneric(onResult){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){alert("Dictée non supportée. Utilisez Chrome.");return}
   recognition=new SR();
   voiceBuffer="";
-  // continuous=true : ne coupe pas aux silences, s'arrête seulement sur stopVoice()
+  lastResultIndex=0;
   recognition.lang="fr-FR";recognition.continuous=true;recognition.interimResults=true;
   recognition.onstart=()=>set({voiceState:"recording",voiceTranscript:""});
   recognition.onresult=e=>{
-    // Accumule tout ce qui est dit
-    let interim="",final="";
-    for(let i=0;i<e.results.length;i++){
-      if(e.results[i].isFinal) final+=e.results[i][0].transcript+" ";
-      else interim+=e.results[i][0].transcript;
+    let interim="";
+    // Traiter seulement les nouveaux résultats depuis lastResultIndex
+    for(let i=lastResultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal){
+        voiceBuffer+=e.results[i][0].transcript+" ";
+        lastResultIndex=i+1;
+      } else {
+        interim=e.results[i][0].transcript;
+      }
     }
-    if(final) voiceBuffer+=final;
-    // Affiche en temps réel ce qui est capturé
     S.voiceTranscript=(voiceBuffer+interim).trim();
     render();
   };
   recognition.onerror=e=>{
-    if(e.error!=="aborted"){set({voiceState:"idle"});alert("Erreur micro : "+e.error)}
+    if(e.error!=="aborted"&&e.error!=="no-speech"){set({voiceState:"idle"});alert("Erreur micro : "+e.error)}
   };
   recognition.onend=()=>{
-    // Ne pas relancer si on a demandé l'arrêt manuellement
     if(S.voiceState==="recording") recognition.start();
   };
   recognition.start();
@@ -278,6 +280,7 @@ window.startVoice=()=>{
       Object.entries(p).forEach(([k,v])=>{if(k!=="pieces"&&v!==null&&v!=="null"&&v!=="")nf[k]=String(v)});
       S.fields=nf;
       if(p.pieces?.length)S.pieces=p.pieces.filter(x=>x.description&&x.description!=="...").map(x=>({description:x.description,quantite:String(x.quantite||"1"),prix_unitaire:String(x.prix_unitaire||"")}));
+      render();
     }catch(e){console.error("Voice parse error",e)}
   };
   startVoiceGeneric(window._voiceCallback);
@@ -291,6 +294,7 @@ window.startVoiceSuivi=()=>{
       const nf={...S.fields};
       Object.entries(p).forEach(([k,v])=>{if(v!==null&&v!=="null"&&v!=="")nf[k]=String(v)});
       S.fields=nf;
+      render();
     }catch(e){console.error("Voice suivi error",e)}
   };
   startVoiceGeneric(window._voiceCallback);
