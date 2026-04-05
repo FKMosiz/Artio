@@ -632,10 +632,9 @@ function renderDocPreview(doc){
 }
 
 // ——— INIT ———
-// Créer les tables Supabase si nécessaire
 async function initDB(){
-  await sb.rpc("init_tables").catch(()=>{});
-  await initAuth();
+  try { await initAuth(); }
+  catch(e){ document.getElementById("root").innerHTML="<p style='padding:2rem;color:red;'>Erreur : "+e.message+"</p>"; }
 }
 initDB();
 </script>
