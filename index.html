@@ -226,42 +226,75 @@ async function callClaude(prompt,maxTokens=400){
 
 // ——— VOICE ———
 let recognition=null;
+let voiceBuffer="";
 function startVoiceGeneric(onResult){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){alert("Dictée non supportée. Utilisez Chrome.");return}
   recognition=new SR();
-  recognition.lang="fr-FR";recognition.continuous=false;recognition.interimResults=false;
-  recognition.onstart=()=>set({voiceState:"recording"});
-  recognition.onresult=async e=>{
-    const t=e.results[0][0].transcript;
-    set({voiceState:"processing",voiceTranscript:t});
-    await onResult(t);
-    set({voiceState:"idle"});
-    setTimeout(()=>set({voiceTranscript:""}),3000);
+  voiceBuffer="";
+  // continuous=true : ne coupe pas aux silences, s'arrête seulement sur stopVoice()
+  recognition.lang="fr-FR";recognition.continuous=true;recognition.interimResults=true;
+  recognition.onstart=()=>set({voiceState:"recording",voiceTranscript:""});
+  recognition.onresult=e=>{
+    // Accumule tout ce qui est dit
+    let interim="",final="";
+    for(let i=0;i<e.results.length;i++){
+      if(e.results[i].isFinal) final+=e.results[i][0].transcript+" ";
+      else interim+=e.results[i][0].transcript;
+    }
+    if(final) voiceBuffer+=final;
+    // Affiche en temps réel ce qui est capturé
+    S.voiceTranscript=(voiceBuffer+interim).trim();
+    render();
   };
-  recognition.onerror=e=>{set({voiceState:"idle"});alert("Erreur micro : "+e.error)};
+  recognition.onerror=e=>{
+    if(e.error!=="aborted"){set({voiceState:"idle"});alert("Erreur micro : "+e.error)}
+  };
+  recognition.onend=()=>{
+    // Ne pas relancer si on a demandé l'arrêt manuellement
+    if(S.voiceState==="recording") recognition.start();
+  };
   recognition.start();
 }
-window.startVoice=()=>startVoiceGeneric(async t=>{
-  const raw=await callClaude(`Extrait les informations de cette dictée pour un plombier. Réponds UNIQUEMENT en JSON valide.\nDictée: "${t}"\nTaux horaire: ${S.entreprise.taux_horaire}€/h\nJSON: {"client_nom":"...","client_adresse":"...","client_tel":"...","client_email":"...","adresse_travaux":"...","travaux":"...","nb_heures":"chiffre","tva":"chiffre","pieces":[{"description":"...","quantite":"chiffre","prix_unitaire":"chiffre"}]}`,600);
-  try{
-    const p=JSON.parse(raw.replace(/```json|```/g,"").trim());
-    const nf={...S.fields};
-    Object.entries(p).forEach(([k,v])=>{if(k!=="pieces"&&v!==null&&v!=="")nf[k]=String(v)});
-    S.fields=nf;
-    if(p.pieces?.length)S.pieces=p.pieces.filter(x=>x.description).map(x=>({description:x.description,quantite:String(x.quantite||"1"),prix_unitaire:String(x.prix_unitaire||"")}));
-  }catch{}
-});
-window.startVoiceSuivi=()=>startVoiceGeneric(async t=>{
-  const raw=await callClaude(`Extrait les informations de ce résumé oral d'avancement de chantier. Réponds UNIQUEMENT en JSON valide.\nDictée: "${t}"\nJSON: {"client_nom":"...","adresse_travaux":"...","avancement":"résumé complet","suite":"prochaine étape ou null","contexte":"contexte ou null"}`,400);
-  try{
-    const p=JSON.parse(raw.replace(/```json|```/g,"").trim());
-    const nf={...S.fields};
-    Object.entries(p).forEach(([k,v])=>{if(v!==null&&v!=="")nf[k]=String(v)});
-    S.fields=nf;
-  }catch{}
-});
-window.stopVoice=()=>{recognition?.stop();set({voiceState:"idle"})};
+
+window.stopVoice=async()=>{
+  if(!recognition)return;
+  recognition.onend=null; // Empêcher le relancement auto
+  recognition.stop();
+  const transcript=(voiceBuffer||S.voiceTranscript||"").trim();
+  if(!transcript){set({voiceState:"idle"});return}
+  set({voiceState:"processing",voiceTranscript:transcript});
+  await window._voiceCallback(transcript);
+  set({voiceState:"idle"});
+  setTimeout(()=>set({voiceTranscript:""}),3000);
+};
+
+window.startVoice=()=>{
+  window._voiceCallback=async t=>{
+    try{
+      const raw=await callClaude("Extrait les informations de cette dictée pour un plombier. Réponds UNIQUEMENT en JSON valide sans texte avant ou après.\nDictée: \""+t+"\"\nTaux horaire: "+S.entreprise.taux_horaire+"€/h\nJSON attendu: {\"client_nom\":\"...\",\"client_adresse\":\"...\",\"client_tel\":\"...\",\"client_email\":\"...\",\"adresse_travaux\":\"...\",\"travaux\":\"...\",\"nb_heures\":\"chiffre\",\"tva\":\"chiffre\",\"pieces\":[{\"description\":\"...\",\"quantite\":\"chiffre\",\"prix_unitaire\":\"chiffre\"}]}",600);
+      const p=JSON.parse(raw.replace(/```json|```/g,"").trim());
+      const nf={...S.fields};
+      Object.entries(p).forEach(([k,v])=>{if(k!=="pieces"&&v!==null&&v!=="null"&&v!=="")nf[k]=String(v)});
+      S.fields=nf;
+      if(p.pieces?.length)S.pieces=p.pieces.filter(x=>x.description&&x.description!=="...").map(x=>({description:x.description,quantite:String(x.quantite||"1"),prix_unitaire:String(x.prix_unitaire||"")}));
+    }catch(e){console.error("Voice parse error",e)}
+  };
+  startVoiceGeneric(window._voiceCallback);
+};
+
+window.startVoiceSuivi=()=>{
+  window._voiceCallback=async t=>{
+    try{
+      const raw=await callClaude("Extrait les informations de ce résumé oral de chantier. Réponds UNIQUEMENT en JSON valide.\nDictée: \""+t+"\"\nJSON: {\"client_nom\":\"...\",\"adresse_travaux\":\"...\",\"avancement\":\"résumé complet\",\"suite\":\"prochaine étape ou null\",\"contexte\":\"contexte ou null\"}",400);
+      const p=JSON.parse(raw.replace(/```json|```/g,"").trim());
+      const nf={...S.fields};
+      Object.entries(p).forEach(([k,v])=>{if(v!==null&&v!=="null"&&v!=="")nf[k]=String(v)});
+      S.fields=nf;
+    }catch(e){console.error("Voice suivi error",e)}
+  };
+  startVoiceGeneric(window._voiceCallback);
+};
 
 // ——— GENERATE ———
 window.handleGenerate=async()=>{
