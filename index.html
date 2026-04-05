@@ -228,11 +228,11 @@ function renderProfil() {
     ].map(([id,label,ph,type]) => `
       <div class="field">
         <label class="label">${label}</label>
-        <input type="${type}" value="${e[id]||""}" placeholder="${ph}" oninput="updateEntreprise('${id}',this.value)" />
+        <input type="${type}" value="${e[id]||""}" placeholder="${ph}" oninput="updateEntreprise('${id}',this.value)" onblur="render()" />
       </div>`).join("")}
     <div class="field">
       <label class="label">Clé API Anthropic * <span class="opt">console.anthropic.com → API Keys</span></label>
-      <input type="password" value="${e.api_key||""}" placeholder="sk-ant-..." oninput="updateEntreprise('api_key',this.value)" />
+      <input type="password" value="${e.api_key||""}" placeholder="sk-ant-..." oninput="updateEntreprise('api_key',this.value)" onblur="render()" />
     </div>
     <div style="display:flex;gap:8px;margin-top:10px;">
       <button class="btn-small btn-blue" style="padding:9px 18px;font-size:13px;" onclick="saveProfil()">Sauvegarder</button>
@@ -473,9 +473,9 @@ function escapeHtml(str) { return String(str||"").replace(/&/g,"&amp;").replace(
 window.toggleProfil = () => setState({ showProfil: !state.showProfil });
 window.setTab = (tab) => setState({ tab, fields: {}, pieces: [{ description: "", quantite: "1", prix_unitaire: "" }], generatedText: "", generatedDoc: null });
 window.setEmailMode = (m) => setState({ emailMode: m, fields: {}, generatedText: "" });
-window.updateField = (id, val) => { state.fields[id] = val; render(); };
-window.updateEntreprise = (id, val) => { state.entreprise[id] = val; render(); };
-window.updatePiece = (i, k, v) => { state.pieces[i][k] = v; render(); };
+window.updateField = (id, val) => { state.fields[id] = val; };
+window.updateEntreprise = (id, val) => { state.entreprise[id] = val; };
+window.updatePiece = (i, k, v) => { state.pieces[i][k] = v; };
 window.addPiece = () => { state.pieces.push({ description: "", quantite: "1", prix_unitaire: "" }); render(); };
 window.removePiece = (i) => { state.pieces.splice(i, 1); render(); };
 window.toggleDossier = (id) => setState({ openDossier: state.openDossier === id ? null : id });
@@ -487,6 +487,12 @@ window.confirmDeleteDoc = (dosId, docNum) => { state.dossiers = state.dossiers.m
 window.getDossierDoc = (dosId, docNum) => { const dos = state.dossiers.find(d=>d.id===dosId); return dos?.documents.find(d=>d.docNumber===docNum); };
 
 window.saveProfil = () => {
+  // Lire les valeurs actuelles des inputs avant de sauvegarder
+  const ids = ["nom","adresse","tel","email","siret","taux_horaire","api_key"];
+  ids.forEach(id => {
+    const el = document.querySelector(`input[oninput*="updateEntreprise('${id}"]`);
+    if (el) state.entreprise[id] = el.value;
+  });
   const e = state.entreprise;
   if (!e.nom || !e.siret || !e.taux_horaire) { alert("Nom, SIRET et taux horaire obligatoires."); return; }
   if (!e.api_key) { alert("La clé API Anthropic est obligatoire."); return; }
@@ -558,6 +564,15 @@ async function processVoice(transcript) {
 }
 
 window.handleGenerate = async () => {
+  // Lire toutes les valeurs des inputs et textareas avant génération
+  document.querySelectorAll('input[oninput*="updateField"], textarea[oninput*="updateField"]').forEach(el => {
+    const m = el.getAttribute('oninput').match(/updateField\('([^']+)'/);
+    if (m) state.fields[m[1]] = el.value;
+  });
+  document.querySelectorAll('input[oninput*="updatePiece"]').forEach(el => {
+    const m = el.getAttribute('oninput').match(/updatePiece\((\d+),'([^']+)'/);
+    if (m) { if (!state.pieces[m[1]]) state.pieces[m[1]] = {}; state.pieces[m[1]][m[2]] = el.value; }
+  });
   const e = state.entreprise, f = state.fields, tab = state.tab;
   if (!e.api_key) { alert("Configure d'abord ta clé API dans le profil entreprise."); return; }
   if (tab === "email") {
