@@ -680,6 +680,7 @@ function renderEmail(){
       <button class="mode-btn ${m==="reponse"?"active":""}" onclick="setEmailMode('reponse')">💬 Répondre à un message</button>
       <button class="mode-btn ${m==="suivi"?"active":""}" onclick="setEmailMode('suivi')">🔧 Mise à jour chantier</button>
     </div>
+    ${m==="suivi"?renderVoice("suivi"):""}
     ${activeF.map(([id,label,ph,type,opt])=>`<div class="field">
       <label class="label">${label}${opt?`<span class="opt">(optionnel)</span>`:""}</label>
       ${type==="textarea"?`<textarea placeholder="${ph}" data-fid="${id}">${esc(f[id]||"")}</textarea>`:`<input type="${type}" value="${esc(f[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value" />`}
