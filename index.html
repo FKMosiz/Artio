@@ -248,12 +248,13 @@ function startVoiceGeneric(onResult){
     r.lang="fr-FR";
     r.continuous=true;
     r.interimResults=false;
+    let sessionIdx=0; // Index LOCAL à chaque session — repart à 0 à chaque relance
 
     r.onresult=e=>{
-      for(let i=lastIdx;i<e.results.length;i++){
+      for(let i=sessionIdx;i<e.results.length;i++){
         if(e.results[i].isFinal){
           voiceBuffer+=" "+e.results[i][0].transcript;
-          lastIdx=i+1;
+          sessionIdx=i+1;
         }
       }
       S.voiceTranscript=voiceBuffer.trim();
