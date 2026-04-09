@@ -67,20 +67,39 @@
     .success-msg{background:#EAF3DE;color:#3B6D11;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:12px}
     .user-bar{display:flex;align-items:center;gap:8px}
     .user-email{font-size:12px;color:#888}
-    body.dark{background:#1a1a18;color:#f0eeea}
-    body.dark .card{background:#2c2c2a;border-color:#444}
-    body.dark input,body.dark textarea{background:#3a3a38;border-color:#555;color:#f0eeea}
-    body.dark .tab-btn{background:#2c2c2a;border-color:#444;color:#f0eeea}
-    body.dark .tab-btn.active{background:#185FA5;border-color:#378ADD;color:#fff}
-    body.dark .dossier-card{background:#2c2c2a;border-color:#444}
-    body.dark .dossier-header{background:#2c2c2a}
-    body.dark .dossier-body{background:#222220}
-    body.dark .totaux{background:#2c2c2a}
-    body.dark .result-box{background:#2c2c2a}
-    body.dark .mode-btn{background:#2c2c2a;border-color:#444;color:#888}
-    body.dark .mode-btn.active{background:#185FA5;color:#fff}
-    .settings-panel{position:fixed;top:0;right:0;bottom:0;width:320px;transition:width 0.2s;background:#fff;border-left:0.5px solid #e0deda;padding:1.5rem;z-index:1000;box-shadow:-4px 0 20px rgba(0,0,0,0.1)}
-    body.dark .settings-panel{background:#2c2c2a;border-color:#444}
+    body.dark{background:#12101a!important;color:#e8e4f0!important}
+    body.dark .card{background:#1e1a2e!important;border-color:#3d3560!important}
+    body.dark input,body.dark textarea{background:#2a2440!important;border-color:#4a3f70!important;color:#e8e4f0!important}
+    body.dark .tab-btn{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
+    body.dark .tab-btn.active{background:#534AB7!important;border-color:#7F77DD!important;color:#fff!important}
+    body.dark .dossier-card{background:#1e1a2e!important;border-color:#3d3560!important}
+    body.dark .dossier-header{background:#1e1a2e!important;color:#e8e4f0!important}
+    body.dark .dossier-body{background:#16122a!important}
+    body.dark .totaux{background:#2a2440!important;color:#e8e4f0!important}
+    body.dark .result-box{background:#1e1a2e!important}
+    body.dark .mode-btn{background:#1e1a2e!important;border-color:#3d3560!important;color:#a090c0!important}
+    body.dark .mode-btn.active{background:#534AB7!important;color:#fff!important;border-color:#7F77DD!important}
+    body.dark .btn-primary{background:#534AB7!important;color:#fff!important}
+    body.dark .btn-primary:hover{background:#7F77DD!important}
+    body.dark .btn-blue{background:#2e2858!important;color:#AFA9EC!important;border-color:#534AB7!important}
+    body.dark .btn-teal{background:#1a4a3a!important;color:#5DD9A7!important}
+    body.dark .btn-gray{background:#2a2440!important;color:#a090c0!important;border-color:#3d3560!important}
+    body.dark .voice-btn{background:#534AB7!important}
+    body.dark .voice-box{background:#2a2440!important;border-color:#3d3560!important}
+    body.dark .voice-box.recording .voice-btn{background:#E24B4A!important}
+    body.dark .voice-box.processing .voice-btn{background:#1D9E75!important}
+    body.dark .auth-box .card{background:#1e1a2e!important;border-color:#3d3560!important}
+    body.dark .auth-tab{background:#2a2440!important;border-color:#3d3560!important;color:#a090c0!important}
+    body.dark .auth-tab.active{background:#534AB7!important;border-color:#7F77DD!important;color:#fff!important}
+    body.dark label,body.dark .label,body.dark p,body.dark span,body.dark h1,body.dark h2,body.dark h3{color:#e8e4f0!important}
+    body.dark .opt{color:#a090c0!important}
+    body.dark .dossier-header span,body.dark .dossier-header div,body.dark .dossier-header p{color:#e8e4f0!important}
+    .settings-panel{position:fixed;top:0;right:0;bottom:0;width:320px;transition:width 0.2s;background:#fff;border-left:0.5px solid #e0deda;padding:1.5rem;z-index:1000;box-shadow:-4px 0 20px rgba(0,0,0,0.1);overflow-y:auto}
+    body.dark .settings-panel{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
+    body.dark .settings-panel *{color:#e8e4f0!important}
+    body.dark .settings-panel input[type="checkbox"]{accent-color:#534AB7}
+    body.dark .settings-panel button{color:#e8e4f0!important}
+    body.dark .settings-panel p,body.dark .settings-panel label,body.dark .settings-panel span{color:#e8e4f0!important}
     .artio-logo{transition:filter 0.2s}
     body.dark .artio-logo{filter:brightness(0) invert(1) drop-shadow(0 0 3px rgba(255,255,255,0.6))}
     .settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:999}
@@ -646,30 +665,35 @@ window.confirmDeleteDoc=async(dosId,docNum)=>{
 window.copyText=text=>{navigator.clipboard.writeText(text);set({copied:true});setTimeout(()=>set({copied:false}),2000)};
 window.setTab=t=>set({tab:t,fields:{},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null});
 window.setEmailMode=m=>set({emailMode:m,fields:{},generatedText:""});
+// Micro contexte — complètement indépendant du micro principal
+let ctxRecognition=null;
+let ctxRunning=false;
+let ctxBuffer="";
+
 window.startVoiceContexte=function(fieldId){
-  // Arrêter si déjà actif
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert("Micro non supporté sur ce navigateur.");return}
+
+  // Arrêter si déjà actif sur ce champ
   if(S.voiceContextField===fieldId){
-    voiceRunning=false;
-    if(recognition){recognition.onend=null;recognition.onresult=null;try{recognition.stop()}catch(e){}}
+    ctxRunning=false;
+    if(ctxRecognition){ctxRecognition.onend=null;ctxRecognition.onresult=null;try{ctxRecognition.stop()}catch(e){}}
+    ctxRecognition=null;
     S.voiceContextField=null;
     render();
     return;
   }
-  // Arrêter toute session précédente proprement
-  voiceRunning=false;
-  if(recognition){recognition.onend=null;recognition.onresult=null;try{recognition.stop()}catch(e){}}
 
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){alert("Micro non supporté sur ce navigateur.");return}
+  // Arrêter toute session contexte précédente
+  ctxRunning=false;
+  if(ctxRecognition){ctxRecognition.onend=null;ctxRecognition.onresult=null;try{ctxRecognition.stop()}catch(e){}}
 
-  // Récupérer texte existant pour ne pas l'effacer
+  // Partir du texte existant dans le champ
   const existingEl=document.querySelector(`textarea[data-fid="${fieldId}"]`);
-  const existingText=(existingEl?existingEl.value:"").trim();
+  ctxBuffer=(existingEl?existingEl.value:"").trim();
 
   S.voiceContextField=fieldId;
-  // Buffer local pour ce micro — séparé de voiceBuffer du micro principal
-  let ctxBuffer=existingText;
-  let ctxRunning=true;
+  ctxRunning=true;
   render();
 
   function makeCtxSession(){
@@ -683,12 +707,10 @@ window.startVoiceContexte=function(fieldId){
     r.onresult=e=>{
       for(let i=sIdx;i<e.results.length;i++){
         if(e.results[i].isFinal){
-          const phrase=e.results[i][0].transcript.trim();
-          ctxBuffer=(ctxBuffer?(ctxBuffer+" "):"")+phrase;
+          ctxBuffer=(ctxBuffer?(ctxBuffer+" "):"")+e.results[i][0].transcript.trim();
           sIdx=i+1;
         }
       }
-      // Mettre à jour uniquement ce champ, sans re-render toute la page
       const el=document.querySelector(`textarea[data-fid="${fieldId}"]`);
       if(el){el.value=ctxBuffer;S.fields[fieldId]=ctxBuffer;}
     };
@@ -698,23 +720,11 @@ window.startVoiceContexte=function(fieldId){
       ctxRunning=false;S.voiceContextField=null;render();
     };
 
-    r.onend=()=>{
-      if(ctxRunning) setTimeout(makeCtxSession,100);
-    };
+    r.onend=()=>{if(ctxRunning)setTimeout(makeCtxSession,100)};
 
-    recognition=r;
-    try{r.start()}catch(e){
-      if(ctxRunning) setTimeout(makeCtxSession,300);
-    }
+    ctxRecognition=r;
+    try{r.start()}catch(e){if(ctxRunning)setTimeout(makeCtxSession,300)}
   }
-
-  // Stopper avec le bouton ⏹
-  window._stopVoiceContexte=function(){
-    ctxRunning=false;
-    if(recognition){recognition.onend=null;recognition.onresult=null;try{recognition.stop()}catch(e){}}
-    S.voiceContextField=null;
-    render();
-  };
 
   makeCtxSession();
 };
