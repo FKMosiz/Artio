@@ -81,6 +81,15 @@ const LOGO_WHITE = "iVBORw0KGgoAAAANSUhEUgAAArkAAADXCAYAAAAeP0m3AADdkElEQVR4nOx9
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const DOC_STORE={};
+function storeDoc(doc){const key=doc.docNumber;DOC_STORE[key]=doc;return key}
+function getDoc(key){return DOC_STORE[key]}
+window.downloadPDF=function(key){
+  const doc=getDoc(key);
+  if(!doc){alert("Document introuvable.");return}
+  try{generatePDF(doc)}catch(e){alert("Erreur PDF : "+e.message)}
+}
+
 const STATUTS = {
   devis_envoye:{label:"Devis envoyé",bg:"#F1EFE8",color:"#5F5E5A"},
   devis_accepte:{label:"Devis accepté",bg:"#E6F1FB",color:"#185FA5"},
@@ -139,14 +148,29 @@ function set(patch){Object.assign(S,patch);render()}
 // ——— SUPABASE DATA ———
 async function loadUserData(userId){
   try{
-    const{data:profil}=await sb.from("profils").select("*").eq("user_id",userId).single();
+    // Charger le profil
+    const{data:profil,error:pe}=await sb.from("profils").select("*").eq("user_id",userId).single();
+    if(pe&&pe.code!=="PGRST116") console.error("Erreur profil:",pe.message);
     if(profil){
-      S.entreprise={nom:profil.nom||"",adresse:profil.adresse||"",tel:profil.tel||"",email:profil.email||"",siret:profil.siret||"",taux_horaire:profil.taux_horaire||"",api_key:profil.api_key||""};
+      S.entreprise={
+        nom:profil.nom||"",adresse:profil.adresse||"",tel:profil.tel||"",
+        email:profil.email||"",siret:profil.siret||"",taux_horaire:profil.taux_horaire||"",
+        api_key:profil.api_key||"",assujetti_tva:profil.assujetti_tva||false
+      };
       S.profilSaved=!!profil.nom;
     }
-    const{data:dossiers}=await sb.from("dossiers").select("*").eq("user_id",userId).order("created_at",{ascending:false});
-    if(dossiers) S.dossiers=dossiers.map(d=>({...d,documents:typeof d.documents==="string"?JSON.parse(d.documents):d.documents||[]}));
-  }catch(e){console.error(e)}
+    // Charger les dossiers
+    const{data:dossiers,error:de}=await sb.from("dossiers").select("*").eq("user_id",userId).order("updated_at",{ascending:false});
+    if(de) console.error("Erreur dossiers:",de.message);
+    if(dossiers&&dossiers.length>0){
+      S.dossiers=dossiers.map(d=>{
+        let docs=[];
+        try{docs=typeof d.documents==="string"?JSON.parse(d.documents):(d.documents||[])}
+        catch(e){docs=[]}
+        return{...d,documents:docs};
+      });
+    }
+  }catch(e){console.error("loadUserData exception:",e)}
 }
 
 async function saveProfil(){
@@ -171,8 +195,11 @@ async function saveDossiers(newDossiers){
 }
 
 async function upsertDossier(dos){
-  const payload={...dos,user_id:S.user.id,documents:JSON.stringify(dos.documents),updated_at:new Date().toISOString()};
-  await sb.from("dossiers").upsert(payload,{onConflict:"id"});
+  try{
+    const payload={...dos,user_id:S.user.id,documents:JSON.stringify(dos.documents),updated_at:new Date().toISOString()};
+    const{error}=await sb.from("dossiers").upsert(payload,{onConflict:"id"});
+    if(error) console.error("Erreur sauvegarde dossier:",error.message);
+  }catch(e){console.error("upsertDossier exception:",e)}
 }
 
 async function deleteDossierDB(id){
@@ -311,7 +338,7 @@ window.startVoice=()=>{
   voiceCallback=async t=>{
     try{
       const raw=await callClaude(
-`Tu es un assistant pour artisan plombier français. Analyse cette dictée et retourne UNIQUEMENT un objet JSON valide, sans texte avant ou après, sans balises markdown.
+`Tu es un assistant pour un prestataire indépendant français (artisan, consultant, auto-entrepreneur...). Analyse cette dictée et retourne UNIQUEMENT un objet JSON valide, sans texte avant ou après, sans balises markdown.
 
 Dictée: "${t}"
 Taux horaire artisan: ${S.entreprise.taux_horaire}€/h
@@ -360,7 +387,7 @@ window.startVoiceSuivi=()=>{
   voiceCallback=async t=>{
     try{
       const raw=await callClaude(
-`Tu es un assistant pour artisan plombier. Analyse ce résumé oral de chantier et retourne UNIQUEMENT un objet JSON valide, sans texte avant ou après.
+`Tu es un assistant pour un prestataire indépendant français. Analyse ce résumé oral de chantier et retourne UNIQUEMENT un objet JSON valide, sans texte avant ou après.
 
 Dictée: "${t}"
 
@@ -526,7 +553,7 @@ function renderAuth(){
   <div class="auth-box">
     <div class="auth-logo">
       <img src="data:image/png;base64,${LOGO_DARK}" style="height:40px;width:auto;" />
-      <p style="font-size:13px;color:#888;margin-top:8px;">Assistant administratif pour artisans</p>
+      <p style="font-size:13px;color:#888;margin-top:8px;">Assistant administratif pour indépendants</p>
     </div>
     <div class="card">
       <div class="auth-tabs">
@@ -576,7 +603,7 @@ function renderProfil(){
   return`<div class="card">
     <p style="font-size:15px;font-weight:500;margin-bottom:3px;">Profil entreprise</p>
     <p style="font-size:12px;color:#888;margin-bottom:14px;">Sauvegardé en ligne — accessible depuis tous tes appareils</p>
-    ${[["nom","Nom de l'entreprise *","Ex: Plomberie Dupont","text"],["adresse","Adresse","Ex: 12 rue des Artisans, 69001 Lyon","text"],["tel","Téléphone","Ex: 06 12 34 56 78","text"],["email","Email","Ex: contact@plomberie-dupont.fr","text"],["siret","SIRET *","Ex: 123 456 789 00012","text"],["taux_horaire","Taux horaire HT (€/h) *","Ex: 55","number"]].map(([id,label,ph,type])=>`
+    ${[["nom","Nom de l'entreprise *","Ex: Plomberie Dupont","text"],["adresse","Adresse","Ex: 12 rue des Artisans, 69001 Lyon","text"],["tel","Téléphone","Ex: 06 12 34 56 78","text"],["email","Email","Ex: contact@plomberie-dupont.fr","text"],["siret","SIRET *","Ex: 123 456 789 00012","text"],["taux_horaire","Taux horaire HT (€/h) *","Ex: 50","number"]].map(([id,label,ph,type])=>`
     <div class="field">
       <label class="label">${label}</label>
       <input type="${type}" class="profil-input" data-id="${id}" value="${esc(e[id]||"")}" placeholder="${ph}" />
@@ -624,7 +651,7 @@ function renderPieces(){
       ${["Description","Qté","Prix HT €",""].map(h=>`<span style="font-size:11px;color:#888;">${h}</span>`).join("")}
     </div>
     ${p.map((x,i)=>`<div class="pieces-grid" style="margin-bottom:6px;">
-      <input value="${esc(x.description)}" placeholder="Ex: Chauffe-eau 200L" data-pid="${i}_description" />
+      <input value="${esc(x.description)}" placeholder="Ex: Nom de la fourniture ou matériau" data-pid="${i}_description" />
       <input type="number" value="${esc(x.quantite)}" min="1" data-pid="${i}_quantite" />
       <input type="number" value="${esc(x.prix_unitaire)}" placeholder="0.00" data-pid="${i}_prix_unitaire" />
       <button class="remove-btn" onclick="S.pieces.splice(${i},1);render()">×</button>
@@ -653,8 +680,8 @@ function renderDevisFacture(){
     ["client_tel","Téléphone client","Ex: 06 12 34 56 78","text",true],
     ["client_email","Email client","Ex: dupont@email.com","text",true],
     ["adresse_travaux","Adresse des travaux","Si différente de l'adresse client","text",true],
-    ["travaux",tab==="devis"?"Description des travaux":"Travaux réalisés","Ex: Remplacement chauffe-eau 200L...","textarea",false],
-    ["nb_heures","Heures main d'œuvre"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",false],
+    ["travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées","Ex: Décris ici la prestation à réaliser...","textarea",false],
+    ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",false],
     S.entreprise.assujetti_tva?["tva","TVA (%)","10 (rénovation) ou 20 (neuf)","text",false]:null,
   ];
   return`<div class="card">
@@ -672,8 +699,8 @@ function renderDevisFacture(){
 
 function renderEmail(){
   const f=S.fields,m=S.emailMode;
-  const reponseF=[["client_nom","Nom du client","Ex: M. Martin","text",false],["message","Message reçu du client","Colle ici le message...","textarea",false],["contexte","Contexte","Ex: le retard est dû à une livraison...","textarea",true]];
-  const suiviF=[["client_nom","Nom du client","Ex: M. Dupont","text",false],["adresse_travaux","Adresse du chantier","Ex: 12 rue de la Paix","text",true],["avancement","Où en sont les travaux","Ex: chauffe-eau posé, mise en service demain...","textarea",false],["suite","Prochaine étape","Ex: retour jeudi matin","text",true],["contexte","Contexte","Ex: retard livraison pièce...","textarea",true]];
+  const reponseF=[["client_nom","Nom du client","Ex: M. Martin","text",false],["message","Message reçu du client","Colle ici le message...","textarea",false],["contexte","Contexte","Ex: infos que le client ne connaît pas encore, contexte particulier...","textarea",true]];
+  const suiviF=[["client_nom","Nom du client","Ex: M. Dupont","text",false],["adresse_travaux","Adresse du chantier","Ex: 12 rue de la Paix","text",true],["avancement","Où en sont les travaux","Ex: installation terminée, il reste la mise en service demain...","textarea",false],["suite","Prochaine étape","Ex: retour jeudi matin","text",true],["contexte","Contexte","Ex: retard dû à une livraison, attente validation client...","textarea",true]];
   const activeF=m==="reponse"?reponseF:suiviF;
   return`<div class="card">
     <div class="mode-tabs">
@@ -731,7 +758,7 @@ function renderHistorique(){
               </div>
             </div>
             <div class="btn-actions">
-              <button class="btn-small btn-green" onclick='generatePDF(${JSON.stringify(doc).replace(/'/g,"\'")})'>⬇ PDF</button>
+              <button class="btn-small btn-green" onclick="downloadPDF('${storeDoc(doc)}')">⬇ PDF</button>
               ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small btn-blue" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}
               ${doc.type==="devis"&&doc.accepte&&!hasFacture?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
               ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small btn-gray" onclick="set({deleteConfirm:null})">✕</button>`:`<button class="btn-small" style="background:transparent;color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
