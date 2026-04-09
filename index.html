@@ -196,9 +196,25 @@ async function saveDossiers(newDossiers){
 
 async function upsertDossier(dos){
   try{
-    const payload={...dos,user_id:S.user.id,documents:JSON.stringify(dos.documents),updated_at:new Date().toISOString()};
-    const{error}=await sb.from("dossiers").upsert(payload,{onConflict:"id"});
-    if(error) console.error("Erreur sauvegarde dossier:",error.message);
+    const payload={
+      id:dos.id,
+      user_id:S.user.id,
+      nom:dos.nom,
+      client:dos.client,
+      statut:dos.statut,
+      documents:JSON.stringify(dos.documents),
+      created_at:dos.createdAt||new Date().toISOString(),
+      updated_at:new Date().toISOString()
+    };
+    // Essayer update d'abord, puis insert si pas trouvé
+    const{data:existing}=await sb.from("dossiers").select("id").eq("id",dos.id).eq("user_id",S.user.id).single();
+    if(existing){
+      const{error}=await sb.from("dossiers").update(payload).eq("id",dos.id).eq("user_id",S.user.id);
+      if(error) console.error("Update dossier erreur:",error.message);
+    } else {
+      const{error}=await sb.from("dossiers").insert(payload);
+      if(error) console.error("Insert dossier erreur:",error.message);
+    }
   }catch(e){console.error("upsertDossier exception:",e)}
 }
 
@@ -243,15 +259,29 @@ async function handleLogout(){
 }
 
 // ——— API CLAUDE ———
-async function callClaude(prompt,maxTokens=400){
-  const res=await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",
-    headers:{"Content-Type":"application/json","x-api-key":S.entreprise.api_key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
-  });
-  const d=await res.json();
-  if(d.error)throw new Error(d.error.message);
-  return d.content?.map(b=>b.text||"").join("")||"";
+async function callClaude(prompt,maxTokens=400,retries=3){
+  for(let attempt=1;attempt<=retries;attempt++){
+    try{
+      const res=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":S.entreprise.api_key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+      });
+      const d=await res.json();
+      if(d.error){
+        // Si overloaded et qu'il reste des tentatives, attendre et réessayer
+        if(d.error.type==="overloaded_error"&&attempt<retries){
+          await new Promise(r=>setTimeout(r,2000*attempt));
+          continue;
+        }
+        throw new Error(d.error.message);
+      }
+      return d.content?.map(b=>b.text||"").join("")||"";
+    }catch(e){
+      if(attempt===retries) throw e;
+      await new Promise(r=>setTimeout(r,1500*attempt));
+    }
+  }
 }
 
 // ——— VOICE ———
