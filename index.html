@@ -67,6 +67,21 @@
     .success-msg{background:#EAF3DE;color:#3B6D11;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:12px}
     .user-bar{display:flex;align-items:center;gap:8px}
     .user-email{font-size:12px;color:#888}
+    body.dark{background:#1a1a18;color:#f0eeea}
+    body.dark .card{background:#2c2c2a;border-color:#444}
+    body.dark input,body.dark textarea{background:#3a3a38;border-color:#555;color:#f0eeea}
+    body.dark .tab-btn{background:#2c2c2a;border-color:#444;color:#f0eeea}
+    body.dark .tab-btn.active{background:#185FA5;border-color:#378ADD;color:#fff}
+    body.dark .dossier-card{background:#2c2c2a;border-color:#444}
+    body.dark .dossier-header{background:#2c2c2a}
+    body.dark .dossier-body{background:#222220}
+    body.dark .totaux{background:#2c2c2a}
+    body.dark .result-box{background:#2c2c2a}
+    body.dark .mode-btn{background:#2c2c2a;border-color:#444;color:#888}
+    body.dark .mode-btn.active{background:#185FA5;color:#fff}
+    .settings-panel{position:fixed;top:0;right:0;bottom:0;width:280px;background:#fff;border-left:0.5px solid #e0deda;padding:1.5rem;z-index:1000;box-shadow:-4px 0 20px rgba(0,0,0,0.1)}
+    body.dark .settings-panel{background:#2c2c2a;border-color:#444}
+    .settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:999}
     @media(max-width:580px){.preview-grid{grid-template-columns:1fr}.btn-actions{gap:4px}.btn-small{font-size:11px;padding:4px 8px}}
   </style>
 </head>
@@ -123,12 +138,12 @@ let S={
   authSuccess:"",
   user:null,
   tab:"devis",
-  emailMode:"reponse",
+  emailMode:"reponse",emailTon:"vouvoiement",showSettings:false,langue:"fr",darkMode:false,
   showProfil:false,
   loading:false,
   voiceState:"idle",
   voiceTranscript:"",
-  fields:{tva:"10"},
+  fields:{},
   pieces:[{description:"",quantite:"1",prix_unitaire:""}],
   generatedText:"",
   generatedDoc:null,
@@ -223,6 +238,27 @@ async function deleteDossierDB(id){
 }
 
 // ——— AUTH ———
+const LABELS={
+  fr:{devis:"📋 Devis",facture:"💶 Facture",email:"✉️ Email",historique:"🗂 Dossiers",mon_entreprise:"⚙️ Mon entreprise",configurer:"⚠️ Configurer",deconnexion:"Déconnexion",generer:"Générer",generer_email:"Générer l'email",chargement:"Chargement..."},
+  en:{devis:"📋 Quote",facture:"💶 Invoice",email:"✉️ Email",historique:"🗂 Files",mon_entreprise:"⚙️ My company",configurer:"⚠️ Setup",deconnexion:"Log out",generer:"Generate",generer_email:"Generate email",chargement:"Loading..."},
+  es:{devis:"📋 Presupuesto",facture:"💶 Factura",email:"✉️ Email",historique:"🗂 Carpetas",mon_entreprise:"⚙️ Mi empresa",configurer:"⚠️ Configurar",deconnexion:"Cerrar sesión",generer:"Generar",generer_email:"Generar email",chargement:"Cargando..."},
+  zh:{devis:"📋 报价单",facture:"💶 发票",email:"✉️ 邮件",historique:"🗂 档案",mon_entreprise:"⚙️ 我的企业",configurer:"⚠️ 配置",deconnexion:"退出",generer:"生成",generer_email:"生成邮件",chargement:"加载中..."},
+};
+function L(key){return(LABELS[S.langue]||LABELS.fr)[key]||key}
+function applyDarkMode(){
+  if(S.darkMode) document.body.classList.add("dark");
+  else document.body.classList.remove("dark");
+  localStorage.setItem("artio_dark",S.darkMode?"1":"0");
+}
+function applyLangue(){
+  localStorage.setItem("artio_langue",S.langue);
+}
+// Restaurer préférences au chargement
+(()=>{
+  if(localStorage.getItem("artio_dark")==="1"){S.darkMode=true;document.body.classList.add("dark")}
+  if(localStorage.getItem("artio_langue")) S.langue=localStorage.getItem("artio_langue");
+})();
+
 async function initAuth(){
   const{data:{session}}=await sb.auth.getSession();
   if(session?.user){
@@ -462,7 +498,7 @@ window.handleGenerate=async()=>{
     try{
       const prompt=S.emailMode==="reponse"
         ?`Rédige une réponse email professionnelle pour ${e.nom}.\nClient : ${f.client_nom}\nMessage : ${f.message}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`
-        :`Rédige un email de mise à jour chantier pour ${e.nom}.\nClient : ${f.client_nom}\nChantier : ${f.adresse_travaux||""}\nAvancement : ${f.avancement}\nProchaine étape : ${f.suite||"à définir"}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`;
+        :`Rédige un email de mise à jour pour ${e.nom}.\nTon souhaité: ${S.emailTon}.\nClient : ${f.client_nom}\nChantier : ${f.adresse_travaux||""}\nAvancement : ${f.avancement}\nProchaine étape : ${f.suite||"à définir"}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`;
       const text=await callClaude(prompt,500);
       set({loading:false,generatedText:text});
     }catch(err){set({loading:false,generatedText:"Erreur : "+err.message})}
@@ -521,8 +557,8 @@ window.confirmDeleteDoc=async(dosId,docNum)=>{
   set({deleteConfirm:null,previewDocNum:null});
 };
 window.copyText=text=>{navigator.clipboard.writeText(text);set({copied:true});setTimeout(()=>set({copied:false}),2000)};
-window.setTab=t=>set({tab:t,fields:{tva:"10"},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null});
-window.setEmailMode=m=>set({emailMode:m,fields:{tva:"10"},generatedText:""});
+window.setTab=t=>set({tab:t,fields:{},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null});
+window.setEmailMode=m=>set({emailMode:m,fields:{},generatedText:""});
 
 // ——— PDF ———
 function generatePDF(doc){
@@ -616,16 +652,40 @@ function renderApp(){
       <div class="user-bar">
         <span class="user-email">${esc(S.user?.email||"")}</span>
         <button class="btn-small ${apiOk?"btn-gray":"btn-red"}" onclick="set({showProfil:!S.showProfil})">${apiOk?"⚙️ Mon entreprise":"⚠️ Configurer"}</button>
+        <button class="btn-small btn-gray" title="Paramètres" onclick="set({showSettings:true})" style="font-size:16px;padding:5px 8px;">⚙</button>
         <button class="btn-small btn-gray" onclick="handleLogout()" style="font-size:11px;">Déconnexion</button>
       </div>
     </div>
     ${S.showProfil?renderProfil():""}
     ${!apiOk&&!S.showProfil?`<div style="background:#FCEBEB;border:0.5px solid #F09595;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#A32D2D;">⚠️ Configure ton entreprise et ta clé API pour commencer.</div>`:""}
     <div class="tabs">
-      ${[["devis","📋 Devis"],["facture","💶 Facture"],["email","✉️ Email"],["historique","🗂 Dossiers"+(S.dossiers.length?" ("+S.dossiers.length+")":"")]].map(([id,label])=>`<button class="tab-btn ${S.tab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}
+      ${[["devis",L("devis")],["facture",L("facture")],["email",L("email")],["historique",L("historique")+(S.dossiers.length?" ("+S.dossiers.length+")":"")]].map(([id,label])=>`<button class="tab-btn ${S.tab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}
     </div>
     ${S.tab==="historique"?renderHistorique():S.tab==="email"?renderEmail():renderDevisFacture()}
-  </div>`;
+  </div>
+  ${S.showSettings?`
+  <div class="settings-overlay" onclick="set({showSettings:false})"></div>
+  <div class="settings-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+      <p style="font-size:16px;font-weight:500;">Paramètres</p>
+      <button onclick="set({showSettings:false})" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;">×</button>
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label class="label" style="margin-bottom:10px;">Langue de l'interface</label>
+      ${[["fr","🇫🇷 Français"],["en","🇬🇧 English"],["es","🇪🇸 Español"],["zh","🇨🇳 中文"]].map(([code,label])=>`
+        <button onclick="S.langue='${code}';applyLangue();render()" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:6px;border-radius:8px;border:1.5px solid ${S.langue===code?"#378ADD":"#d0d0cc"};background:${S.langue===code?"#E6F1FB":"transparent"};color:${S.langue===code?"#185FA5":"#666"};cursor:pointer;font-size:14px;">
+          ${label}
+        </button>`).join("")}
+    </div>
+    <div>
+      <label class="label" style="margin-bottom:10px;">Thème</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button onclick="S.darkMode=false;applyDarkMode();render()" style="padding:12px;border-radius:8px;border:1.5px solid ${!S.darkMode?"#378ADD":"#d0d0cc"};background:${!S.darkMode?"#E6F1FB":"#fff"};color:${!S.darkMode?"#185FA5":"#666"};cursor:pointer;font-size:13px;">☀️ Clair</button>
+        <button onclick="S.darkMode=true;applyDarkMode();render()" style="padding:12px;border-radius:8px;border:1.5px solid ${S.darkMode?"#378ADD":"#d0d0cc"};background:${S.darkMode?"#1a1a18":"transparent"};color:${S.darkMode?"#fff":"#666"};cursor:pointer;font-size:13px;">🌙 Sombre</button>
+      </div>
+    </div>
+  </div>`:""}
+  `;
 }
 
 function renderProfil(){
@@ -681,15 +741,19 @@ function renderPieces(){
       ${["Description","Qté","Prix HT €",""].map(h=>`<span style="font-size:11px;color:#888;">${h}</span>`).join("")}
     </div>
     ${p.map((x,i)=>`<div class="pieces-grid" style="margin-bottom:6px;">
-      <input value="${esc(x.description)}" placeholder="Ex: Nom de la fourniture ou matériau" data-pid="${i}_description" />
-      <input type="number" value="${esc(x.quantite)}" min="1" data-pid="${i}_quantite" />
-      <input type="number" value="${esc(x.prix_unitaire)}" placeholder="0.00" data-pid="${i}_prix_unitaire" />
+      <input value="${esc(x.description)}" placeholder="Ex: Nom de la fourniture ou matériau" data-pid="${i}_description" oninput="S.pieces[${i}]={...S.pieces[${i}],description:this.value};renderTotauxOnly()" />
+      <input type="number" value="${esc(x.quantite)}" min="1" data-pid="${i}_quantite" oninput="S.pieces[${i}]={...S.pieces[${i}],quantite:this.value};renderTotauxOnly()" />
+      <input type="number" value="${esc(x.prix_unitaire)}" placeholder="0.00" data-pid="${i}_prix_unitaire" oninput="S.pieces[${i}]={...S.pieces[${i}],prix_unitaire:this.value};renderTotauxOnly()" />
       <button class="remove-btn" onclick="S.pieces.splice(${i},1);render()">×</button>
     </div>`).join("")}
     <button class="btn-small btn-gray" style="font-size:12px;padding:6px 12px;" onclick="S.pieces.push({description:'',quantite:'1',prix_unitaire:''});render()">+ Ajouter une pièce</button>
   </div>`;
 }
 
+window.renderTotauxOnly=function(){
+  const el=document.getElementById("totaux-container");
+  if(el) el.innerHTML=renderTotaux();
+}
 function renderTotaux(){
   const f=S.fields,e=S.entreprise,p=S.pieces;
   if(!f.nb_heures||!e.taux_horaire)return"";
@@ -721,7 +785,7 @@ function renderDevisFacture(){
       ${type==="textarea"?`<textarea placeholder="${ph}" data-fid="${id}">${esc(f[id]||"")}</textarea>`:`<input type="${type}" value="${esc(f[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'render()':''}" />`}
     </div>`).join("")}
     ${renderPieces()}
-    ${renderTotaux()}
+    <div id="totaux-container">${renderTotaux()}</div>
     <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":"Générer"}</button>
   </div>
   ${S.generatedDoc?`<div class="card">${renderDocPreview(S.generatedDoc)}</div>`:""}`;
@@ -736,6 +800,15 @@ function renderEmail(){
     <div class="mode-tabs">
       <button class="mode-btn ${m==="reponse"?"active":""}" onclick="setEmailMode('reponse')">💬 Répondre à un message</button>
       <button class="mode-btn ${m==="suivi"?"active":""}" onclick="setEmailMode('suivi')">🔧 Mise à jour chantier</button>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label class="label" style="margin-bottom:8px;">Ton de la réponse</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${["vouvoiement","tutoiement","amical","institutionnel","ferme"].map(ton=>`
+          <button onclick="S.emailTon='${ton}';render()" style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${S.emailTon===ton?"#378ADD":"#d0d0cc"};background:${S.emailTon===ton?"#E6F1FB":"transparent"};color:${S.emailTon===ton?"#185FA5":"#666"};font-weight:${S.emailTon===ton?"500":"400"};">
+            ${ton.charAt(0).toUpperCase()+ton.slice(1)}
+          </button>`).join("")}
+      </div>
     </div>
     ${m==="suivi"?renderVoice("suivi"):""}
     ${activeF.map(([id,label,ph,type,opt])=>`<div class="field">
