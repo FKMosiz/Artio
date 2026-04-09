@@ -79,11 +79,16 @@
     body.dark .result-box{background:#2c2c2a}
     body.dark .mode-btn{background:#2c2c2a;border-color:#444;color:#888}
     body.dark .mode-btn.active{background:#185FA5;color:#fff}
-    .settings-panel{position:fixed;top:0;right:0;bottom:0;width:280px;background:#fff;border-left:0.5px solid #e0deda;padding:1.5rem;z-index:1000;box-shadow:-4px 0 20px rgba(0,0,0,0.1)}
+    .settings-panel{position:fixed;top:0;right:0;bottom:0;width:320px;transition:width 0.2s;background:#fff;border-left:0.5px solid #e0deda;padding:1.5rem;z-index:1000;box-shadow:-4px 0 20px rgba(0,0,0,0.1)}
     body.dark .settings-panel{background:#2c2c2a;border-color:#444}
     .artio-logo{transition:filter 0.2s}
     body.dark .artio-logo{filter:brightness(0) invert(1) drop-shadow(0 0 3px rgba(255,255,255,0.6))}
     .settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:999}
+    body.dark .doc-preview-wrapper{background:#fff!important;color:#1a1a18!important;border-radius:8px;padding:1rem}
+    body.dark .doc-preview-wrapper *{color:#1a1a18!important}
+    body.dark .doc-preview-wrapper .preview-table th{background:#E6F1FB!important;color:#185FA5!important}
+    body.dark .doc-preview-wrapper .preview-table td{border-color:#e0deda!important;color:#1a1a18!important}
+    body.dark .dossier-body .doc-preview-wrapper{background:#fff!important}
     @media(max-width:580px){.preview-grid{grid-template-columns:1fr}.btn-actions{gap:4px}.btn-small{font-size:11px;padding:4px 8px}}
   </style>
 </head>
@@ -241,10 +246,58 @@ async function deleteDossierDB(id){
 
 // ——— AUTH ———
 const LABELS={
-  fr:{devis:"📋 Devis",facture:"💶 Facture",email:"✉️ Email",historique:"🗂 Dossiers",mon_entreprise:"⚙️ Mon entreprise",configurer:"⚠️ Configurer",deconnexion:"Déconnexion",generer:"Générer",generer_email:"Générer l'email",chargement:"Chargement..."},
-  en:{devis:"📋 Quote",facture:"💶 Invoice",email:"✉️ Email",historique:"🗂 Files",mon_entreprise:"⚙️ My company",configurer:"⚠️ Setup",deconnexion:"Log out",generer:"Generate",generer_email:"Generate email",chargement:"Loading..."},
-  es:{devis:"📋 Presupuesto",facture:"💶 Factura",email:"✉️ Email",historique:"🗂 Carpetas",mon_entreprise:"⚙️ Mi empresa",configurer:"⚠️ Configurar",deconnexion:"Cerrar sesión",generer:"Generar",generer_email:"Generar email",chargement:"Cargando..."},
-  zh:{devis:"📋 报价单",facture:"💶 发票",email:"✉️ 邮件",historique:"🗂 档案",mon_entreprise:"⚙️ 我的企业",configurer:"⚠️ 配置",deconnexion:"退出",generer:"生成",generer_email:"生成邮件",chargement:"加载中..."},
+  fr:{
+    devis:"📋 Devis",facture:"💶 Facture",email:"✉️ Email",historique:"🗂 Dossiers",
+    mon_entreprise:"⚙️ Mon entreprise",configurer:"⚠️ Configurer",deconnexion:"Déconnexion",
+    generer:"Générer",generer_email:"Générer l'email",chargement:"Chargement...",
+    ph_client_nom:"Ex: M. Dupont",ph_client_adresse:"Ex: 12 rue de la Paix, 75001 Paris",
+    ph_client_tel:"Ex: 06 12 34 56 78",ph_client_email:"Ex: dupont@email.com",
+    ph_adresse_travaux:"Si différente de l'adresse client",ph_travaux:"Décris ici la prestation à réaliser...",
+    ph_nb_heures:"Ex: 3",ph_tva:"10 (rénovation) ou 20 (neuf)",
+    ph_message:"Colle ici le message reçu...",ph_contexte:"Infos que le client ne connaît pas encore...",
+    ph_avancement:"Ex: installation terminée, mise en service demain...",ph_suite:"Ex: retour jeudi matin",
+    ph_fourniture:"Ex: Nom de la fourniture ou matériau",
+    ton_vouvoiement:"Vouvoiement",ton_tutoiement:"Tutoiement",ton_amical:"Amical",ton_institutionnel:"Institutionnel",ton_ferme:"Ferme",
+  },
+  en:{
+    devis:"📋 Quote",facture:"💶 Invoice",email:"✉️ Email",historique:"🗂 Files",
+    mon_entreprise:"⚙️ My company",configurer:"⚠️ Setup",deconnexion:"Log out",
+    generer:"Generate",generer_email:"Generate email",chargement:"Loading...",
+    ph_client_nom:"Ex: Mr. Smith",ph_client_adresse:"Ex: 12 Main Street, London",
+    ph_client_tel:"Ex: +44 7911 123456",ph_client_email:"Ex: smith@email.com",
+    ph_adresse_travaux:"If different from client address",ph_travaux:"Describe the work to be done...",
+    ph_nb_heures:"Ex: 3",ph_tva:"10 (renovation) or 20 (new)",
+    ph_message:"Paste the client message here...",ph_contexte:"Info the client doesn't know yet...",
+    ph_avancement:"Ex: installation done, commissioning tomorrow...",ph_suite:"Ex: return Thursday morning",
+    ph_fourniture:"Ex: Material or supply name",
+    ton_vouvoiement:"Formal",ton_tutoiement:"Informal",ton_amical:"Friendly",ton_institutionnel:"Institutional",ton_ferme:"Firm",
+  },
+  es:{
+    devis:"📋 Presupuesto",facture:"💶 Factura",email:"✉️ Email",historique:"🗂 Carpetas",
+    mon_entreprise:"⚙️ Mi empresa",configurer:"⚠️ Configurar",deconnexion:"Cerrar sesión",
+    generer:"Generar",generer_email:"Generar email",chargement:"Cargando...",
+    ph_client_nom:"Ej: Sr. García",ph_client_adresse:"Ej: Calle Mayor 12, Madrid",
+    ph_client_tel:"Ej: +34 612 345 678",ph_client_email:"Ej: garcia@email.com",
+    ph_adresse_travaux:"Si es diferente a la dirección del cliente",ph_travaux:"Describe el trabajo a realizar...",
+    ph_nb_heures:"Ej: 3",ph_tva:"10 (renovación) o 20 (nuevo)",
+    ph_message:"Pega aquí el mensaje del cliente...",ph_contexte:"Info que el cliente no conoce aún...",
+    ph_avancement:"Ej: instalación lista, puesta en marcha mañana...",ph_suite:"Ej: vuelta el jueves",
+    ph_fourniture:"Ej: Nombre del material o suministro",
+    ton_vouvoiement:"Formal",ton_tutoiement:"Informal",ton_amical:"Amistoso",ton_institutionnel:"Institucional",ton_ferme:"Firme",
+  },
+  zh:{
+    devis:"📋 报价单",facture:"💶 发票",email:"✉️ 邮件",historique:"🗂 档案",
+    mon_entreprise:"⚙️ 我的企业",configurer:"⚠️ 配置",deconnexion:"退出",
+    generer:"生成",generer_email:"生成邮件",chargement:"加载中...",
+    ph_client_nom:"例：王先生",ph_client_adresse:"例：北京市朝阳区xxx路12号",
+    ph_client_tel:"例：138-0000-0000",ph_client_email:"例：wang@email.com",
+    ph_adresse_travaux:"如与客户地址不同请填写",ph_travaux:"请描述要完成的工作...",
+    ph_nb_heures:"例：3",ph_tva:"10（翻新）或20（新建）",
+    ph_message:"粘贴客户消息...",ph_contexte:"客户不知道的信息...",
+    ph_avancement:"例：安装完成，明天调试...",ph_suite:"例：周四上午回来",
+    ph_fourniture:"例：材料或供应品名称",
+    ton_vouvoiement:"正式",ton_tutoiement:"非正式",ton_amical:"友好",ton_institutionnel:"官方",ton_ferme:"强硬",
+  },
 };
 function L(key){return(LABELS[S.langue]||LABELS.fr)[key]||key}
 function applyDarkMode(){
@@ -574,20 +627,30 @@ window.copyText=text=>{navigator.clipboard.writeText(text);set({copied:true});se
 window.setTab=t=>set({tab:t,fields:{},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null});
 window.setEmailMode=m=>set({emailMode:m,fields:{},generatedText:""});
 window.startVoiceContexte=function(fieldId){
+  // Arrêter si déjà actif sur ce champ
   if(S.voiceContextField===fieldId){
-    // Arrêter
     voiceRunning=false;
-    if(recognition){recognition.onend=null;try{recognition.stop()}catch(e){}}
+    if(recognition){recognition.onend=null;recognition.onresult=null;try{recognition.stop()}catch(e){}}
     S.voiceContextField=null;
     render();
     return;
   }
+  // Arrêter toute session précédente
+  if(recognition){try{recognition.stop()}catch(e){}}
+  voiceRunning=false;
+
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){alert("Micro non supporté sur ce navigateur.");return}
+
+  // Récupérer le texte existant du champ pour ne pas l'effacer
+  const existingEl=document.querySelector(`textarea[data-fid="${fieldId}"]`);
+  const existingText=existingEl?existingEl.value:"";
+
   S.voiceContextField=fieldId;
-  voiceBuffer="";
+  voiceBuffer=existingText; // Partir du texte existant, pas de zéro
   voiceRunning=true;
   render();
+
   function makeCtxSession(){
     if(!voiceRunning)return;
     const r=new SR();
@@ -595,13 +658,19 @@ window.startVoiceContexte=function(fieldId){
     let sIdx=0;
     r.onresult=e=>{
       for(let i=sIdx;i<e.results.length;i++){
-        if(e.results[i].isFinal){voiceBuffer+=" "+e.results[i][0].transcript;sIdx=i+1;}
+        if(e.results[i].isFinal){
+          voiceBuffer+=(voiceBuffer?" ":"")+e.results[i][0].transcript.trim();
+          sIdx=i+1;
+        }
       }
-      // Mettre à jour le champ directement
+      // Mettre à jour UNIQUEMENT le champ contexte, sans toucher aux autres
       const el=document.querySelector(`textarea[data-fid="${fieldId}"]`);
-      if(el){el.value=voiceBuffer.trim();S.fields[fieldId]=voiceBuffer.trim();}
+      if(el){el.value=voiceBuffer;S.fields[fieldId]=voiceBuffer;}
     };
-    r.onerror=e=>{if(e.error==="no-speech"||e.error==="aborted")return;voiceRunning=false;S.voiceContextField=null;render()};
+    r.onerror=e=>{
+      if(e.error==="no-speech"||e.error==="aborted")return;
+      voiceRunning=false;S.voiceContextField=null;render();
+    };
     r.onend=()=>{if(voiceRunning)setTimeout(makeCtxSession,100)};
     recognition=r;
     try{r.start()}catch(e){if(voiceRunning)setTimeout(makeCtxSession,300)}
@@ -728,7 +797,7 @@ function renderApp(){
   </div>
   ${S.showSettings?`
   <div class="settings-overlay" onclick="set({showSettings:false})"></div>
-  <div class="settings-panel">
+  <div class="settings-panel" style="width:${S.settingsPage==="profil"?"460px":"320px"};overflow-y:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
       <div style="display:flex;align-items:center;gap:8px;">
         ${S.settingsPage!=="main"?`<button onclick="set({settingsPage:'main'})" style="background:none;border:none;cursor:pointer;font-size:18px;color:#888;">←</button>`:""}
@@ -821,7 +890,7 @@ function renderPieces(){
       ${["Description","Qté","Prix HT €",""].map(h=>`<span style="font-size:11px;color:#888;">${h}</span>`).join("")}
     </div>
     ${p.map((x,i)=>`<div class="pieces-grid" style="margin-bottom:6px;">
-      <input value="${esc(x.description)}" placeholder="Ex: Nom de la fourniture ou matériau" data-pid="${i}_description" oninput="S.pieces[${i}]={...S.pieces[${i}],description:this.value};renderTotauxOnly()" />
+      <input value="${esc(x.description)}" placeholder="${L('ph_fourniture')}" data-pid="${i}_description" oninput="S.pieces[${i}]={...S.pieces[${i}],description:this.value};renderTotauxOnly()" />
       <input type="number" value="${esc(x.quantite)}" min="1" data-pid="${i}_quantite" oninput="S.pieces[${i}]={...S.pieces[${i}],quantite:this.value};renderTotauxOnly()" />
       <input type="number" value="${esc(x.prix_unitaire)}" placeholder="0.00" data-pid="${i}_prix_unitaire" oninput="S.pieces[${i}]={...S.pieces[${i}],prix_unitaire:this.value};renderTotauxOnly()" />
       <button class="remove-btn" onclick="S.pieces.splice(${i},1);render()">×</button>
@@ -849,12 +918,12 @@ function renderTotaux(){
 function renderDevisFacture(){
   const f=S.fields,tab=S.tab,e=S.entreprise;
   const fields=[
-    ["client_nom","Nom du client","Ex: M. Dupont","text",false],
-    ["client_adresse","Adresse du client","Ex: 12 rue de la Paix, 75001 Paris","text",false],
-    ["client_tel","Téléphone client","Ex: 06 12 34 56 78","text",true],
-    ["client_email","Email client","Ex: dupont@email.com","text",true],
-    ["adresse_travaux","Adresse des travaux","Si différente de l'adresse client","text",true],
-    ["travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées","Ex: Décris ici la prestation à réaliser...","textarea",false],
+    ["client_nom","Nom du client",L("ph_client_nom"),"text",false],
+    ["client_adresse","Adresse du client",L("ph_client_adresse"),"text",false],
+    ["client_tel","Téléphone client",L("ph_client_tel"),"text",true],
+    ["client_email","Email client",L("ph_client_email"),"text",true],
+    ["adresse_travaux","Adresse des travaux",L("ph_adresse_travaux"),"text",true],
+    ["travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false],
     ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",false],
     S.entreprise.assujetti_tva?["tva","TVA (%)","10 (rénovation) ou 20 (neuf)","text",false]:null,
   ];
@@ -874,7 +943,7 @@ function renderDevisFacture(){
 function renderEmail(){
   const f=S.fields,m=S.emailMode;
   const reponseF=[["client_nom","Nom du client","Ex: M. Martin","text",false],["message","Message reçu du client","Colle ici le message...","textarea",false],["contexte","Contexte 🎙","Ex: infos que le client ne connaît pas encore, contexte particulier...","textarea",true,"voice"]];
-  const suiviF=[["client_nom","Nom du client","Ex: M. Dupont","text",false],["adresse_travaux","Adresse du chantier","Ex: 12 rue de la Paix","text",true],["avancement","Où en sont les travaux","Ex: installation terminée, il reste la mise en service demain...","textarea",false],["suite","Prochaine étape","Ex: retour jeudi matin","text",true],["contexte","Contexte 🎙","Ex: retard dû à une livraison, attente validation client...","textarea",true,"voice"]];
+  const suiviF=[["client_nom","Nom du client",L("ph_client_nom"),"text",false],["adresse_travaux","Adresse du chantier","Ex: 12 rue de la Paix","text",true],["avancement","Où en sont les travaux","Ex: installation terminée, il reste la mise en service demain...","textarea",false],["suite","Prochaine étape","Ex: retour jeudi matin","text",true],["contexte","Contexte 🎙","Ex: retard dû à une livraison, attente validation client...","textarea",true,"voice"]];
   const activeF=m==="reponse"?reponseF:suiviF;
   return`<div class="card">
     <div class="mode-tabs">
@@ -965,7 +1034,7 @@ function renderHistorique(){
 }
 
 function renderDocPreview(doc){
-  return`<div style="font-size:13px;line-height:1.7;">
+  return`<div class="doc-preview-wrapper" style="font-size:13px;line-height:1.7;">
     <div class="preview-grid">
       <div><p style="font-weight:500;margin-bottom:2px;">${esc(doc.entreprise.nom)}</p><p style="color:#888;font-size:12px;">${esc(doc.entreprise.adresse)}<br/>${esc(doc.entreprise.tel)} — ${esc(doc.entreprise.email)}<br/>SIRET : ${esc(doc.entreprise.siret)}</p></div>
       <div style="text-align:right;"><p style="font-weight:500;font-size:16px;margin-bottom:2px;">${doc.type==="devis"?"DEVIS":"FACTURE"}</p><p style="color:#888;font-size:12px;">N° ${doc.docNumber}<br/>Date : ${doc.date}${doc.validUntil?"<br/>Valable jusqu'au : "+doc.validUntil:""}</p></div>
