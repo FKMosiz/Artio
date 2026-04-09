@@ -97,6 +97,8 @@
     .settings-panel{position:fixed;top:0;right:0;bottom:0;width:320px;transition:width 0.2s;background:#fff;border-left:0.5px solid #e0deda;padding:1.5rem;z-index:1000;box-shadow:-4px 0 20px rgba(0,0,0,0.1);overflow-y:auto}
     body.dark .settings-panel{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
     body.dark .settings-panel *{color:#e8e4f0!important}
+    body.dark .tva-box{background:#2a2440!important}
+    body.dark .tva-box span,body.dark .tva-box p,body.dark .tva-box label{color:#AFA9EC!important}
     body.dark .settings-panel input[type="checkbox"]{accent-color:#534AB7}
     body.dark .settings-panel button{color:#e8e4f0!important}
     body.dark .settings-panel p,body.dark .settings-panel label,body.dark .settings-panel span{color:#e8e4f0!important}
@@ -665,68 +667,33 @@ window.confirmDeleteDoc=async(dosId,docNum)=>{
 window.copyText=text=>{navigator.clipboard.writeText(text);set({copied:true});setTimeout(()=>set({copied:false}),2000)};
 window.setTab=t=>set({tab:t,fields:{},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null});
 window.setEmailMode=m=>set({emailMode:m,fields:{},generatedText:""});
-// Micro contexte — complètement indépendant du micro principal
-let ctxRecognition=null;
-let ctxRunning=false;
-let ctxBuffer="";
-
 window.startVoiceContexte=function(fieldId){
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){alert("Micro non supporté sur ce navigateur.");return}
-
-  // Arrêter si déjà actif sur ce champ
+  // Si déjà actif sur ce champ → arrêter via stopVoice
   if(S.voiceContextField===fieldId){
-    ctxRunning=false;
-    if(ctxRecognition){ctxRecognition.onend=null;ctxRecognition.onresult=null;try{ctxRecognition.stop()}catch(e){}}
-    ctxRecognition=null;
     S.voiceContextField=null;
-    render();
+    window.stopVoice();
     return;
   }
 
-  // Arrêter toute session contexte précédente
-  ctxRunning=false;
-  if(ctxRecognition){ctxRecognition.onend=null;ctxRecognition.onresult=null;try{ctxRecognition.stop()}catch(e){}}
-
-  // Partir du texte existant dans le champ
+  // Partir du texte existant dans le champ pour ne pas l'effacer
   const existingEl=document.querySelector(`textarea[data-fid="${fieldId}"]`);
-  ctxBuffer=(existingEl?existingEl.value:"").trim();
+  const existingText=(existingEl?existingEl.value:"").trim();
+  voiceBuffer=existingText; // Partir de l'existant
 
   S.voiceContextField=fieldId;
-  ctxRunning=true;
-  render();
 
-  function makeCtxSession(){
-    if(!ctxRunning)return;
-    const r=new SR();
-    r.lang="fr-FR";
-    r.continuous=true;
-    r.interimResults=false;
-    let sIdx=0;
+  // Utiliser exactement la même infrastructure que le micro principal
+  voiceCallback=async t=>{
+    // t = tout ce qui a été dit. On met à jour directement le champ
+    const el=document.querySelector(`textarea[data-fid="${fieldId}"]`);
+    if(el){
+      el.value=t;
+      S.fields[fieldId]=t;
+    }
+  };
 
-    r.onresult=e=>{
-      for(let i=sIdx;i<e.results.length;i++){
-        if(e.results[i].isFinal){
-          ctxBuffer=(ctxBuffer?(ctxBuffer+" "):"")+e.results[i][0].transcript.trim();
-          sIdx=i+1;
-        }
-      }
-      const el=document.querySelector(`textarea[data-fid="${fieldId}"]`);
-      if(el){el.value=ctxBuffer;S.fields[fieldId]=ctxBuffer;}
-    };
-
-    r.onerror=e=>{
-      if(e.error==="no-speech"||e.error==="aborted")return;
-      ctxRunning=false;S.voiceContextField=null;render();
-    };
-
-    r.onend=()=>{if(ctxRunning)setTimeout(makeCtxSession,100)};
-
-    ctxRecognition=r;
-    try{r.start()}catch(e){if(ctxRunning)setTimeout(makeCtxSession,300)}
-  }
-
-  makeCtxSession();
+  // Remplacer stopVoice temporairement pour gérer l'arrêt proprement
+  startVoiceGeneric(voiceCallback);
 };
 
 window.toggleTon=function(ton){
@@ -872,7 +839,7 @@ function renderApp(){
     <div style="margin-bottom:1.5rem;">
       <label class="label" style="margin-bottom:10px;">${L("langue_lbl")}</label>
       ${[["fr","🇫🇷 Français"],["en","🇬🇧 English"],["es","🇪🇸 Español"],["zh","🇨🇳 中文"]].map(([code,label])=>`
-        <button onclick="S.langue='${code}';applyLangue();render()" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:6px;border-radius:8px;border:1.5px solid ${S.langue===code?"#378ADD":"#d0d0cc"};background:${S.langue===code?"#E6F1FB":"transparent"};color:${S.langue===code?"#185FA5":"#666"};cursor:pointer;font-size:14px;">
+        <button onclick="S.langue='${code}';applyLangue();render()" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:6px;border-radius:8px;border:1.5px solid ${S.langue===code?"#378ADD":"#d0d0cc"};background:${S.langue===code?"#2e2858":"transparent"};color:${S.langue===code?"#AFA9EC":"#666"};cursor:pointer;font-size:14px;">
           ${label}
         </button>`).join("")}
     </div>
@@ -902,7 +869,7 @@ function renderProfil(){
       <label class="label">Clé API Anthropic * <span class="opt">console.anthropic.com → API Keys</span></label>
       <input type="password" class="profil-input" data-id="api_key" value="${esc(e.api_key||"")}" placeholder="sk-ant-..." />
     </div>
-    <div style="background:#E6F1FB;border-radius:8px;padding:12px;margin-bottom:10px;">
+    <div style="background:#E6F1FB;border-radius:8px;padding:12px;margin-bottom:10px;" class="tva-box">
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
         <input type="checkbox" class="profil-input" data-id="assujetti_tva" ${e.assujetti_tva?"checked":""} style="width:18px;height:18px;cursor:pointer;flex-shrink:0;" />
         <span style="font-size:14px;font-weight:500;">Assujetti à la TVA</span>
