@@ -258,6 +258,11 @@ const LABELS={
     ph_avancement:"Ex: installation terminée, mise en service demain...",ph_suite:"Ex: retour jeudi matin",
     ph_fourniture:"Ex: Nom de la fourniture ou matériau",
     ton_vouvoiement:"Vouvoiement",ton_tutoiement:"Tutoiement",ton_amical:"Amical",ton_institutionnel:"Institutionnel",ton_ferme:"Ferme",
+    login:"Se connecter",register:"Créer un compte",email_lbl:"Email",password_lbl:"Mot de passe",
+    connexion_btn:"Se connecter",creation_btn:"Créer mon compte",loading_btn:"...",
+    subtitle:"Assistant administratif pour indépendants",
+    settings:"Paramètres",langue_lbl:"Langue",theme_lbl:"Thème",clair:"Clair",sombre:"Sombre",
+    mon_entreprise_desc:"Infos, SIRET, taux horaire, clé API",
   },
   en:{
     devis:"📋 Quote",facture:"💶 Invoice",email:"✉️ Email",historique:"🗂 Files",
@@ -271,6 +276,11 @@ const LABELS={
     ph_avancement:"Ex: installation done, commissioning tomorrow...",ph_suite:"Ex: return Thursday morning",
     ph_fourniture:"Ex: Material or supply name",
     ton_vouvoiement:"Formal",ton_tutoiement:"Informal",ton_amical:"Friendly",ton_institutionnel:"Institutional",ton_ferme:"Firm",
+    login:"Log in",register:"Create account",email_lbl:"Email",password_lbl:"Password",
+    connexion_btn:"Log in",creation_btn:"Create my account",loading_btn:"...",
+    subtitle:"Administrative assistant for freelancers",
+    settings:"Settings",langue_lbl:"Language",theme_lbl:"Theme",clair:"Light",sombre:"Dark",
+    mon_entreprise_desc:"Info, VAT, hourly rate, API key",
   },
   es:{
     devis:"📋 Presupuesto",facture:"💶 Factura",email:"✉️ Email",historique:"🗂 Carpetas",
@@ -284,6 +294,11 @@ const LABELS={
     ph_avancement:"Ej: instalación lista, puesta en marcha mañana...",ph_suite:"Ej: vuelta el jueves",
     ph_fourniture:"Ej: Nombre del material o suministro",
     ton_vouvoiement:"Formal",ton_tutoiement:"Informal",ton_amical:"Amistoso",ton_institutionnel:"Institucional",ton_ferme:"Firme",
+    login:"Iniciar sesión",register:"Crear cuenta",email_lbl:"Email",password_lbl:"Contraseña",
+    connexion_btn:"Iniciar sesión",creation_btn:"Crear mi cuenta",loading_btn:"...",
+    subtitle:"Asistente administrativo para autónomos",
+    settings:"Ajustes",langue_lbl:"Idioma",theme_lbl:"Tema",clair:"Claro",sombre:"Oscuro",
+    mon_entreprise_desc:"Info, NIF, tarifa horaria, clave API",
   },
   zh:{
     devis:"📋 报价单",facture:"💶 发票",email:"✉️ 邮件",historique:"🗂 档案",
@@ -297,6 +312,11 @@ const LABELS={
     ph_avancement:"例：安装完成，明天调试...",ph_suite:"例：周四上午回来",
     ph_fourniture:"例：材料或供应品名称",
     ton_vouvoiement:"正式",ton_tutoiement:"非正式",ton_amical:"友好",ton_institutionnel:"官方",ton_ferme:"强硬",
+    login:"登录",register:"创建账户",email_lbl:"邮箱",password_lbl:"密码",
+    connexion_btn:"登录",creation_btn:"创建账户",loading_btn:"...",
+    subtitle:"独立从业者行政助手",
+    settings:"设置",langue_lbl:"语言",theme_lbl:"主题",clair:"浅色",sombre:"深色",
+    mon_entreprise_desc:"信息、税号、时薪、API密钥",
   },
 };
 function L(key){return(LABELS[S.langue]||LABELS.fr)[key]||key}
@@ -627,7 +647,7 @@ window.copyText=text=>{navigator.clipboard.writeText(text);set({copied:true});se
 window.setTab=t=>set({tab:t,fields:{},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null});
 window.setEmailMode=m=>set({emailMode:m,fields:{},generatedText:""});
 window.startVoiceContexte=function(fieldId){
-  // Arrêter si déjà actif sur ce champ
+  // Arrêter si déjà actif
   if(S.voiceContextField===fieldId){
     voiceRunning=false;
     if(recognition){recognition.onend=null;recognition.onresult=null;try{recognition.stop()}catch(e){}}
@@ -635,46 +655,67 @@ window.startVoiceContexte=function(fieldId){
     render();
     return;
   }
-  // Arrêter toute session précédente
-  if(recognition){try{recognition.stop()}catch(e){}}
+  // Arrêter toute session précédente proprement
   voiceRunning=false;
+  if(recognition){recognition.onend=null;recognition.onresult=null;try{recognition.stop()}catch(e){}}
 
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){alert("Micro non supporté sur ce navigateur.");return}
 
-  // Récupérer le texte existant du champ pour ne pas l'effacer
+  // Récupérer texte existant pour ne pas l'effacer
   const existingEl=document.querySelector(`textarea[data-fid="${fieldId}"]`);
-  const existingText=existingEl?existingEl.value:"";
+  const existingText=(existingEl?existingEl.value:"").trim();
 
   S.voiceContextField=fieldId;
-  voiceBuffer=existingText; // Partir du texte existant, pas de zéro
-  voiceRunning=true;
+  // Buffer local pour ce micro — séparé de voiceBuffer du micro principal
+  let ctxBuffer=existingText;
+  let ctxRunning=true;
   render();
 
   function makeCtxSession(){
-    if(!voiceRunning)return;
+    if(!ctxRunning)return;
     const r=new SR();
-    r.lang="fr-FR";r.continuous=true;r.interimResults=false;
+    r.lang="fr-FR";
+    r.continuous=true;
+    r.interimResults=false;
     let sIdx=0;
+
     r.onresult=e=>{
       for(let i=sIdx;i<e.results.length;i++){
         if(e.results[i].isFinal){
-          voiceBuffer+=(voiceBuffer?" ":"")+e.results[i][0].transcript.trim();
+          const phrase=e.results[i][0].transcript.trim();
+          ctxBuffer=(ctxBuffer?(ctxBuffer+" "):"")+phrase;
           sIdx=i+1;
         }
       }
-      // Mettre à jour UNIQUEMENT le champ contexte, sans toucher aux autres
+      // Mettre à jour uniquement ce champ, sans re-render toute la page
       const el=document.querySelector(`textarea[data-fid="${fieldId}"]`);
-      if(el){el.value=voiceBuffer;S.fields[fieldId]=voiceBuffer;}
+      if(el){el.value=ctxBuffer;S.fields[fieldId]=ctxBuffer;}
     };
+
     r.onerror=e=>{
       if(e.error==="no-speech"||e.error==="aborted")return;
-      voiceRunning=false;S.voiceContextField=null;render();
+      ctxRunning=false;S.voiceContextField=null;render();
     };
-    r.onend=()=>{if(voiceRunning)setTimeout(makeCtxSession,100)};
+
+    r.onend=()=>{
+      if(ctxRunning) setTimeout(makeCtxSession,100);
+    };
+
     recognition=r;
-    try{r.start()}catch(e){if(voiceRunning)setTimeout(makeCtxSession,300)}
+    try{r.start()}catch(e){
+      if(ctxRunning) setTimeout(makeCtxSession,300);
+    }
   }
+
+  // Stopper avec le bouton ⏹
+  window._stopVoiceContexte=function(){
+    ctxRunning=false;
+    if(recognition){recognition.onend=null;recognition.onresult=null;try{recognition.stop()}catch(e){}}
+    S.voiceContextField=null;
+    render();
+  };
+
   makeCtxSession();
 };
 
@@ -753,25 +794,25 @@ function renderAuth(){
     </div>
     <div class="auth-logo">
       <img src="data:image/png;base64,${LOGO_DARK}" style="height:40px;width:auto;" class="artio-logo" />
-      <p style="font-size:13px;color:#888;margin-top:8px;">Assistant administratif pour indépendants</p>
+      <p style="font-size:13px;color:#888;margin-top:8px;">${L("subtitle")}</p>
     </div>
     <div class="card">
       <div class="auth-tabs">
-        <button class="auth-tab ${t==="login"?"active":""}" onclick="set({authTab:'login',authError:'',authSuccess:''})">Se connecter</button>
-        <button class="auth-tab ${t==="register"?"active":""}" onclick="set({authTab:'register',authError:'',authSuccess:''})">Créer un compte</button>
+        <button class="auth-tab ${t==="login"?"active":""}" onclick="set({authTab:'login',authError:'',authSuccess:''})">${L("login")}</button>
+        <button class="auth-tab ${t==="register"?"active":""}" onclick="set({authTab:'register',authError:'',authSuccess:''})">${L("register")}</button>
       </div>
       ${S.authError?`<div class="error-msg">${esc(S.authError)}</div>`:""}
       ${S.authSuccess?`<div class="success-msg">${esc(S.authSuccess)}</div>`:""}
       <div class="field">
-        <label class="label">Email</label>
-        <input id="auth-email" type="email" placeholder="contact@plomberie-dupont.fr" onkeydown="if(event.key==='Enter')handleAuth()" />
+        <label class="label">${L("email_lbl")}</label>
+        <input id="auth-email" type="email" placeholder="contact@email.com" onkeydown="if(event.key==='Enter')handleAuth()" />
       </div>
       <div class="field">
-        <label class="label">Mot de passe</label>
+        <label class="label">${L("password_lbl")}</label>
         <input id="auth-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleAuth()" />
       </div>
       <button class="btn-primary" ${S.authLoading?"disabled":""} onclick="handleAuth()">
-        ${S.authLoading?"...":(t==="login"?"Se connecter":"Créer mon compte")}
+        ${S.authLoading?L("loading_btn"):(t==="login"?L("connexion_btn"):L("creation_btn"))}
       </button>
     </div>
   </div>`;
@@ -801,7 +842,7 @@ function renderApp(){
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
       <div style="display:flex;align-items:center;gap:8px;">
         ${S.settingsPage!=="main"?`<button onclick="set({settingsPage:'main'})" style="background:none;border:none;cursor:pointer;font-size:18px;color:#888;">←</button>`:""}
-        <p style="font-size:16px;font-weight:500;">${S.settingsPage==="profil"?"Mon entreprise":"Paramètres"}</p>
+        <p style="font-size:16px;font-weight:500;">${S.settingsPage==="profil"?L("mon_entreprise"):L("settings")}</p>
       </div>
       <button onclick="set({showSettings:false})" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;">×</button>
     </div>
@@ -812,24 +853,24 @@ function renderApp(){
     <button onclick="set({settingsPage:'profil'})" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:10px;">
       <span style="font-size:20px;">🏢</span>
       <div>
-        <p style="font-size:14px;font-weight:500;margin:0;">Mon entreprise</p>
-        <p style="font-size:12px;color:#888;margin:0;">Infos, SIRET, taux horaire, clé API</p>
+        <p style="font-size:14px;font-weight:500;margin:0;">${L("mon_entreprise")}</p>
+        <p style="font-size:12px;color:#888;margin:0;">${L("mon_entreprise_desc")}</p>
       </div>
       <span style="margin-left:auto;color:#888;">›</span>
     </button>
 
     <div style="margin-bottom:1.5rem;">
-      <label class="label" style="margin-bottom:10px;">Langue</label>
+      <label class="label" style="margin-bottom:10px;">${L("langue_lbl")}</label>
       ${[["fr","🇫🇷 Français"],["en","🇬🇧 English"],["es","🇪🇸 Español"],["zh","🇨🇳 中文"]].map(([code,label])=>`
         <button onclick="S.langue='${code}';applyLangue();render()" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:6px;border-radius:8px;border:1.5px solid ${S.langue===code?"#378ADD":"#d0d0cc"};background:${S.langue===code?"#E6F1FB":"transparent"};color:${S.langue===code?"#185FA5":"#666"};cursor:pointer;font-size:14px;">
           ${label}
         </button>`).join("")}
     </div>
     <div>
-      <label class="label" style="margin-bottom:10px;">Thème</label>
+      <label class="label" style="margin-bottom:10px;">${L("theme_lbl")}</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button onclick="S.darkMode=false;applyDarkMode();render()" style="padding:12px;border-radius:8px;border:1.5px solid ${!S.darkMode?"#534AB7":"#d0d0cc"};background:${!S.darkMode?"#E6F1FB":"transparent"};color:${!S.darkMode?"#534AB7":"#666"};cursor:pointer;font-size:13px;">☀️ Clair</button>
-        <button onclick="S.darkMode=true;applyDarkMode();render()" style="padding:12px;border-radius:8px;border:1.5px solid ${S.darkMode?"#534AB7":"#d0d0cc"};background:${S.darkMode?"#2a2440":"transparent"};color:${S.darkMode?"#AFA9EC":"#666"};cursor:pointer;font-size:13px;">🌙 Sombre</button>
+        <button onclick="S.darkMode=false;applyDarkMode();render()" style="padding:12px;border-radius:8px;border:1.5px solid ${!S.darkMode?"#534AB7":"#d0d0cc"};background:${!S.darkMode?"#E6F1FB":"transparent"};color:${!S.darkMode?"#534AB7":"#666"};cursor:pointer;font-size:13px;">☀️ ${L("clair")}</button>
+        <button onclick="S.darkMode=true;applyDarkMode();render()" style="padding:12px;border-radius:8px;border:1.5px solid ${S.darkMode?"#534AB7":"#d0d0cc"};background:${S.darkMode?"#2a2440":"transparent"};color:${S.darkMode?"#AFA9EC":"#666"};cursor:pointer;font-size:13px;">🌙 ${L("sombre")}</button>
       </div>
     </div>
     `}
@@ -943,7 +984,7 @@ function renderDevisFacture(){
 function renderEmail(){
   const f=S.fields,m=S.emailMode;
   const reponseF=[["client_nom","Nom du client","Ex: M. Martin","text",false],["message","Message reçu du client","Colle ici le message...","textarea",false],["contexte","Contexte 🎙","Ex: infos que le client ne connaît pas encore, contexte particulier...","textarea",true,"voice"]];
-  const suiviF=[["client_nom","Nom du client",L("ph_client_nom"),"text",false],["adresse_travaux","Adresse du chantier","Ex: 12 rue de la Paix","text",true],["avancement","Où en sont les travaux","Ex: installation terminée, il reste la mise en service demain...","textarea",false],["suite","Prochaine étape","Ex: retour jeudi matin","text",true],["contexte","Contexte 🎙","Ex: retard dû à une livraison, attente validation client...","textarea",true,"voice"]];
+  const suiviF=[["client_nom","Nom du client",L("ph_client_nom"),"text",false],["adresse_travaux","Adresse du chantier","Ex: 12 rue de la Paix","text",true],["avancement","Où en sont les travaux","Ex: installation terminée, il reste la mise en service demain...","textarea",false],["suite","Prochaine étape","Ex: retour jeudi matin","text",true],["contexte","Contexte","Ex: retard dû à une livraison, attente validation client...","textarea",true]];
   const activeF=m==="reponse"?reponseF:suiviF;
   return`<div class="card">
     <div class="mode-tabs">
