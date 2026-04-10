@@ -183,7 +183,7 @@ let S={
   deleteConfirm:null,
   convertingId:null,
   copied:false,
-  entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:"",assujetti_tva:false},
+  entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:"",assujetti_tva:false,secteur:"",conditions_paiement:"",delai_paiement:"30"},
   dossiers:[],
   profilSaved:false,
   syncing:false,
@@ -201,7 +201,10 @@ async function loadUserData(userId){
       S.entreprise={
         nom:profil.nom||"",adresse:profil.adresse||"",tel:profil.tel||"",
         email:profil.email||"",siret:profil.siret||"",taux_horaire:profil.taux_horaire||"",
-        api_key:profil.api_key||"",assujetti_tva:profil.assujetti_tva||false
+        api_key:profil.api_key||"",assujetti_tva:profil.assujetti_tva||false,
+        secteur:profil.secteur||"",
+        conditions_paiement:profil.conditions_paiement||"",
+        delai_paiement:profil.delai_paiement||"30"
       };
       S.profilSaved=!!profil.nom;
     }
@@ -223,13 +226,13 @@ async function saveProfil(){
   const inputs=document.querySelectorAll(".profil-input");
   inputs.forEach(el=>{
     if(el.type==="checkbox") S.entreprise[el.dataset.id]=el.checked;
-    else S.entreprise[el.dataset.id]=el.value;
+    else S.entreprise[el.dataset.id]=el.value||el.options?.[el.selectedIndex]?.value||"";
   });
   const e=S.entreprise;
   if(!e.nom||!e.siret||!e.taux_horaire){alert("Nom, SIRET et taux horaire obligatoires.");return}
   if(!e.api_key){alert("La clé API Anthropic est obligatoire.");return}
   set({syncing:true});
-  const{error}=await sb.from("profils").upsert({user_id:S.user.id,...e,assujetti_tva:e.assujetti_tva||false,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+  const{error}=await sb.from("profils").upsert({user_id:S.user.id,...e,assujetti_tva:e.assujetti_tva||false,secteur:e.secteur||"",conditions_paiement:e.conditions_paiement||"",delai_paiement:e.delai_paiement||"30",updated_at:new Date().toISOString()},{onConflict:"user_id"});
   if(error){alert("Erreur sauvegarde : "+error.message)}
   else{S.profilSaved=true}
   set({syncing:false,showProfil:false});
@@ -625,7 +628,7 @@ window.startVoice=()=>{
   voiceCallback=async t=>{
     try{
       const raw=await callClaude(
-`Tu es un assistant pour un prestataire indépendant français (artisan, consultant, auto-entrepreneur...). Analyse cette dictée et retourne UNIQUEMENT un objet JSON valide, sans texte avant ou après, sans balises markdown.
+`Tu es un assistant pour ${S.entreprise.secteur||"un prestataire indépendant"}. Analyse cette dictée et retourne UNIQUEMENT un objet JSON valide, sans texte avant ou après, sans balises markdown.
 
 Dictée: "${t}"
 Taux horaire artisan: ${S.entreprise.taux_horaire}€/h
@@ -730,7 +733,7 @@ window.handleGenerate=async()=>{
   if(miss.length){alert("Champs manquants : "+miss.join(", "));return}
   set({loading:true,generatedDoc:null});
   try{
-    const docNumber=getNextNum(tab,e);
+    const docNumber=await getNextNum(tab,S.user.id);
     const pv=S.pieces.filter(p=>p.description&&p.quantite&&p.prix_unitaire);
     const totaux=calcTotaux(f.nb_heures,e.taux_horaire,pv,e.assujetti_tva?(f.tva||"0"):"0");
     const desc=await callClaude(`Rédige en 2-3 phrases professionnelles la description de ces travaux de plomberie : ${f.travaux}. Paragraphe fluide, pas de liste.`,300);
@@ -762,7 +765,7 @@ window.convertToFacture=async(dosId,docNum)=>{
   set({convertingId:docNum});
   const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
   const devis=dos.documents.find(d=>d.docNumber===docNum);if(!devis)return;
-  const factNum=getNextNum("facture",S.entreprise);
+  const factNum=await getNextNum("facture",S.user.id);
   const factDoc={...devis,type:"facture",docNumber:factNum,date:todayFR(),validUntil:null,accepte:false};
   dos.statut="facture";
   dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,accepte:true}:d).concat([factDoc]);
@@ -867,7 +870,25 @@ function generatePDF(doc){
     pdf.text("TVA non applicable, art. 293 B du CGI",m,y);y+=5;
   }
   pdf.setFont(undefined,"normal").setFontSize(8).setTextColor(80);
-  if(doc.type==="devis"){pdf.text("Conditions : 30% d'acompte à la commande, solde à réception des travaux.",m,y);y+=4;pdf.text("Devis valable 30 jours. Garantie décennale applicable.",m,y);y+=12;pdf.setTextColor(0).setFontSize(9).text("Bon pour accord — Date et signature du client :",m,y);y+=14;pdf.setDrawColor(180).line(m,y,m+80,y)}
+  if(doc.type==="devis"){
+  const condMap={
+    "30_reception":"Paiement à réception de facture.",
+    "30_jours":"Paiement à 30 jours date de facture.",
+    "45_jours":"Paiement à 45 jours date de facture.",
+    "60_jours":"Paiement à 60 jours date de facture.",
+    "acompte_30":"30% d'acompte à la commande, solde à réception.",
+    "acompte_50":"50% d'acompte à la commande, solde à réception.",
+    "3_versements":"Règlement en 3 versements égaux.",
+    "custom":"Voir conditions spécifiques.",
+    "":"Paiement à réception de facture."
+  };
+  const condTxt=condMap[doc.entreprise.conditions_paiement||""]||"Paiement à réception de facture.";
+  const delai=doc.entreprise.delai_paiement||"30";
+  pdf.text("Conditions : "+condTxt,m,y);y+=4;
+  pdf.text("Devis valable "+delai+" jours.",m,y);y+=12;
+  pdf.setTextColor(0).setFontSize(9).text("Bon pour accord — Date et signature :",m,y);y+=14;
+  pdf.setDrawColor(180).line(m,y,m+80,y);
+}
   else{pdf.text("Paiement à 30 jours. Pénalités de retard : 3× le taux légal. Indemnité forfaitaire : 40 €.",m,y)}
   try{pdf.addImage("data:image/png;base64,"+LOGO_WHITE,"PNG",m,280,22,7)}catch{}
   pdf.setFontSize(7).setTextColor(150).text(doc.entreprise.nom+" — SIRET : "+doc.entreprise.siret,W/2,287,{align:"center"});
@@ -1012,7 +1033,34 @@ function renderProfil(){
   return`<div class="card">
     <p style="font-size:15px;font-weight:500;margin-bottom:3px;">Profil entreprise</p>
     <p style="font-size:12px;color:#888;margin-bottom:14px;">Sauvegardé en ligne — accessible depuis tous tes appareils</p>
-    ${[["nom","Nom de l'entreprise *","Ex: Plomberie Dupont","text"],["adresse","Adresse","Ex: 12 rue des Artisans, 69001 Lyon","text"],["tel","Téléphone","Ex: 06 12 34 56 78","text"],["email","Email","Ex: contact@plomberie-dupont.fr","text"],["siret","SIRET *","Ex: 123 456 789 00012","text"],["taux_horaire","Taux horaire HT (€/h) *","Ex: 50","number"]].map(([id,label,ph,type])=>`
+        <div class="field">
+      <label class="label">Secteur d'activité</label>
+      <select class="profil-input" data-id="secteur" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;">
+        <option value="">-- Choisir --</option>
+        ${["Artisan / BTP","Plombier","Électricien","Menuisier","Peintre","Maçon","Chauffagiste","Consultant","Coach / Formateur","Photographe","Développeur freelance","Designer","Traducteur","Comptable","Avocat / Juriste","Médecin / Thérapeute","Agent immobilier","Autre"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
+      </select>
+    </div>
+    <div class="field">
+      <label class="label">Conditions de paiement</label>
+      <select class="profil-input" data-id="conditions_paiement" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;">
+        <option value="">-- Choisir --</option>
+        ${[
+          ["30_reception","Solde à réception de facture"],
+          ["30_jours","Paiement à 30 jours"],
+          ["45_jours","Paiement à 45 jours"],
+          ["60_jours","Paiement à 60 jours"],
+          ["acompte_30","30% d'acompte, solde à réception"],
+          ["acompte_50","50% d'acompte, solde à réception"],
+          ["3_versements","3 versements égaux"],
+          ["custom","Personnalisé (voir notes)"]
+        ].map(([v,l])=>`<option value="${v}" ${e.conditions_paiement===v?"selected":""}>${l}</option>`).join("")}
+      </select>
+    </div>
+    <div class="field">
+      <label class="label">Validité du devis (jours)</label>
+      <input type="number" class="profil-input" data-id="delai_paiement" value="${esc(e.delai_paiement||"30")}" placeholder="30" min="1" max="365" />
+    </div>
+    ${[["nom","Nom de l'entreprise *","Ex: Dupont Consulting","text"],["adresse","Adresse","Ex: 12 rue des Artisans, 69001 Lyon","text"],["tel","Téléphone","Ex: 06 12 34 56 78","text"],["email","Email","Ex: contact@dupont.fr","text"],["siret","SIRET *","Ex: 123 456 789 00012","text"],["taux_horaire","Taux horaire HT (€/h) *","Ex: 50","number"]].map(([id,label,ph,type])=>`
     <div class="field">
       <label class="label">${label}</label>
       <input type="${type}" class="profil-input" data-id="${id}" value="${esc(e[id]||"")}" placeholder="${ph}" />
