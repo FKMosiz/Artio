@@ -133,12 +133,15 @@ window.downloadPDF=function(key){
   try{generatePDF(doc)}catch(e){alert("Erreur PDF : "+e.message)}
 }
 
-const STATUTS = {
-  devis_envoye:{label:"Devis envoyé",bg:"#F1EFE8",color:"#5F5E5A"},
-  devis_accepte:{label:"Devis accepté",bg:"#E6F1FB",color:"#185FA5"},
-  facture:{label:"Facturé",bg:"#EAF3DE",color:"#3B6D11"},
-  termine:{label:"Terminé",bg:"#E1F5EE",color:"#085041"},
-};
+function getStatuts(){
+  const dk=S.darkMode;
+  return {
+    devis_envoye:{label:"Devis envoyé",  bg:dk?"#2a2440":  "#F1EFE8", color:dk?"#AFA9EC":"#5F5E5A"},
+    devis_accepte:{label:"Devis accepté",bg:dk?"#1e1a3a":  "#E6F1FB", color:dk?"#7F77DD":"#185FA5"},
+    facture:      {label:"Facturé",      bg:dk?"#1a3a20":  "#EAF3DE", color:dk?"#5DD9A7":"#3B6D11"},
+    termine:      {label:"Terminé",      bg:dk?"#16302a":  "#E1F5EE", color:dk?"#3DB58A":"#085041"},
+  };
+}
 
 function todayFR(){return new Date().toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"})}
 function addDays(n){const d=new Date();d.setDate(d.getDate()+n);return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"})}
@@ -1189,7 +1192,7 @@ function renderEmailsGmail(){
 function renderHistorique(){
   if(!S.dossiers.length)return`<div class="card" style="text-align:center;padding:2rem;"><p style="color:#888;font-size:13px;">Aucun dossier pour l'instant.</p><p style="color:#999;font-size:12px;margin-top:8px;">Génère un devis pour créer ton premier dossier.</p></div>`;
   return S.dossiers.map(dos=>{
-    const st=STATUTS[dos.statut]||STATUTS.devis_envoye;
+    const st=(getStatuts()[dos.statut]||getStatuts().devis_envoye);
     const isOpen=S.openDossier===dos.id;
     const hasFacture=dos.documents.some(d=>d.type==="facture");
     return`<div class="dossier-card">
