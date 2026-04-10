@@ -486,7 +486,7 @@ async function initAuth(){
     S.user=session.user;
     await loadUserData(session.user.id);
     renderApp();
-  }else{window.location.href="index.html";}
+  }else{window.location.href="login.html";}
 }
 
 async function handleAuth(){
@@ -512,7 +512,7 @@ async function handleLogout(){
   await sb.auth.signOut();
   S.user=null;S.entreprise={nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:""};
   S.dossiers=[];S.profilSaved=false;
-  window.location.href="index.html";
+  window.location.href="login.html";
 }
 
 // ——— API CLAUDE ———
@@ -903,7 +903,7 @@ function renderApp(){
   <div class="app">
     <div class="header">
       <div style="display:flex;align-items:center;gap:12px;">
-        <a href="dashboard.html" style="display:flex;align-items:center;text-decoration:none;flex-shrink:0;">
+        <a href="home.html" style="display:flex;align-items:center;text-decoration:none;flex-shrink:0;">
           <img src="data:image/png;base64,${LOGO_DARK}" style="height:36px;width:auto;" class="artio-logo" />
         </a>
         <div style="display:flex;gap:4px;overflow-x:auto;">
@@ -1282,7 +1282,13 @@ function renderDocPreview(doc){
 
 // ——— INIT ———
 async function initDB(){
-  try { await initAuth(); }
+  try {
+    await initAuth();
+    // Auto-ouvrir les paramètres si appelé depuis une autre page
+    if(new URLSearchParams(location.search).get('settings')==='1'){
+      set({showSettings:true,settingsPage:'main'});
+    }
+  }
   catch(e){ document.getElementById("root").innerHTML="<p style='padding:2rem;color:red;'>Erreur : "+e.message+"</p>"; }
 }
 initDB();

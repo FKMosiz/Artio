@@ -234,12 +234,12 @@ async function handleAuth(){
   if(S.authTab==="login"){
     const{data,error}=await sb.auth.signInWithPassword({email,password});
     if(error){set({authLoading:false,authError:"Identifiants incorrects."})}
-    else{window.location.href="app.html";}
+    else{window.location.href="home.html";}
   }else{
     const{data,error}=await sb.auth.signUp({email,password});
     if(error){set({authLoading:false,authError:error.message})}
     else if(data.user&&!data.session){set({authLoading:false,authSuccess:"Compte créé ! Vérifie ton email pour confirmer."})}
-    else if(data.user){window.location.href="app.html";}
+    else if(data.user){window.location.href="home.html";}
   }
 }
 
@@ -295,7 +295,7 @@ function renderAuth(){
   if(localStorage.getItem("artio_langue")){S.langue=localStorage.getItem("artio_langue");}
   // Si déjà connecté → app.html
   const{data:{session}}=await sb.auth.getSession();
-  if(session?.user){window.location.href="app.html";return;}
+  if(session?.user){window.location.href="home.html";return;}
   render();
 })();
 </script>
