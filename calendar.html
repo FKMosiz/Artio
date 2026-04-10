@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Artio — Calendrier</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh}
+.top-nav{background:#fff;border-bottom:0.5px solid #e0deda;padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100}
+.nav-links{display:flex;gap:2px;overflow-x:auto}
+.nav-link{padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;border:none;background:transparent;white-space:nowrap;cursor:pointer}
+.nav-link.active{background:#E6F1FB;color:#185FA5}
+.page-content{max-width:720px;margin:0 auto;padding:1.25rem 1rem}
+.card{background:#fff;border:0.5px solid #e0deda;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.cal-title{font-size:18px;font-weight:700}
+.cal-nav{padding:6px 14px;border-radius:8px;border:0.5px solid #d0d0cc;background:#fff;cursor:pointer;font-size:16px;color:#333}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-day-lbl{text-align:center;font-size:11px;font-weight:600;color:#888;padding:4px 0;margin-bottom:2px}
+.cal-day{min-height:74px;border-radius:8px;padding:5px;cursor:pointer;border:1.5px solid transparent;transition:border-color .15s,background .15s}
+.cal-day:hover{border-color:#d0d0cc;background:#fafaf8}
+.cal-day.other{opacity:.3}
+.cal-day.today{border-color:#534AB7!important;background:#f0eeff}
+.cal-day.today .day-num{color:#534AB7;font-weight:700}
+.cal-day.selected{border-color:#378ADD;background:#E6F1FB}
+.day-num{font-size:12px;font-weight:500;margin-bottom:3px}
+.day-events{display:flex;flex-direction:column;gap:2px}
+.ev{font-size:9px;padding:2px 4px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.ev.devis{background:#E6F1FB;color:#185FA5}
+.ev.rdv{background:#EAF3DE;color:#2E7D32}
+.ev.facture{background:#E1F5EE;color:#085041}
+/* Panel */
+.panel{position:fixed;top:0;right:-310px;bottom:0;width:300px;background:#fff;border-left:0.5px solid #e0deda;padding:1.25rem;z-index:200;overflow-y:auto;box-shadow:-4px 0 16px rgba(0,0,0,.08);transition:right .2s}
+.panel.open{right:0}
+.overlay{display:none;position:fixed;inset:0;z-index:199;background:rgba(0,0,0,.2)}
+.overlay.open{display:block}
+.btn-small{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:0.5px solid #d0d0cc;background:#f5f5f3;color:#333}
+.btn-primary{width:100%;padding:10px;background:#534AB7;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;margin-top:4px}
+input,select{width:100%;padding:8px 10px;font-size:13px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;font-family:inherit;outline:none;margin-bottom:10px}
+.label{display:block;font-size:12px;font-weight:500;color:#555;margin-bottom:4px}
+.rdv-item{background:#f9f8f6;border-radius:8px;padding:10px;margin-bottom:8px}
+.rdv-title{font-size:13px;font-weight:600}
+.rdv-sub{font-size:11px;color:#888;margin-top:2px}
+.artio-logo{transition:filter .2s}
+/* Dark */
+body.dark{background:#12101a!important;color:#e8e4f0!important}
+body.dark .card{background:#1e1a2e!important;border-color:#3d3560!important}
+body.dark .top-nav{background:#1e1a2e!important;border-color:#3d3560!important}
+body.dark .nav-link{color:#a090c0!important}
+body.dark .nav-link.active{background:#2e2858!important;color:#AFA9EC!important}
+body.dark .cal-day:hover{background:#2a2440!important;border-color:#3d3560!important}
+body.dark .cal-day.today{border-color:#7F77DD!important;background:#261e3a!important}
+body.dark .cal-day.today .day-num{color:#AFA9EC!important}
+body.dark .cal-day.selected{border-color:#534AB7!important;background:#2e2858!important}
+body.dark .cal-nav{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
+body.dark .panel{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
+body.dark .rdv-item{background:#2a2440!important}
+body.dark .rdv-sub{color:#a090c0!important}
+body.dark input,body.dark select{background:#2a2440!important;border-color:#4a3f70!important;color:#e8e4f0!important}
+body.dark .label{color:#a090c0!important}
+body.dark .btn-small{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
+body.dark .cal-day-lbl{color:#7F77DD!important}
+body.dark .artio-logo{filter:brightness(0) invert(1) drop-shadow(0 0 3px rgba(255,255,255,.6))}
+@media(max-width:500px){.cal-day{min-height:50px;padding:3px}.day-num{font-size:10px}.ev{font-size:8px}}
+</style>
+</head>
+<body>
+<div id="root">Chargement...</div>
+<div class="overlay" id="ov" onclick="closePanel()"></div>
+<div class="panel" id="panel"></div>
+<script>
+const SUPABASE_URL="https://mwmexkoeqeyueqgdkkni.supabase.co";
+const SUPABASE_KEY="sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
+const{createClient}=supabase;
+const sb=createClient(SUPABASE_URL,SUPABASE_KEY);
+if(localStorage.getItem("artio_dark")==="1")document.body.classList.add("dark");
+
+let user=null,dossiers=[],rdvs=[],viewDate=new Date(),selectedDay=null;
+const JOURS=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+const MOIS=["Janvier","F\xe9vrier","Mars","Avril","Mai","Juin","Juillet","Ao\xfbt","Septembre","Octobre","Novembre","D\xe9cembre"];
+
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+
+function buildEvents(){
+  const ev={};
+  function add(date,o){const k=new Date(date).toISOString().slice(0,10);if(!ev[k])ev[k]=[];ev[k].push(o);}
+  dossiers.forEach(dos=>{
+    (dos.documents||[]).forEach(d=>{
+      if(!d.date)return;
+      if(d.type==="devis"&&d.accepte)add(d.date,{type:"devis",label:"\u2713 "+esc(dos.nom||dos.client||"Devis")});
+      if(d.type==="facture")add(d.date,{type:"facture",label:"\u{1F4B6} "+esc(dos.nom||dos.client||"Facture")});
+    });
+  });
+  rdvs.forEach(r=>add(r.date,{type:"rdv",label:"\u{1F4C5} "+esc(r.titre),id:r.id}));
+  return ev;
+}
+
+function getDays(year,month){
+  const first=new Date(year,month,1);
+  let dow=first.getDay();if(dow===0)dow=7;
+  const days=[];
+  for(let i=dow-1;i>0;i--){const d=new Date(year,month,1-i);d._other=true;days.push(d);}
+  const last=new Date(year,month+1,0).getDate();
+  for(let i=1;i<=last;i++)days.push(new Date(year,month,i));
+  let edow=new Date(year,month+1,0).getDay();if(edow===0)edow=7;
+  for(let i=1;i<=7-edow;i++){const d=new Date(year,month+1,i);d._other=true;days.push(d);}
+  return days;
+}
+
+function render(){
+  const ev=buildEvents();
+  const y=viewDate.getFullYear(),m=viewDate.getMonth();
+  const days=getDays(y,m);
+  const today=new Date();today.setHours(0,0,0,0);
+
+  document.getElementById("root").innerHTML=`
+  <nav class="top-nav">
+    <div class="nav-links">
+      <a class="nav-link" href="app.html">\u{1F4CB} Application</a>
+      <a class="nav-link" href="dashboard.html">\u{1F4CA} Tableau de bord</a>
+      <a class="nav-link active">\u{1F4C5} Calendrier</a>
+    </div>
+    <button class="btn-small" onclick="sb.auth.signOut().then(()=>location.href='index.html')">D\xe9connexion</button>
+  </nav>
+  <div class="page-content">
+    <div class="card">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="viewDate.setMonth(viewDate.getMonth()-1);render()">&#9664;</button>
+        <div class="cal-title">${MOIS[m]} ${y}</div>
+        <button class="cal-nav" onclick="viewDate.setMonth(viewDate.getMonth()+1);render()">&#9654;</button>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+        <button class="btn-small" onclick="openPanel(new Date().toISOString().slice(0,10))">+ Ajouter un RDV</button>
+      </div>
+      <div class="cal-grid">
+        ${JOURS.map(j=>`<div class="cal-day-lbl">${j}</div>`).join("")}
+        ${days.map(d=>{
+          const k=d.toISOString().slice(0,10);
+          const dCopy=new Date(d);dCopy.setHours(0,0,0,0);
+          const isToday=dCopy.getTime()===today.getTime();
+          const dayEvs=ev[k]||[];
+          return`<div class="cal-day ${d._other?"other":""} ${isToday?"today":""} ${selectedDay===k?"selected":""}" onclick="openPanel('${k}')">
+            <div class="day-num">${d.getDate()}</div>
+            <div class="day-events">
+              ${dayEvs.slice(0,2).map(e=>`<div class="ev ${e.type}">${e.label}</div>`).join("")}
+              ${dayEvs.length>2?`<div style="font-size:9px;color:#888;">+${dayEvs.length-2}</div>`:""}
+            </div>
+          </div>`;
+        }).join("")}
+      </div>
+    </div>
+  </div>`;
+}
+
+function openPanel(dk){
+  selectedDay=dk;
+  render();
+  const ev=buildEvents();
+  const dayEvs=ev[dk]||[];
+  const date=new Date(dk).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  document.getElementById("panel").innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <div>
+        <div style="font-size:14px;font-weight:700;text-transform:capitalize;">${date}</div>
+        <div style="font-size:11px;color:#888;">${dayEvs.length} \xe9v\xe9nement(s)</div>
+      </div>
+      <button class="btn-small" onclick="closePanel()">&#10005;</button>
+    </div>
+    ${dayEvs.length===0?`<p style="color:#888;font-size:13px;">Aucun \xe9v\xe9nement</p>`:""}
+    ${dayEvs.map(e=>`
+      <div class="rdv-item">
+        <div class="rdv-title">${e.label}</div>
+        ${e.id?`<button class="btn-small" style="margin-top:6px;font-size:11px;color:#A32D2D;border-color:#F09595;" onclick="deleteRdv('${e.id}','${dk}')">Supprimer</button>`:""}
+      </div>`).join("")}
+    <div style="margin-top:1rem;border-top:0.5px solid #e0deda;padding-top:1rem;">
+      <div class="label" style="font-size:13px;font-weight:600;margin-bottom:10px;">Ajouter un RDV</div>
+      <label class="label">Titre *</label>
+      <input id="rdv-titre" type="text" placeholder="Ex: Intervention chez M. Dupont"/>
+      <label class="label">Dossier li\xe9 (optionnel)</label>
+      <select id="rdv-dos">
+        <option value="">-- Aucun --</option>
+        ${dossiers.map(d=>`<option value="${d.id}">${esc(d.nom||d.client||d.id)}</option>`).join("")}
+      </select>
+      <button class="btn-primary" onclick="addRdv('${dk}')">+ Ajouter</button>
+    </div>`;
+  document.getElementById("panel").classList.add("open");
+  document.getElementById("ov").classList.add("open");
+}
+
+function closePanel(){
+  document.getElementById("panel").classList.remove("open");
+  document.getElementById("ov").classList.remove("open");
+  selectedDay=null;render();
+}
+
+window.addRdv=async function(dk){
+  const titre=document.getElementById("rdv-titre")?.value.trim();
+  if(!titre){alert("Entre un titre.");return}
+  const dosId=document.getElementById("rdv-dos")?.value||null;
+  const rdv={id:Date.now().toString(),user_id:user.id,date:dk,titre,dossier_id:dosId};
+  const{error}=await sb.from("rdvs").upsert(rdv,{onConflict:"id"});
+  if(error){alert("Erreur : "+error.message);return}
+  rdvs.push(rdv);render();openPanel(dk);
+};
+
+window.deleteRdv=async function(id,dk){
+  await sb.from("rdvs").delete().eq("id",id);
+  rdvs=rdvs.filter(r=>r.id!==id);
+  render();openPanel(dk);
+};
+
+(async()=>{
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href="index.html";return}
+  user=session.user;
+  const[{data:dos},{data:rv}]=await Promise.all([
+    sb.from("dossiers").select("*").eq("user_id",user.id),
+    sb.from("rdvs").select("*").eq("user_id",user.id)
+  ]);
+  dossiers=(dos||[]).map(d=>{let docs=[];try{docs=typeof d.documents==="string"?JSON.parse(d.documents):(d.documents||[])}catch(e){}return{...d,documents:docs};});
+  rdvs=rv||[];
+  render();
+})();
+</script>
+</body>
+</html>
