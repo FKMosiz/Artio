@@ -280,7 +280,7 @@ const LABELS={
     ph_nb_heures:"Ex: 3",ph_tva:"10 (rénovation) ou 20 (neuf)",
     ph_message:"Colle ici le message reçu...",ph_contexte:"Infos que le client ne connaît pas encore...",
     ph_avancement:"Ex: installation terminée, mise en service demain...",ph_suite:"Ex: retour jeudi matin",
-    ph_fourniture:"Ex: Nom de la fourniture ou matériau",
+    ph_fourniture:"Ex: Code service, article, fourniture...",
     ton_vouvoiement:"Vouvoiement",ton_tutoiement:"Tutoiement",ton_amical:"Amical",ton_institutionnel:"Institutionnel",ton_ferme:"Ferme",
     login:"Se connecter",register:"Créer un compte",email_lbl:"Email",password_lbl:"Mot de passe",
     connexion_btn:"Se connecter",creation_btn:"Créer mon compte",loading_btn:"...",
@@ -298,7 +298,7 @@ const LABELS={
     ph_nb_heures:"Ex: 3",ph_tva:"10 (renovation) or 20 (new)",
     ph_message:"Paste the client message here...",ph_contexte:"Info the client doesn't know yet...",
     ph_avancement:"Ex: installation done, commissioning tomorrow...",ph_suite:"Ex: return Thursday morning",
-    ph_fourniture:"Ex: Material or supply name",
+    ph_fourniture:"Ex: Service code, item, supply...",
     ton_vouvoiement:"Formal",ton_tutoiement:"Informal",ton_amical:"Friendly",ton_institutionnel:"Institutional",ton_ferme:"Firm",
     login:"Log in",register:"Create account",email_lbl:"Email",password_lbl:"Password",
     connexion_btn:"Log in",creation_btn:"Create my account",loading_btn:"...",
@@ -316,7 +316,7 @@ const LABELS={
     ph_nb_heures:"Ej: 3",ph_tva:"10 (renovación) o 20 (nuevo)",
     ph_message:"Pega aquí el mensaje del cliente...",ph_contexte:"Info que el cliente no conoce aún...",
     ph_avancement:"Ej: instalación lista, puesta en marcha mañana...",ph_suite:"Ej: vuelta el jueves",
-    ph_fourniture:"Ej: Nombre del material o suministro",
+    ph_fourniture:"Ej: Código de servicio, artículo...",
     ton_vouvoiement:"Formal",ton_tutoiement:"Informal",ton_amical:"Amistoso",ton_institutionnel:"Institucional",ton_ferme:"Firme",
     login:"Iniciar sesión",register:"Crear cuenta",email_lbl:"Email",password_lbl:"Contraseña",
     connexion_btn:"Iniciar sesión",creation_btn:"Crear mi cuenta",loading_btn:"...",
@@ -334,7 +334,7 @@ const LABELS={
     ph_nb_heures:"例：3",ph_tva:"10（翻新）或20（新建）",
     ph_message:"粘贴客户消息...",ph_contexte:"客户不知道的信息...",
     ph_avancement:"例：安装完成，明天调试...",ph_suite:"例：周四上午回来",
-    ph_fourniture:"例：材料或供应品名称",
+    ph_fourniture:"例：服务代码、商品...",
     ton_vouvoiement:"正式",ton_tutoiement:"非正式",ton_amical:"友好",ton_institutionnel:"官方",ton_ferme:"强硬",
     login:"登录",register:"创建账户",email_lbl:"邮箱",password_lbl:"密码",
     connexion_btn:"登录",creation_btn:"创建账户",loading_btn:"...",
@@ -635,21 +635,22 @@ Instructions d'extraction:
 - client_adresse: adresse complète du client
 - client_tel: numéro de téléphone si mentionné
 - client_email: email si mentionné
-- adresse_travaux: adresse du chantier si différente du client
-- travaux: description complète des travaux à réaliser
-- nb_heures: nombre d'heures de main d'oeuvre en chiffre (ex: "3 heures" → "3", "une demi-journée" → "4", "une journée" → "8")
-- tva: taux de TVA en chiffre seul sans % (ex: "TVA 10%" → "10", "vingt pourcent" → "20", rénovation → "10", neuf → "20")
-- pieces: tableau des pièces et matériaux avec leur prix (ex: "chauffe-eau Atlantic 200L à 280 euros" → {"description":"Chauffe-eau Atlantic 200L","quantite":"1","prix_unitaire":"280"})
+- travaux: description complète de la prestation à réaliser
+- nb_heures: nombre d'heures de main d'oeuvre si mentionné (ex: "3 heures" → "3"), null sinon
+- tva: taux de TVA en chiffre seul sans % si mentionné, null sinon
+- date_prestation: date au format YYYY-MM-DD si mentionnée ("demain", "lundi", "le 15 avril"...), null sinon
+- heure_prestation: heure au format HH:MM si mentionnée ("9h", "14h30"...), null sinon
+- pieces: tableau des prestations/articles avec leur prix. Généraliser : forfait, code service, pièce, produit... (ex: "forfait lavage 39 euros" → {"description":"Forfait lavage","quantite":"1","prix_unitaire":"39"}, "code D9" → {"description":"Code D9","quantite":"1","prix_unitaire":null})
 
-Si une information n'est pas mentionnée, mettre null. Pour pieces, tableau vide [] si aucune pièce mentionnée.
+Si une information n'est pas mentionnée, mettre null. Pour pieces, tableau vide [] si rien mentionné.
 
 JSON:
-{"client_nom":null,"client_adresse":null,"client_tel":null,"client_email":null,"adresse_travaux":null,"travaux":null,"nb_heures":null,"tva":null,"pieces":[]}`,800);
+{"client_nom":null,"client_adresse":null,"client_tel":null,"client_email":null,"travaux":null,"nb_heures":null,"tva":null,"date_prestation":null,"heure_prestation":null,"pieces":[]}`,800);
 
       const cleaned=raw.replace(/```json/g,"").replace(/```/g,"").trim();
       const p=JSON.parse(cleaned);
       const nf={...S.fields};
-      ["client_nom","client_adresse","client_tel","client_email","adresse_travaux","travaux","nb_heures","tva"].forEach(k=>{
+      ["client_nom","client_adresse","client_tel","client_email","travaux","nb_heures","tva","date_prestation","heure_prestation"].forEach(k=>{
         if(p[k]!==null&&p[k]!==undefined&&String(p[k])!=="null"&&String(p[k]).trim()!=="")
           nf[k]=String(p[k]);
       });
@@ -734,7 +735,7 @@ window.handleGenerate=async()=>{
     const pv=S.pieces.filter(p=>p.description&&p.quantite&&p.prix_unitaire);
     const totaux=calcTotaux(f.nb_heures,e.taux_horaire,pv,e.assujetti_tva?(f.tva||"0"):"0");
     const desc=await callClaude(`Rédige en 2-3 phrases professionnelles la description de ces travaux de plomberie : ${f.travaux}. Paragraphe fluide, pas de liste.`,300);
-    const doc={type:tab,docNumber,date:todayFR(),validUntil:tab==="devis"?addDays(parseInt(S.entreprise.delai_paiement)||30):null,accepte:false,entreprise:{...e},client:{nom:f.client_nom,adresse:f.client_adresse,tel:f.client_tel||"",email:f.client_email||""},adresse_travaux:f.adresse_travaux||f.client_adresse,date_prestation:f.date_prestation||"",heure_prestation:f.heure_prestation||"",description:desc,nb_heures:f.nb_heures,pieces:pv,...totaux};
+    const doc={type:tab,docNumber,date:todayFR(),validUntil:tab==="devis"?addDays(parseInt(S.entreprise.delai_paiement)||30):null,accepte:false,entreprise:{...e},client:{nom:f.client_nom,adresse:f.client_adresse,tel:f.client_tel||"",email:f.client_email||""},adresse_travaux:f.client_adresse||"",date_prestation:f.date_prestation||"",heure_prestation:f.heure_prestation||"",description:desc,nb_heures:f.nb_heures,pieces:pv,...totaux};
     // Nom du dossier = Civilité + Nom client + aperçu prestation
 const civStr=f.client_nom?f.client_nom.trim():"Client";
 const travStr=(f.travaux||"").slice(0,35)+((f.travaux||"").length>35?"...":"");
@@ -1074,7 +1075,7 @@ function renderVoice(mode){
 function renderPieces(){
   const p=S.pieces;
   return`<div style="margin-bottom:14px;">
-    <label class="label" style="margin-bottom:8px;">Pièces / matériaux</label>
+    <label class="label" style="margin-bottom:8px;">Prestations / Articles</label>
     <div class="pieces-grid" style="margin-bottom:4px;">
       ${["Description","Qté","Prix HT €",""].map(h=>`<span style="font-size:11px;color:#888;">${h}</span>`).join("")}
     </div>
@@ -1108,14 +1109,13 @@ function renderDevisFacture(){
   const f=S.fields,tab=S.tab,e=S.entreprise;
   const fields=[
     ["client_nom","Nom du client",L("ph_client_nom"),"text",false],
-    ["client_adresse","Adresse du client",L("ph_client_adresse"),"text",false],
+    ["client_adresse","Adresse du client",L("ph_client_adresse"),"text",true],
     ["client_tel","Téléphone client",L("ph_client_tel"),"text",true],
     ["client_email","Email client",L("ph_client_email"),"text",true],
-    ["adresse_travaux","Adresse des travaux",L("ph_adresse_travaux"),"text",true],
     ["date_prestation",tab==="devis"?"Date prévue de la prestation":"Date de la prestation","","date",true],
     ["heure_prestation",tab==="devis"?"Heure prévue":"Heure de la prestation","","time",true],
     ["travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false],
-    ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",false],
+    ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true],
     S.entreprise.assujetti_tva?["tva","TVA (%)","10 (rénovation) ou 20 (neuf)","text",false]:null,
   ];
   return`<div class="card">
