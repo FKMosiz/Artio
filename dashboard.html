@@ -54,7 +54,17 @@ body.dark .decl-item-val{color:#AFA9EC!important}
 body.dark select{background:#2a2440!important;border-color:#4a3f70!important;color:#e8e4f0!important}
 body.dark .btn-small{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
 body.dark .artio-logo{filter:brightness(0) invert(1) drop-shadow(0 0 3px rgba(255,255,255,0.6))}
-</style>
+
+    .settings-panel{position:fixed;top:0;right:0;bottom:0;width:320px;background:#fff;border-left:0.5px solid #e0deda;padding:1.5rem;z-index:1000;box-shadow:-4px 0 20px rgba(0,0,0,.1);overflow-y:auto;transform:translateX(100%);transition:transform .25s ease}
+    .settings-panel.open{transform:translateX(0)}
+    .settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:999}
+    .settings-overlay.open{display:block}
+    body.dark .settings-panel{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
+    body.dark .settings-panel *{color:#e8e4f0!important}
+    body.dark .settings-panel .lang-opt-active{background:#534AB7!important;color:#fff!important}
+    body.dark .settings-panel .theme-btn.active{background:#534AB7!important;color:#fff!important}
+
+  </style>
 </head>
 <body>
 <div id="root">Chargement...</div>
@@ -141,7 +151,7 @@ function render(){
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-      <a href="app.html?settings=1" title="Paramètres" style="padding:5px 9px;border-radius:7px;font-size:16px;text-decoration:none;color:#666;background:transparent;border:0.5px solid #e0deda;">⚙</a>
+      <button id="settings-btn" title="Paramètres" style="padding:5px 9px;border-radius:7px;font-size:16px;cursor:pointer;color:#666;background:transparent;border:0.5px solid #e0deda;">⚙</button>
       <button class="btn-small" onclick="sb.auth.signOut().then(()=>location.href='index.html')" style="font-size:11px;">Déconnexion</button>
     </div>
   </nav>
@@ -182,13 +192,76 @@ function render(){
 }
 
 (async()=>{
-  const{data:{session}}=await sb.auth.getSession();
-  if(!session){window.location.href="index.html";return}
-  user=session.user;
-  const{data}=await sb.from("dossiers").select("*").eq("user_id",user.id);
-  dossiers=(data||[]).map(d=>{let docs=[];try{docs=typeof d.documents==="string"?JSON.parse(d.documents):(d.documents||[])}catch(e){}return{...d,documents:docs};});
-  render();
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session){window.location.href="index.html";return}
+    user=session.user;
+    const{data,error}=await sb.from("dossiers").select("*").eq("user_id",user.id);
+    if(error)console.error("Erreur dossiers:",error);
+    dossiers=(data||[]).map(d=>{let docs=[];try{docs=typeof d.documents==="string"?JSON.parse(d.documents):(d.documents||[])}catch(e){}return{...d,documents:docs};});
+    render();
+  }catch(e){
+    console.error("Init error:",e);
+    document.getElementById("root").innerHTML="<p style='padding:2rem;color:red;'>Erreur: "+e.message+"</p>";
+  }
 })();
+
+let settingsOpen=false;
+
+function openSettings(){settingsOpen=true;document.getElementById("sp").classList.add("open");document.getElementById("sov").classList.add("open");}
+function closeSettings(){settingsOpen=false;document.getElementById("sp").classList.remove("open");document.getElementById("sov").classList.remove("open");}
+
+function renderSettingsPanel(){
+  const dk=document.body.classList.contains("dark");
+  const langs=[["fr","🇫🇷","Français"],["en","🇬🇧","English"],["es","🇪🇸","Español"],["zh","🇨🇳","中文"]];
+  const lang=localStorage.getItem("artio_langue")||"fr";
+  document.getElementById("sp").innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+      <p style="font-size:16px;font-weight:600;">Paramètres</p>
+      <button onclick="closeSettings()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;">×</button>
+    </div>
+    <a href="app.html?settings=profil" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:10px;text-decoration:none;color:inherit;">
+      <span style="font-size:20px;">🏢</span>
+      <div><p style="font-size:14px;font-weight:500;margin:0;">Mon entreprise</p><p style="font-size:12px;color:#888;margin:0;">Infos, SIRET, taux horaire, clé API</p></div>
+      <span style="margin-left:auto;color:#888;">›</span>
+    </a>
+    <a href="app.html?settings=gmail" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:20px;text-decoration:none;color:inherit;">
+      <span style="font-size:20px;">📧</span>
+      <div><p style="font-size:14px;font-weight:500;margin:0;">Connexion Gmail</p><p style="font-size:12px;color:#888;margin:0;">Connecte Gmail pour répondre automatiquement</p></div>
+      <span style="margin-left:auto;color:#888;">›</span>
+    </a>
+    <p style="font-size:13px;font-weight:600;color:#888;margin-bottom:8px;">LANGUE</p>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px;">
+      ${langs.map(([code,flag,name])=>`
+        <button onclick="setLang('${code}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;border:0.5px solid ${lang===code?"#534AB7":"#e0deda"};background:${lang===code?"#534AB7":"transparent"};color:${lang===code?"#fff":"inherit"};cursor:pointer;font-size:13px;width:100%;text-align:left;">
+          ${flag} ${name}
+        </button>`).join("")}
+    </div>
+    <p style="font-size:13px;font-weight:600;color:#888;margin-bottom:8px;">THÈME</p>
+    <div style="display:flex;gap:8px;">
+      <button onclick="setTheme(false)" style="flex:1;padding:9px;border-radius:8px;border:0.5px solid ${!dk?"#534AB7":"#e0deda"};background:${!dk?"#534AB7":"transparent"};color:${!dk?"#fff":"inherit"};cursor:pointer;font-size:13px;">☀️ Clair</button>
+      <button onclick="setTheme(true)" style="flex:1;padding:9px;border-radius:8px;border:0.5px solid ${dk?"#534AB7":"#e0deda"};background:${dk?"#534AB7":"transparent"};color:${dk?"#fff":"inherit"};cursor:pointer;font-size:13px;">🌙 Sombre</button>
+    </div>
+  `;
+}
+
+function setLang(code){localStorage.setItem("artio_langue",code);renderSettingsPanel();}
+function setTheme(dark){
+  if(dark)document.body.classList.add("dark");
+  else document.body.classList.remove("dark");
+  localStorage.setItem("artio_dark",dark?"1":"0");
+  renderSettingsPanel();
+}
+
+// Ouvrir le panel au clic ⚙
+document.addEventListener("click",e=>{
+  if(e.target.closest("#settings-btn")){openSettings();renderSettingsPanel();}
+});
+
 </script>
+
+<div class="settings-overlay" id="sov" onclick="closeSettings()"></div>
+<div class="settings-panel" id="sp"></div>
+
 </body>
 </html>
