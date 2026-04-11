@@ -734,7 +734,7 @@ window.handleGenerate=async()=>{
     const pv=S.pieces.filter(p=>p.description&&p.quantite&&p.prix_unitaire);
     const totaux=calcTotaux(f.nb_heures,e.taux_horaire,pv,e.assujetti_tva?(f.tva||"0"):"0");
     const desc=await callClaude(`Rédige en 2-3 phrases professionnelles la description de ces travaux de plomberie : ${f.travaux}. Paragraphe fluide, pas de liste.`,300);
-    const doc={type:tab,docNumber,date:todayFR(),validUntil:tab==="devis"?addDays(30):null,accepte:false,entreprise:{...e},client:{nom:f.client_nom,adresse:f.client_adresse,tel:f.client_tel||"",email:f.client_email||""},adresse_travaux:f.adresse_travaux||f.client_adresse,description:desc,nb_heures:f.nb_heures,pieces:pv,...totaux};
+    const doc={type:tab,docNumber,date:todayFR(),validUntil:tab==="devis"?addDays(parseInt(S.entreprise.delai_paiement)||30):null,accepte:false,entreprise:{...e},client:{nom:f.client_nom,adresse:f.client_adresse,tel:f.client_tel||"",email:f.client_email||""},adresse_travaux:f.adresse_travaux||f.client_adresse,date_prestation:f.date_prestation||"",heure_prestation:f.heure_prestation||"",description:desc,nb_heures:f.nb_heures,pieces:pv,...totaux};
     // Nom du dossier = Civilité + Nom client + aperçu prestation
 const civStr=f.client_nom?f.client_nom.trim():"Client";
 const travStr=(f.travaux||"").slice(0,35)+((f.travaux||"").length>35?"...":"");
@@ -842,6 +842,12 @@ function generatePDF(doc){
   pdf.text("N° "+doc.docNumber,rX,m+9,{align:"right"});
   pdf.text("Date : "+doc.date,rX,m+15,{align:"right"});
   if(doc.validUntil)pdf.text("Valable jusqu'au : "+doc.validUntil,rX,m+21,{align:"right"});
+  let yOff=doc.validUntil?27:21;
+  if(doc.date_prestation){
+    const dp=new Date(doc.date_prestation).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});
+    const hp=doc.heure_prestation?" à "+doc.heure_prestation:"";
+    pdf.text((doc.type==="devis"?"Prestation prévue : ":"Prestation réalisée : ")+dp+hp,rX,m+yOff,{align:"right"});
+  }
   y=58;pdf.setDrawColor(220,220,220).line(m,y,W-m,y);y+=8;
   pdf.setFontSize(9).setFont(undefined,"bold").text("CLIENT",m,y);y+=5;
   pdf.setFont(undefined,"normal").text(doc.client.nom,m,y);y+=4;
@@ -1106,6 +1112,8 @@ function renderDevisFacture(){
     ["client_tel","Téléphone client",L("ph_client_tel"),"text",true],
     ["client_email","Email client",L("ph_client_email"),"text",true],
     ["adresse_travaux","Adresse des travaux",L("ph_adresse_travaux"),"text",true],
+    ["date_prestation",tab==="devis"?"Date prévue de la prestation":"Date de la prestation","","date",true],
+    ["heure_prestation",tab==="devis"?"Heure prévue":"Heure de la prestation","","time",true],
     ["travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false],
     ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",false],
     S.entreprise.assujetti_tva?["tva","TVA (%)","10 (rénovation) ou 20 (neuf)","text",false]:null,
@@ -1259,7 +1267,7 @@ function renderDocPreview(doc){
   return`<div class="doc-preview-wrapper" style="font-size:13px;line-height:1.7;">
     <div class="preview-grid">
       <div><p style="font-weight:500;margin-bottom:2px;">${esc(doc.entreprise.nom)}</p><p style="color:#888;font-size:12px;">${esc(doc.entreprise.adresse)}<br/>${esc(doc.entreprise.tel)} — ${esc(doc.entreprise.email)}<br/>SIRET : ${esc(doc.entreprise.siret)}</p></div>
-      <div style="text-align:right;"><p style="font-weight:500;font-size:16px;margin-bottom:2px;">${doc.type==="devis"?"DEVIS":"FACTURE"}</p><p style="color:#888;font-size:12px;">N° ${doc.docNumber}<br/>Date : ${doc.date}${doc.validUntil?"<br/>Valable jusqu'au : "+doc.validUntil:""}</p></div>
+      <div style="text-align:right;"><p style="font-weight:500;font-size:16px;margin-bottom:2px;">${doc.type==="devis"?"DEVIS":"FACTURE"}</p><p style="color:#888;font-size:12px;">N° ${doc.docNumber}<br/>Date : ${doc.date}${doc.validUntil?"<br/>Valable jusqu'au : "+doc.validUntil:""}${doc.date_prestation?"<br/>"+(doc.type==="devis"?"Prestation prévue":"Prestation réalisée")+" : "+new Date(doc.date_prestation).toLocaleDateString("fr-FR")+(doc.heure_prestation?" à "+doc.heure_prestation:""):""}</p></div>
     </div>
     <div class="divider"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">CLIENT</p><p>${esc(doc.client.nom)}<br/>${esc(doc.client.adresse)}${doc.client.tel?"<br/>Tél : "+esc(doc.client.tel):""}</p></div>
     ${doc.adresse_travaux?`<div style="margin-bottom:10px;"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">ADRESSE DES TRAVAUX</p><p>${esc(doc.adresse_travaux)}</p></div>`:""}
