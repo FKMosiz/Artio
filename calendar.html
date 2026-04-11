@@ -204,8 +204,12 @@ function buildEvents(){
     (dos.documents||[]).forEach(d=>{
       if(!d.date_prestation)return;
       const type=d.type;
-      const label=type==="devis"?"✓ "+esc(dos.nom||dos.client||"Devis"):"💶 "+esc(dos.nom||dos.client||"Facture");
-      add(d.date_prestation,{type,label,hour:d.heure_prestation||"",dosId:dos.id});
+      const accepte=d.accepte||false;
+      const label=type==="devis"?"📋 "+esc(dos.nom||dos.client||"Devis"):"💶 "+esc(dos.nom||dos.client||"Facture");
+      // Utiliser la date directement (pas de new Date() pour éviter timezone UTC)
+      const dk=d.date_prestation.slice(0,10);
+      if(!ev[dk])ev[dk]=[];
+      ev[dk].push({type,label,hour:d.heure_prestation||"",dosId:dos.id,accepte});
     });
   });
   rdvs.forEach(r=>add(r.date,{type:"rdv",label:"📅 "+esc(r.titre),hour:r.heure||"",id:r.id,couleur:r.couleur||"blue"}));
@@ -332,7 +336,12 @@ function renderMonthView(){
       const dayEvs=ev[dk]||[];
       return`<div class="cal-month-day ${d._other?"other":""} ${isToday?"today":""}" onclick="openPanel('${dk}',9)">
         <div class="mday-num">${d.getDate()}</div>
-        ${dayEvs.slice(0,3).map(e=>`<div class="mday-ev" style="${e.type==='rdv'?getColorStyle(e.couleur||'blue'):(e.type==='devis'?'background:#E6F1FB;color:#185FA5;':'background:#EAF3DE;color:#2E7D32;')};border-radius:3px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:9px;">${e.label}</div>`).join("")}
+        ${dayEvs.slice(0,3).map(e=>{
+        const pending=e.type==="devis"&&!e.accepte;
+        const baseS=e.type==="rdv"?getColorStyle(e.couleur||"blue"):(e.type==="devis"?"background:#E6F1FB;color:#185FA5;":"background:#EAF3DE;color:#2E7D32;");
+        const stripes=pending?"background-image:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(255,255,255,.5) 3px,rgba(255,255,255,.5) 6px);opacity:.8;":"";
+        return`<div class="mday-ev" style="${baseS}${stripes};border-radius:3px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:9px;">${e.label}${pending?"⏳":""}</div>`;
+      }).join("")}
         ${dayEvs.length>3?`<div style="font-size:9px;color:#888;">+${dayEvs.length-3}</div>`:""}
       </div>`;
     }).join("")}

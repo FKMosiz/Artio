@@ -726,7 +726,7 @@ window.handleGenerate=async()=>{
     }catch(err){set({loading:false,generatedText:"Erreur : "+err.message})}
     return;
   }
-  const req=["client_nom","client_adresse","travaux","nb_heures"].concat(S.entreprise.assujetti_tva?["tva"]:[]);
+  const req=["client_nom","travaux"].concat(S.entreprise.assujetti_tva?["tva"]:[]);
   const miss=req.filter(id=>!(f[id]||"").trim());
   if(miss.length){alert("Champs manquants : "+miss.join(", "));return}
   set({loading:true,generatedDoc:null});
@@ -915,8 +915,8 @@ function renderApp(){
         </a>
         <div style="display:flex;gap:4px;overflow-x:auto;">
           <a href="app.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:600;color:#185FA5;background:#E6F1FB;text-decoration:none;white-space:nowrap;">📋 Application</a>
-          <a href="clients.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">👥 Clients</a>
-        <a href="dashboard.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">📊 Tableau de bord</a>
+          <a href="dashboard.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">📊 Tableau de bord</a>
+        <a href="clients.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">👥 Clients</a>
           <a href="calendar.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">📅 Calendrier</a>
         </div>
       </div>
