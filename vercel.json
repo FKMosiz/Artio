@@ -5,8 +5,10 @@
     { "source": "/",          "destination": "/index.html"     },
     { "source": "/home",      "destination": "/home.html"      },
     { "source": "/app",       "destination": "/app.html"       },
+    { "source": "/clients",   "destination": "/clients.html"   },
     { "source": "/dashboard", "destination": "/dashboard.html" },
-    { "source": "/calendar",  "destination": "/calendar.html"  }
+    { "source": "/calendar",  "destination": "/calendar.html"  },
+    { "source": "/sign",      "destination": "/sign.html"      }
   ],
   "headers": [
     {

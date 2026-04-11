@@ -915,7 +915,8 @@ function renderApp(){
         </a>
         <div style="display:flex;gap:4px;overflow-x:auto;">
           <a href="app.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:600;color:#185FA5;background:#E6F1FB;text-decoration:none;white-space:nowrap;">📋 Application</a>
-          <a href="dashboard.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">📊 Tableau de bord</a>
+          <a href="clients.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">👥 Clients</a>
+        <a href="dashboard.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">📊 Tableau de bord</a>
           <a href="calendar.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">📅 Calendrier</a>
         </div>
       </div>
@@ -1253,6 +1254,7 @@ function renderHistorique(){
               <button class="btn-small btn-green" onclick="downloadPDF('${storeDoc(doc)}')">⬇ PDF</button>
               ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small btn-blue" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}
               ${doc.type==="devis"&&doc.accepte&&!hasFacture?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
+              ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:""}
               ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small btn-gray" onclick="set({deleteConfirm:null})">✕</button>`:`<button class="btn-small" style="background:transparent;color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
             </div>
           </div>
