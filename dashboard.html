@@ -158,10 +158,18 @@ function render(){
   <div class="page-content">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
       <h1 style="font-size:20px;font-weight:700;">\u{1F4CA} Tableau de bord</h1>
-      <select onchange="filterPeriode=this.value;render()">
-        <option value="all" ${filterPeriode==="all"?"selected":""}>Toute la p\xe9riode</option>
-        ${moisDispo.map(m=>`<option value="${m.key}" ${filterPeriode===m.key?"selected":""}>${m.label}</option>`).join("")}
-      </select>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <select id="period-type" onchange="onPeriodChange()" style="padding:6px 10px;border-radius:8px;border:0.5px solid #d0d0cc;background:#fff;font-size:13px;color:#333;cursor:pointer;">
+          <option value="mois" ${filterType==="mois"?"selected":""}>Mois en cours</option>
+          <option value="annee" ${filterType==="annee"?"selected":""}>Année en cours</option>
+          <option value="custom" ${filterType==="custom"?"selected":""}>Personnalisé</option>
+        </select>
+        ${filterType==="custom"?`
+        <input type="date" value="${filterFrom}" onchange="filterFrom=this.value;render()" style="padding:5px 8px;border-radius:8px;border:0.5px solid #d0d0cc;font-size:13px;" min="${new Date().getFullYear()-1+'-01-01'}" max="${new Date().toISOString().slice(0,10)}"/>
+        <span style="color:#888;">→</span>
+        <input type="date" value="${filterTo}" onchange="filterTo=this.value;render()" style="padding:5px 8px;border-radius:8px;border:0.5px solid #d0d0cc;font-size:13px;" min="${new Date().getFullYear()-1+'-01-01'}" max="${new Date().toISOString().slice(0,10)}"/>
+        `:""}
+      </div>
     </div>
     <div class="kpi-grid">
       <div class="kpi-card kpi-blue"><div class="kpi-label">\u{1F4B6} CA factur\xe9</div><div class="kpi-value">${fmt(kpi.caTotal)}</div><div class="kpi-sub">${kpi.nbFactures} facture(s)</div></div>
