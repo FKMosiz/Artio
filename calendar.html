@@ -155,7 +155,30 @@ let selectedSlot=null; // {date,hour} ou null
 const JOURS=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
 const JOURS_FR=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
 const MOIS=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-const HEURES=Array.from({length:24},(_,i)=>i); // 0..23
+const HEURES=Array.from({length:16},(_,i)=>i+6); // 6..21
+
+
+const COLORS=[
+  {id:"blue",   label:"Bleu",    bg:"#E6F1FB", text:"#185FA5", border:"#378ADD", darkBg:"#1e2a3a", darkText:"#7FB8F0", darkBorder:"#378ADD"},
+  {id:"green",  label:"Vert",    bg:"#EAF3DE", text:"#2E7D32", border:"#66BB6A", darkBg:"#1a3020", darkText:"#5DD9A7", darkBorder:"#4CAF50"},
+  {id:"orange", label:"Orange",  bg:"#FFF3E0", text:"#E65100", border:"#FFA726", darkBg:"#3a2800", darkText:"#FFB74D", darkBorder:"#FF9800"},
+  {id:"red",    label:"Rouge",   bg:"#FCEBEB", text:"#A32D2D", border:"#EF9A9A", darkBg:"#3a1a1a", darkText:"#FF8A80", darkBorder:"#EF5350"},
+  {id:"purple", label:"Violet",  bg:"#f0eeff", text:"#534AB7", border:"#7F77DD", darkBg:"#1e1a3a", darkText:"#AFA9EC", darkBorder:"#7F77DD"},
+  {id:"pink",   label:"Rose",    bg:"#FCE4EC", text:"#880E4F", border:"#F48FB1", darkBg:"#3a1028", darkText:"#F48FB1", darkBorder:"#E91E63"},
+  {id:"teal",   label:"Cyan",    bg:"#E0F2F1", text:"#00695C", border:"#4DB6AC", darkBg:"#0a2a28", darkText:"#4DB6AC", darkBorder:"#009688"},
+  {id:"yellow", label:"Jaune",   bg:"#FFFDE7", text:"#827717", border:"#FFF176", darkBg:"#2a2400", darkText:"#FFF176", darkBorder:"#FFEB3B"},
+];
+
+function getColor(id){
+  return COLORS.find(c=>c.id===id)||COLORS[0];
+}
+
+function getColorStyle(id){
+  const dk=document.body.classList.contains("dark");
+  const c=getColor(id);
+  if(dk) return "background:"+c.darkBg+";color:"+c.darkText+";border-left:3px solid "+c.darkBorder+";";
+  return "background:"+c.bg+";color:"+c.text+";border-left:3px solid "+c.border+";";
+}
 
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 
@@ -185,7 +208,7 @@ function buildEvents(){
       add(d.date_prestation,{type,label,hour:d.heure_prestation||"",dosId:dos.id});
     });
   });
-  rdvs.forEach(r=>add(r.date,{type:"rdv",label:"📅 "+esc(r.titre),hour:r.heure||"",id:r.id}));
+  rdvs.forEach(r=>add(r.date,{type:"rdv",label:"📅 "+esc(r.titre),hour:r.heure||"",id:r.id,couleur:r.couleur||"blue"}));
   return ev;
 }
 
@@ -309,7 +332,7 @@ function renderMonthView(){
       const dayEvs=ev[dk]||[];
       return`<div class="cal-month-day ${d._other?"other":""} ${isToday?"today":""}" onclick="openPanel('${dk}',9)">
         <div class="mday-num">${d.getDate()}</div>
-        ${dayEvs.slice(0,3).map(e=>`<div class="mday-ev ev ${e.type}">${e.label}</div>`).join("")}
+        ${dayEvs.slice(0,3).map(e=>`<div class="mday-ev" style="${e.type==='rdv'?getColorStyle(e.couleur||'blue'):(e.type==='devis'?'background:#E6F1FB;color:#185FA5;':'background:#EAF3DE;color:#2E7D32;')};border-radius:3px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:9px;">${e.label}</div>`).join("")}
         ${dayEvs.length>3?`<div style="font-size:9px;color:#888;">+${dayEvs.length-3}</div>`:""}
       </div>`;
     }).join("")}
@@ -368,7 +391,7 @@ function openPanel(dk,h){
       </div>
       <button class="btn-small" onclick="closePanel()">&#10005;</button>
     </div>
-    ${dayEvs.map(e=>`<div class="rdv-item">
+    ${dayEvs.map(e=>`<div class="rdv-item" style="border-left:4px solid ${e.type==='rdv'?getColor(e.couleur||'blue').border:'#378ADD'};">
       <div class="rdv-title">${e.label}</div>
       ${e.hour?`<div class="rdv-sub">⏰ ${e.hour}</div>`:"" }
       ${e.id?`<button class="btn-small" style="margin-top:6px;font-size:11px;color:#A32D2D;border-color:#F09595;" onclick="deleteRdv('${e.id}','${dk}')">Supprimer</button>`:""}
@@ -379,6 +402,11 @@ function openPanel(dk,h){
       <input id="rdv-titre" type="text" placeholder="Ex: Intervention chez M. Dupont" style="width:100%;padding:8px 10px;font-size:13px;border:0.5px solid #d0d0cc;border-radius:8px;margin-bottom:10px;"/>
       <label style="font-size:12px;font-weight:500;color:#555;display:block;margin-bottom:4px;">Heure</label>
       <input id="rdv-heure" type="time" value="${hStr}" style="width:100%;padding:8px 10px;font-size:13px;border:0.5px solid #d0d0cc;border-radius:8px;margin-bottom:10px;"/>
+      <label style="font-size:12px;font-weight:500;color:#555;display:block;margin-bottom:8px;">Couleur</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;" id="color-picker">
+        ${COLORS.map(c=>`<button type="button" onclick="selectColor('${c.id}')" id="col-${c.id}" title="${c.label}" style="width:28px;height:28px;border-radius:50%;border:3px solid transparent;cursor:pointer;background:${c.border};transition:border-color .15s;"></button>`).join("")}
+      </div>
+      <input type="hidden" id="rdv-couleur" value="blue"/>
       <label style="font-size:12px;font-weight:500;color:#555;display:block;margin-bottom:4px;">Dossier lié (optionnel)</label>
       <select id="rdv-dos" style="width:100%;padding:8px 10px;font-size:13px;border:0.5px solid #d0d0cc;border-radius:8px;margin-bottom:10px;">
         <option value="">-- Aucun --</option>
@@ -400,11 +428,23 @@ window.addRdv=async function(dk){
   const titre=document.getElementById("rdv-titre")?.value.trim();
   if(!titre){alert("Entre un titre.");return}
   const heure=document.getElementById("rdv-heure")?.value||"";
+  const couleur=document.getElementById("rdv-couleur")?.value||"blue";
   const dosId=document.getElementById("rdv-dos")?.value||null;
-  const rdv={id:Date.now().toString(),user_id:user.id,date:dk,titre,heure,dossier_id:dosId};
+  const rdv={id:Date.now().toString(),user_id:user.id,date:dk,titre,heure,couleur,dossier_id:dosId};
   const{error}=await sb.from("rdvs").upsert(rdv,{onConflict:"id"});
   if(error){alert("Erreur : "+error.message);return}
   rdvs.push(rdv);render();openPanel(dk,parseInt(heure)||9);
+};
+
+window.selectColor=function(id){
+  document.getElementById("rdv-couleur").value=id;
+  COLORS.forEach(c=>{
+    const btn=document.getElementById("col-"+c.id);
+    if(btn)btn.style.borderColor=c.id===id?"#1a1a18":"transparent";
+  });
+  // Pré-sélectionner blue par défaut
+  const defBtn=document.getElementById("col-blue");
+  if(defBtn&&id==="blue")defBtn.style.borderColor="#1a1a18";
 };
 
 window.deleteRdv=async function(id,dk){
