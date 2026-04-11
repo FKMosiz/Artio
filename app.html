@@ -759,7 +759,25 @@ window.markAccepte=async(dosId,docNum)=>{
   dos.statut="devis_accepte";dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,accepte:true}:d);
   await upsertDossier(dos);set({});
 };
-window.convertToFacture=async(dosId,docNum)=>{
+window.sendForSignature=async(dosId,docNum)=>{
+  const dos=S.dossiers.find(d=>d.id===dosId);
+  const doc=dos?.documents?.find(d=>d.docNumber===docNum);
+  if(!doc){alert("Document introuvable.");return}
+  set({loading:true});
+  const token=[...Array(32)].map(()=>(Math.random().toString(36)[2]||"a")).join("");
+  const{error}=await sb.from("signatures").upsert({
+    token,user_id:S.user.id,dossier_id:dosId,doc_number:docNum,
+    doc_data:doc,status:"pending",created_at:new Date().toISOString()
+  },{onConflict:"token"});
+  set({loading:false});
+  if(error){alert("Erreur : "+error.message);return}
+  const base=window.location.origin+window.location.pathname.replace(/app\.html$/,"");
+  const link=base+"sign.html?token="+token;
+  try{await navigator.clipboard.writeText(link);}catch(e){}
+  alert("✅ Lien de signature créé !\n\n"+link+"\n\n(Copié dans le presse-papier)\n\nEnvoie ce lien à ton client par SMS ou email.");
+};
+window.sendForSignature=sendForSignature;
+convertToFacture=async(dosId,docNum)=>{
   set({convertingId:docNum});
   const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
   const devis=dos.documents.find(d=>d.docNumber===docNum);if(!devis)return;

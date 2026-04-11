@@ -180,6 +180,12 @@ function getColorStyle(id){
   return "background:"+c.bg+";color:"+c.text+";border-left:3px solid "+c.border+";";
 }
 
+// Clé de date locale sans bug UTC
+function localKey(d){
+  if(typeof d==="string")return d.slice(0,10);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 
 function getWeekStart(d){
@@ -199,7 +205,7 @@ function getWeekDays(start){
 
 function buildEvents(){
   const ev={};
-  function add(date,o){const k=new Date(date).toISOString().slice(0,10);if(!ev[k])ev[k]=[];ev[k].push(o);}
+  function add(date,o){const k=localKey(date);if(!ev[k])ev[k]=[];ev[k].push(o);}
   dossiers.forEach(dos=>{
     (dos.documents||[]).forEach(d=>{
       if(!d.date_prestation)return;
@@ -221,13 +227,13 @@ function renderWeekView(){
   const weekStart=getWeekStart(viewDate);
   const days=getWeekDays(weekStart);
   const today=new Date();today.setHours(0,0,0,0);
-  const todayKey=today.toISOString().slice(0,10);
+  const todayKey=localKey(today);
   const nowH=new Date().getHours(),nowM=new Date().getMinutes();
 
   const weekLabel=`${days[0].getDate()} – ${days[6].toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}`;
 
   const headerCells=days.map(d=>{
-    const isToday=d.toISOString().slice(0,10)===todayKey;
+    const isToday=localKey(d)===todayKey;
     return`<div class="cal-week-day-hdr ${isToday?"today-hdr":""}">
       ${JOURS_FR[(d.getDay()+6)%7]}
       <span class="day-num-big">${d.getDate()}</span>
@@ -237,7 +243,7 @@ function renderWeekView(){
   const timeRows=HEURES.map(h=>{
     const timeLabel=h===0?"":h+"h";
     const dayCells=days.map(d=>{
-      const dk=d.toISOString().slice(0,10);
+      const dk=localKey(d);
       const isToday=dk===todayKey;
       const eventsAtHour=(ev[dk]||[]).filter(e=>{
         if(!e.hour)return h===9; // défaut 9h si pas d'heure
@@ -264,7 +270,7 @@ function renderWeekView(){
     <div style="display:flex;gap:6px;align-items:center;">
       <button class="zoom-btn ${viewMode==="week"?"active":""}" onclick="setView('week')">Semaine</button>
       <button class="zoom-btn ${viewMode==="month"?"active":""}" onclick="setView('month')">Mois</button>
-      <button class="btn-small" onclick="openPanel(new Date().toISOString().slice(0,10),9)">+ RDV</button>
+      <button class="btn-small" onclick="openPanel(localKey(new Date()),9)">+ RDV</button>
     </div>
   </div>
   <div style="overflow-x:auto;">
@@ -277,9 +283,9 @@ function renderWeekView(){
         <div class="cal-week-grid" id="week-scroll">
           <div class="cal-time-col">${HEURES.map(h=>`<div class="cal-time-slot">${h===0?"":h+"h"}</div>`).join("")}</div>
           ${days.map(d=>{
-            const dk=d.toISOString().slice(0,10);
+            const dk=localKey(d);
             const isToday=dk===todayKey;
-            const nowLine=isToday?`<div class="current-time-line" style="top:${nowH*48+Math.round(nowM/60*48)}px;position:absolute;left:0;right:0;"></div>`:"";
+            const nowLine=isToday?`<div class="current-time-line" style="top:${(nowH-HEURES[0])*48+Math.round(nowM/60*48)}px;position:absolute;left:0;right:0;"></div>`:"";
             const dayEvs=(ev[dk]||[]);
             return`<div class="cal-day-col ${isToday?"today-col":""}" style="position:relative;" onclick="openPanel('${dk}',9)">
               ${nowLine}
@@ -287,7 +293,7 @@ function renderWeekView(){
               ${dayEvs.map(e=>{
                 const startH=e.hour?parseInt(e.hour.split(":")[0]):9;
                 const startM=e.hour?parseInt(e.hour.split(":")[1]||0):0;
-                const top=startH*48+Math.round(startM/60*48);
+                const top=(startH-HEURES[0])*48+Math.round(startM/60*48);
                 return`<div class="cal-event-block ${e.type}" style="top:${top}px;" onclick="event.stopPropagation();openPanel('${dk}',${startH})" title="${e.label}">${e.label}</div>`;
               }).join("")}
             </div>`;
@@ -302,7 +308,7 @@ function renderMonthView(){
   const ev=buildEvents();
   const y=viewDate.getFullYear(),m=viewDate.getMonth();
   const today=new Date();today.setHours(0,0,0,0);
-  const todayKey=today.toISOString().slice(0,10);
+  const todayKey=localKey(today);
   const first=new Date(y,m,1);
   let dow=first.getDay();if(dow===0)dow=7;
   const days=[];
@@ -322,7 +328,7 @@ function renderMonthView(){
     <div style="display:flex;gap:6px;align-items:center;">
       <button class="zoom-btn ${viewMode==="week"?"active":""}" onclick="setView('week')">Semaine</button>
       <button class="zoom-btn ${viewMode==="month"?"active":""}" onclick="setView('month')">Mois</button>
-      <button class="btn-small" onclick="openPanel(new Date().toISOString().slice(0,10),9)">+ RDV</button>
+      <button class="btn-small" onclick="openPanel(localKey(new Date()),9)">+ RDV</button>
     </div>
   </div>
   <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
@@ -331,8 +337,7 @@ function renderMonthView(){
   <div class="cal-month-grid">
     ${days.map(d=>{
       const dk=d.toISOString().slice(0,10);
-      const dCopy=new Date(d);dCopy.setHours(0,0,0,0);
-      const isToday=dCopy.getTime()===today.getTime();
+      const isToday=localKey(d)===todayKey;
       const dayEvs=ev[dk]||[];
       return`<div class="cal-month-day ${d._other?"other":""} ${isToday?"today":""}" onclick="openPanel('${dk}',9)">
         <div class="mday-num">${d.getDate()}</div>
@@ -360,6 +365,7 @@ function render(){
         <a href="app.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;border:none;background:transparent;">📋 Application</a>
         <a href="dashboard.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;border:none;background:transparent;">📊 Tableau de bord</a>
         <a href="calendar.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:600;color:#185FA5;background:#E6F1FB;text-decoration:none;white-space:nowrap;border:none;">📅 Calendrier</a>
+        <a href="clients.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;background:transparent;text-decoration:none;white-space:nowrap;border:none;">👥 Clients</a>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
@@ -376,7 +382,7 @@ function render(){
     const scroll=document.querySelector(".cal-day-col");
     if(scroll&&scroll.parentElement){
       const container=scroll.parentElement.closest("div[style*='overflow-y:auto']");
-      if(container)container.scrollTop=Math.max(0,(h-2)*48);
+      if(container)container.scrollTop=Math.max(0,(h-HEURES[0]-2)*48);
     }
   }
 }
