@@ -242,18 +242,26 @@ async function saveDossiers(newDossiers){
 
 async function upsertDossier(dos){
   try{
+    // created_at toujours en ISO (jamais en format FR)
+    // documents toujours sérialisé en JSON string (compatible text ET jsonb)
     const{error}=await sb.from("dossiers").upsert({
       id:dos.id,
       user_id:S.user.id,
       nom:dos.nom||"",
       client:dos.client||"",
       statut:dos.statut||"devis_envoye",
-      documents:dos.documents||[],
-      created_at:dos.createdAt||new Date().toISOString(),
+      documents:JSON.stringify(dos.documents||[]),
+      created_at:new Date().toISOString(),
       updated_at:new Date().toISOString()
     },{onConflict:"id"});
-    if(error)console.error("upsertDossier erreur:",error.message);
-  }catch(e){console.error("upsertDossier exception:",e)}
+    if(error){
+      console.error("upsertDossier erreur:",error.message,error);
+      alert("Erreur de sauvegarde : "+error.message);
+    }
+  }catch(e){
+    console.error("upsertDossier exception:",e);
+    alert("Erreur de sauvegarde : "+e.message);
+  }
 }
 
 async function deleteDossierDB(id){
