@@ -242,17 +242,31 @@ async function saveDossiers(newDossiers){
 
 async function upsertDossier(dos){
   try{
+    // Sécurité : ne jamais sauvegarder des documents vides si Supabase en a déjà
+    let docsToSave=dos.documents||[];
+    if(docsToSave.length===0){
+      const{data:check}=await sb.from("dossiers").select("documents").eq("id",dos.id).eq("user_id",S.user.id).single();
+      if(check?.documents){
+        const existing=typeof check.documents==="string"?JSON.parse(check.documents):(check.documents||[]);
+        if(existing.length>0){
+          console.warn("upsertDossier : protection anti-perte — documents conservés depuis Supabase");
+          docsToSave=existing;
+          // Mettre à jour aussi le state local
+          const si=S.dossiers.findIndex(d=>d.id===dos.id);
+          if(si>-1)S.dossiers[si].documents=existing;
+        }
+      }
+    }
     const payload={
       id:dos.id,
       user_id:S.user.id,
       nom:dos.nom,
       client:dos.client,
       statut:dos.statut,
-      documents:JSON.stringify(dos.documents),
+      documents:JSON.stringify(docsToSave),
       created_at:dos.createdAt||new Date().toISOString(),
       updated_at:new Date().toISOString()
     };
-    // Essayer update d'abord, puis insert si pas trouvé
     const{data:existing}=await sb.from("dossiers").select("id").eq("id",dos.id).eq("user_id",S.user.id).single();
     if(existing){
       const{error}=await sb.from("dossiers").update(payload).eq("id",dos.id).eq("user_id",S.user.id);
@@ -1180,10 +1194,30 @@ function renderDevisFacture(){
   ];
   return`<div class="card">
     ${renderVoice("devis")}
-    ${fields.filter(f=>f!==null).map(([id,label,ph,type,opt])=>`<div class="field">
+    ${fields.filter(f=>f!==null).map(([id,label,ph,type,opt])=>{
+      const heureOpts=(()=>{
+        let opts='<option value="">-- Optionnel --</option>';
+        for(let h=6;h<=21;h++){
+          for(let m=0;m<60;m+=15){
+            const hh=String(h).padStart(2,"0"),mm=String(m).padStart(2,"0");
+            const val=hh+":"+mm,sel=(S.fields[id]||"")==val?"selected":"";
+            opts+=`<option value="${val}" ${sel}>${h}h${m>0?m:""}</option>`;
+          }
+        }
+        return opts;
+      })();
+      const input=type==="textarea"
+        ?`<textarea placeholder="${ph}" data-fid="${id}">${esc(S.fields[id]||"")}</textarea>`
+        :type==="select_heure"
+          ?`<select data-fid="${id}" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;" onchange="S.fields['${id}']=this.value">${heureOpts}</select>`
+          :type==="date"
+            ?`<input type="date" value="${S.fields[id]||""}" data-fid="${id}" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;font-family:inherit;" oninput="S.fields['${id}']=this.value"/>`
+            :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'render()':''}"/>`;
+      return`<div class="field">
       <label class="label">${label}${opt?`<span class="opt">(optionnel)</span>`:""}</label>
-      ${type==="textarea"?`<textarea placeholder="${ph}" data-fid="${id}">${esc(f[id]||"")}</textarea>`:`<input type="${type}" value="${esc(f[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'render()':''}" />`}
-    </div>`).join("")}
+      ${input}
+    </div>`;
+    }).join("")}
     ${renderPieces()}
     <div id="totaux-container">${renderTotaux()}</div>
     <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":"Générer"}</button>
