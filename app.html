@@ -485,6 +485,7 @@ async function initAuth(){
   if(session?.user){
     S.user=session.user;
     await loadUserData(session.user.id);
+    setupSignatureListener(session.user.id);
     renderApp();
   }else{window.location.href="login.html";}
 }
@@ -914,6 +915,45 @@ function generatePDF(doc){
   try{pdf.addImage("data:image/png;base64,"+LOGO_WHITE,"PNG",m,280,22,7)}catch{}
   pdf.setFontSize(7).setTextColor(150).text(doc.entreprise.nom+" — SIRET : "+doc.entreprise.siret,W/2,287,{align:"center"});
   pdf.save(doc.docNumber+".pdf");
+}
+
+// ——— REALTIME SIGNATURE LISTENER ———
+function setupSignatureListener(userId){
+  sb.channel("signatures_"+userId)
+    .on("postgres_changes",{
+      event:"UPDATE",
+      schema:"public",
+      table:"signatures",
+      filter:"user_id=eq."+userId
+    }, async payload=>{
+      if(payload.new?.status==="signed"){
+        const{data}=await sb.from("dossiers").select("*").eq("user_id",userId).order("updated_at",{ascending:false});
+        if(data){
+          S.dossiers=data.map(d=>{
+            let docs=[];
+            try{docs=typeof d.documents==="string"?JSON.parse(d.documents):(d.documents||[])}catch(e){}
+            return{...d,documents:docs};
+          });
+          render();
+          const nom=payload.new?.doc_data?.client?.nom||"";
+          const num=payload.new?.doc_number||"";
+          showToast("✅ Devis "+num+" signé par "+nom+" !");
+        }
+      }
+    })
+    .subscribe();
+}
+
+function showToast(msg){
+  let t=document.getElementById("artio-toast");
+  if(!t){
+    t=document.createElement("div");
+    t.id="artio-toast";
+    t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#534AB7;color:#fff;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:500;z-index:9999;box-shadow:0 4px 20px rgba(83,74,183,.4);transition:opacity .4s;";
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;t.style.opacity="1";
+  clearTimeout(t._to);t._to=setTimeout(()=>{t.style.opacity="0";},4500);
 }
 
 // ——— RENDER ———
