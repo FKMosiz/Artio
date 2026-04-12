@@ -766,9 +766,11 @@ window.sendForSignature=async(dosId,docNum)=>{
   if(!doc){alert("Document introuvable.");return}
   set({loading:true});
   const token=[...Array(32)].map(()=>(Math.random().toString(36)[2]||"a")).join("");
+  // dossier_id en texte libre (pas de FK stricte) + dosId dans doc_data
   const{error}=await sb.from("signatures").upsert({
     token,user_id:S.user.id,dossier_id:dosId,doc_number:docNum,
-    doc_data:doc,status:"pending",created_at:new Date().toISOString()
+    doc_data:{...doc,_dossier_id:dosId},status:"pending",
+    created_at:new Date().toISOString()
   },{onConflict:"token"});
   set({loading:false});
   if(error){alert("Erreur : "+error.message);return}
@@ -1171,7 +1173,7 @@ function renderDevisFacture(){
     ["client_tel","Téléphone client",L("ph_client_tel"),"text",true],
     ["client_email","Email client",L("ph_client_email"),"text",true],
     ["date_prestation",tab==="devis"?"Date prévue de la prestation":"Date de la prestation","","date",true],
-    ["heure_prestation",tab==="devis"?"Heure prévue":"Heure de la prestation","","time",true],
+    ["heure_prestation",tab==="devis"?"Heure prévue":"Heure de la prestation","","select_heure",true],
     ["travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false],
     ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true],
     S.entreprise.assujetti_tva?["tva","TVA (%)","10 (rénovation) ou 20 (neuf)","text",false]:null,
