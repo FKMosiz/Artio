@@ -640,7 +640,8 @@ Instructions d'extraction:
 - nb_heures: nombre d'heures de main d'oeuvre si mentionné (ex: "3 heures" → "3"), null sinon
 - tva: taux de TVA en chiffre seul sans % si mentionné, null sinon
 - date_prestation: date au format YYYY-MM-DD si mentionnée ("demain", "lundi", "le 15 avril"...), null sinon
-- heure_prestation: heure au format HH:MM si mentionnée ("9h", "14h30"...), null sinon
+- heure_prestation: heure de début au format HH:MM si mentionnée ("9h", "14h30"...), null sinon
+- heure_fin_prestation: heure de fin au format HH:MM si mentionnée ("jusqu'à 11h", "pendant 2h"...), null sinon
 - pieces: tableau des prestations/articles avec leur prix. Généraliser : forfait, code service, pièce, produit... (ex: "forfait lavage 39 euros" → {"description":"Forfait lavage","quantite":"1","prix_unitaire":"39"}, "code D9" → {"description":"Code D9","quantite":"1","prix_unitaire":null})
 
 Si une information n'est pas mentionnée, mettre null. Pour pieces, tableau vide [] si rien mentionné.
@@ -651,7 +652,7 @@ JSON:
       const cleaned=raw.replace(/```json/g,"").replace(/```/g,"").trim();
       const p=JSON.parse(cleaned);
       const nf={...S.fields};
-      ["client_nom","client_adresse","client_tel","client_email","travaux","nb_heures","tva","date_prestation","heure_prestation"].forEach(k=>{
+      ["client_nom","client_adresse","client_tel","client_email","travaux","nb_heures","tva","date_prestation","heure_prestation","heure_fin_prestation"].forEach(k=>{
         if(p[k]!==null&&p[k]!==undefined&&String(p[k])!=="null"&&String(p[k]).trim()!=="")
           nf[k]=String(p[k]);
       });
@@ -736,7 +737,7 @@ window.handleGenerate=async()=>{
     const pv=S.pieces.filter(p=>p.description&&p.quantite&&p.prix_unitaire);
     const totaux=calcTotaux(f.nb_heures,e.taux_horaire,pv,e.assujetti_tva?(f.tva||"0"):"0");
     const desc=await callClaude(`Tu es un assistant administratif pour ${S.entreprise.secteur||"un prestataire indépendant"} (jamais un plombier par défaut). Rédige en 2-3 phrases professionnelles la description de cette prestation : ${f.travaux}. Adapte le vocabulaire au secteur d'activité. Paragraphe fluide, pas de liste, pas de mise en forme.`,300);
-    const doc={type:tab,docNumber,date:todayFR(),validUntil:tab==="devis"?addDays(parseInt(S.entreprise.delai_paiement)||30):null,accepte:false,entreprise:{...e},client:{nom:f.client_nom,adresse:f.client_adresse,tel:f.client_tel||"",email:f.client_email||""},adresse_travaux:f.client_adresse||"",date_prestation:f.date_prestation||"",heure_prestation:f.heure_prestation||"",description:desc,nb_heures:f.nb_heures,pieces:pv,...totaux};
+    const doc={type:tab,docNumber,date:todayFR(),validUntil:tab==="devis"?addDays(parseInt(S.entreprise.delai_paiement)||30):null,accepte:false,entreprise:{...e},client:{nom:f.client_nom,adresse:f.client_adresse,tel:f.client_tel||"",email:f.client_email||""},adresse_travaux:f.client_adresse||"",date_prestation:f.date_prestation||"",heure_prestation:f.heure_prestation||"",heure_fin_prestation:f.heure_fin_prestation||"",description:desc,nb_heures:f.nb_heures,pieces:pv,...totaux};
     // Nom du dossier = Civilité + Nom client + aperçu prestation
 const civStr=f.client_nom?f.client_nom.trim():"Client";
 const travStr=(f.travaux||"").slice(0,35)+((f.travaux||"").length>35?"...":"");
@@ -866,7 +867,7 @@ function generatePDF(doc){
   let yOff=doc.validUntil?27:21;
   if(doc.date_prestation){
     const dp=new Date(doc.date_prestation).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});
-    const hp=doc.heure_prestation?" à "+doc.heure_prestation:"";
+    const hp=doc.heure_prestation?" à "+doc.heure_prestation+(doc.heure_fin_prestation?" → "+doc.heure_fin_prestation:""):"";
     pdf.text((doc.type==="devis"?"Prestation prévue : ":"Prestation réalisée : ")+dp+hp,rX,m+yOff,{align:"right"});
   }
   y=58;pdf.setDrawColor(220,220,220).line(m,y,W-m,y);y+=8;
@@ -1174,6 +1175,7 @@ function renderDevisFacture(){
     ["client_email","Email client",L("ph_client_email"),"text",true],
     ["date_prestation",tab==="devis"?"Date prévue de la prestation":"Date de la prestation","","date",true],
     ["heure_prestation",tab==="devis"?"Heure prévue":"Heure de la prestation","","select_heure",true],
+    ["heure_fin_prestation",tab==="devis"?"Heure de fin estimée":"Heure de fin","","select_heure",true],
     ["travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false],
     ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true],
     S.entreprise.assujetti_tva?["tva","TVA (%)","10 (rénovation) ou 20 (neuf)","text",false]:null,
@@ -1348,7 +1350,7 @@ function renderDocPreview(doc){
   return`<div class="doc-preview-wrapper" style="font-size:13px;line-height:1.7;">
     <div class="preview-grid">
       <div><p style="font-weight:500;margin-bottom:2px;">${esc(doc.entreprise.nom)}</p><p style="color:#888;font-size:12px;">${esc(doc.entreprise.adresse)}<br/>${esc(doc.entreprise.tel)} — ${esc(doc.entreprise.email)}<br/>SIRET : ${esc(doc.entreprise.siret)}</p></div>
-      <div style="text-align:right;"><p style="font-weight:500;font-size:16px;margin-bottom:2px;">${doc.type==="devis"?"DEVIS":"FACTURE"}</p><p style="color:#888;font-size:12px;">N° ${doc.docNumber}<br/>Date : ${doc.date}${doc.validUntil?"<br/>Valable jusqu'au : "+doc.validUntil:""}${doc.date_prestation?"<br/>"+(doc.type==="devis"?"Prestation prévue":"Prestation réalisée")+" : "+new Date(doc.date_prestation).toLocaleDateString("fr-FR")+(doc.heure_prestation?" à "+doc.heure_prestation:""):""}</p></div>
+      <div style="text-align:right;"><p style="font-weight:500;font-size:16px;margin-bottom:2px;">${doc.type==="devis"?"DEVIS":"FACTURE"}</p><p style="color:#888;font-size:12px;">N° ${doc.docNumber}<br/>Date : ${doc.date}${doc.validUntil?"<br/>Valable jusqu'au : "+doc.validUntil:""}${doc.date_prestation?"<br/>"+(doc.type==="devis"?"Prestation prévue":"Prestation réalisée")+" : "+new Date(doc.date_prestation).toLocaleDateString("fr-FR")+(doc.heure_prestation?" à "+doc.heure_prestation+(doc.heure_fin_prestation?" → "+doc.heure_fin_prestation:""):""):""}</p></div>
     </div>
     <div class="divider"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">CLIENT</p><p>${esc(doc.client.nom)}<br/>${esc(doc.client.adresse)}${doc.client.tel?"<br/>Tél : "+esc(doc.client.tel):""}</p></div>
     ${doc.adresse_travaux?`<div style="margin-bottom:10px;"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">ADRESSE DES TRAVAUX</p><p>${esc(doc.adresse_travaux)}</p></div>`:""}

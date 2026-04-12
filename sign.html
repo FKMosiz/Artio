@@ -126,11 +126,13 @@ window.submitSignature=async function(){
   const btn=document.getElementById("sign-btn");
   if(btn){btn.disabled=true;btn.textContent="Envoi en cours...";}
 
-  const{error}=await sb.from("signatures").update({
-    signed_at:new Date().toISOString(),
-    signature_data:sigData,
-    status:"signed"
-  }).eq("token",token);
+  // Utiliser une fonction RPC sécurisée (SECURITY DEFINER)
+  // car le client n'est pas authentifié et la RLS bloquerait le UPDATE direct
+  const{error}=await sb.rpc("sign_document",{
+    p_token:token,
+    p_signature_data:sigData,
+    p_signed_at:new Date().toISOString()
+  });
 
   if(error){
     alert("Erreur lors de la signature : "+error.message);

@@ -215,7 +215,7 @@ function buildEvents(){
       // Utiliser la date directement (pas de new Date() pour éviter timezone UTC)
       const dk=d.date_prestation.slice(0,10);
       if(!ev[dk])ev[dk]=[];
-      ev[dk].push({type,label,hour:d.heure_prestation||"",dosId:dos.id,accepte});
+      ev[dk].push({type,label,hour:d.heure_prestation||"",heureFin:d.heure_fin_prestation||"",dosId:dos.id,accepte});
     });
   });
   rdvs.forEach(r=>add(r.date,{type:"rdv",label:"📅 "+esc(r.titre),hour:r.heure||"",id:r.id,couleur:r.couleur||"blue"}));
@@ -310,7 +310,14 @@ function renderWeekView(){
                 const stripeStyle=pending
                   ? "background-image:repeating-linear-gradient(45deg,rgba(0,0,0,0),rgba(0,0,0,0) 5px,rgba(255,255,255,0.6) 5px,rgba(255,255,255,0.6) 10px);"
                   : "";
-                return`<div style="position:absolute;top:${topPx}px;left:2px;right:2px;border-radius:4px;padding:2px 4px;font-size:10px;font-weight:500;overflow:hidden;z-index:2;${evStyle}${stripeStyle}" onclick="event.stopPropagation();openPanel('${dk}',${h})" title="${e.label}${pending?' ⏳':''}">${e.label.slice(0,30)}${pending?" ⏳":""}</div>`;
+                // Calculer hauteur selon durée
+                let evH="";
+                if(e.heureFin){
+                  const [fH,fM]=(e.heureFin).split(":").map(Number);
+                  const durMin=(fH*60+fM)-(h*60+(e.hour?parseInt(e.hour.split(":")[1]||0):0));
+                  if(durMin>15) evH="height:"+(durMin/60*48)+"px;";
+                }
+                return`<div style="position:absolute;top:${topPx}px;left:2px;right:2px;border-radius:4px;padding:2px 4px;font-size:10px;font-weight:500;overflow:hidden;z-index:2;${evH}${evStyle}${stripeStyle}" onclick="event.stopPropagation();openPanel('${dk}',${h})" title="${e.label}${pending?' ⏳':''}">${e.label.slice(0,30)}${pending?" ⏳":""}</div>`;
               }).join("")}
             </td>`;
           }).join("")}
