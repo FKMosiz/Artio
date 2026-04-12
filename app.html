@@ -734,7 +734,7 @@ window.handleGenerate=async()=>{
     const docNumber=await getNextNum(tab,S.user.id);
     const pv=S.pieces.filter(p=>p.description&&p.quantite&&p.prix_unitaire);
     const totaux=calcTotaux(f.nb_heures,e.taux_horaire,pv,e.assujetti_tva?(f.tva||"0"):"0");
-    const desc=await callClaude(`Rédige en 2-3 phrases professionnelles la description de ces travaux de plomberie : ${f.travaux}. Paragraphe fluide, pas de liste.`,300);
+    const desc=await callClaude(`Tu es un assistant administratif pour ${S.entreprise.secteur||"un prestataire indépendant"} (jamais un plombier par défaut). Rédige en 2-3 phrases professionnelles la description de cette prestation : ${f.travaux}. Adapte le vocabulaire au secteur d'activité. Paragraphe fluide, pas de liste, pas de mise en forme.`,300);
     const doc={type:tab,docNumber,date:todayFR(),validUntil:tab==="devis"?addDays(parseInt(S.entreprise.delai_paiement)||30):null,accepte:false,entreprise:{...e},client:{nom:f.client_nom,adresse:f.client_adresse,tel:f.client_tel||"",email:f.client_email||""},adresse_travaux:f.client_adresse||"",date_prestation:f.date_prestation||"",heure_prestation:f.heure_prestation||"",description:desc,nb_heures:f.nb_heures,pieces:pv,...totaux};
     // Nom du dossier = Civilité + Nom client + aperçu prestation
 const civStr=f.client_nom?f.client_nom.trim():"Client";

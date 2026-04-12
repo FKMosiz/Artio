@@ -77,17 +77,17 @@ body.dark .artio-logo{filter:brightness(0) invert(1) drop-shadow(0 0 3px rgba(25
 
   
 /* Vue semaine */
-.cal-week-grid{display:grid;grid-template-columns:52px repeat(7,1fr);border:0.5px solid #e0deda;border-radius:12px;overflow:hidden;background:#fff}
-.cal-week-header{display:grid;grid-template-columns:52px repeat(7,1fr);border-bottom:0.5px solid #e0deda;background:#fafaf8}
+.cal-week-grid{display:grid;grid-template-columns:52px repeat(7,1fr);background:#fff;border-top:0.5px solid #e0deda}
+.cal-week-header{display:grid;grid-template-columns:52px repeat(7,1fr);background:#fafaf8;border-bottom:0.5px solid #e0deda;border-top:0.5px solid #e0deda;border-left:0.5px solid #e0deda;border-right:0.5px solid #e0deda;border-radius:10px 10px 0 0}
 .cal-week-day-hdr{padding:8px 4px;text-align:center;font-size:11px;font-weight:600;color:#888;border-left:0.5px solid #e0deda}
 .cal-week-day-hdr.today-hdr{color:#534AB7;font-weight:700}
 .cal-week-day-hdr .day-num-big{font-size:18px;font-weight:700;display:block;line-height:1.2}
 .cal-week-day-hdr.today-hdr .day-num-big{color:#534AB7}
 .cal-time-col{display:flex;flex-direction:column}
-.cal-time-slot{height:48px;display:flex;align-items:flex-start;padding-top:2px;padding-right:6px;font-size:10px;color:#aaa;justify-content:flex-end;border-bottom:0.5px solid #f0eeea;flex-shrink:0}
+.cal-time-slot{height:48px;min-height:48px;max-height:48px;display:flex;align-items:flex-start;padding-top:2px;padding-right:6px;font-size:10px;color:#aaa;justify-content:flex-end;border-bottom:0.5px solid #f0eeea;flex-shrink:0;box-sizing:border-box}
 .cal-day-col{border-left:0.5px solid #e0deda;position:relative;cursor:pointer}
 .cal-day-col.today-col{background:#f8f6ff}
-.cal-hour-row{height:48px;border-bottom:0.5px solid #f0eeea;position:relative}
+.cal-hour-row{height:48px;min-height:48px;max-height:48px;border-bottom:0.5px solid #f0eeea;position:relative;box-sizing:border-box}
 .cal-hour-row:hover{background:#faf8ff}
 .cal-event-block{position:absolute;left:2px;right:2px;border-radius:5px;padding:2px 5px;font-size:10px;font-weight:500;cursor:pointer;overflow:hidden;z-index:2;min-height:20px;line-height:1.3}
 .cal-event-block.rdv{background:#EAF3DE;color:#2E7D32;border-left:3px solid #2E7D32}
@@ -101,7 +101,7 @@ body.dark .artio-logo{filter:brightness(0) invert(1) drop-shadow(0 0 3px rgba(25
 .zoom-btn.active{background:#534AB7;color:#fff;border-color:#534AB7}
 /* Vue mois */
 .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.cal-month-day{min-height:70px;border-radius:8px;padding:5px;cursor:pointer;border:1.5px solid transparent;transition:border-color .15s}
+.cal-month-day{height:80px;border-radius:8px;padding:5px;cursor:pointer;border:1.5px solid transparent;transition:border-color .15s;overflow:hidden}
 .cal-month-day:hover{border-color:#d0d0cc;background:#fafaf8}
 .cal-month-day.other{opacity:.35}
 .cal-month-day.today{border-color:#534AB7!important;background:#f0eeff}
@@ -273,34 +273,50 @@ function renderWeekView(){
       <button class="btn-small" onclick="openPanel(localKey(new Date()),9)">+ RDV</button>
     </div>
   </div>
-  <div style="overflow-x:auto;">
-    <div style="min-width:500px;">
-      <div class="cal-week-header">
-        <div style="border-bottom:0.5px solid #e0deda;"></div>
-        ${headerCells}
-      </div>
-      <div style="overflow-y:auto;max-height:calc(100vh - 220px);">
-        <div class="cal-week-grid" id="week-scroll">
-          <div class="cal-time-col">${HEURES.map(h=>`<div class="cal-time-slot">${h===0?"":h+"h"}</div>`).join("")}</div>
+  <div style="overflow:auto;max-height:calc(100vh - 200px);border:0.5px solid #e0deda;border-radius:10px;">
+    <table style="width:100%;min-width:520px;border-collapse:collapse;table-layout:fixed;">
+      <colgroup>
+        <col style="width:44px"/>
+        ${days.map(()=>'<col/>').join("")}
+      </colgroup>
+      <thead style="position:sticky;top:0;z-index:5;background:#fafaf8;">
+        <tr>
+          <th style="border-bottom:0.5px solid #e0deda;border-right:0.5px solid #f0eeea;"></th>
+          ${headerCells.replace(/<div class="cal-week-day-hdr/g,'<th style="border-bottom:0.5px solid #e0deda;border-left:0.5px solid #f0eeea;padding:6px 2px;" class="cal-week-day-hdr').replace(/<\/div>/g,'</th>')}
+        </tr>
+      </thead>
+      <tbody>
+        ${HEURES.map(h=>`<tr style="height:48px;">
+          <td style="font-size:10px;color:#aaa;text-align:right;padding-right:6px;vertical-align:top;padding-top:2px;border-right:0.5px solid #f0eeea;border-bottom:0.5px solid #f0eeea;white-space:nowrap;">${h}h</td>
           ${days.map(d=>{
             const dk=localKey(d);
             const isToday=dk===todayKey;
-            const nowLine=isToday?`<div class="current-time-line" style="top:${(nowH-HEURES[0])*48+Math.round(nowM/60*48)}px;position:absolute;left:0;right:0;"></div>`:"";
-            const dayEvs=(ev[dk]||[]);
-            return`<div class="cal-day-col ${isToday?"today-col":""}" style="position:relative;" onclick="openPanel('${dk}',9)">
-              ${nowLine}
-              ${HEURES.map(h=>`<div class="cal-hour-row"></div>`).join("")}
+            const dayEvs=(ev[dk]||[]).filter(e=>{
+              const eh=e.hour?parseInt(e.hour.split(":")[0]):9;
+              return eh===h;
+            });
+            const nowDot=isToday&&h===nowH?`<div style="position:absolute;left:0;right:0;top:${Math.round(nowM/60*48)}px;height:2px;background:#534AB7;z-index:4;"><span style="position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:#534AB7;display:block;"></span></div>`:"";
+            return`<td style="border-left:0.5px solid #f0eeea;border-bottom:0.5px solid #f0eeea;vertical-align:top;position:relative;cursor:pointer;${isToday?"background:#f8f6ff;":""}" onclick="openPanel('${dk}',${h})">
+              ${nowDot}
               ${dayEvs.map(e=>{
-                const startH=e.hour?parseInt(e.hour.split(":")[0]):9;
+                const pending=e.type==="devis"&&!e.accepte;
                 const startM=e.hour?parseInt(e.hour.split(":")[1]||0):0;
-                const top=(startH-HEURES[0])*48+Math.round(startM/60*48);
-                return`<div class="cal-event-block ${e.type}" style="top:${top}px;" onclick="event.stopPropagation();openPanel('${dk}',${startH})" title="${e.label}">${e.label}</div>`;
+                const topPx=Math.round(startM/60*48);
+                const evStyle=e.type==="rdv"
+                  ? getColorStyle(e.couleur||"blue")
+                  : e.type==="devis"
+                    ? "background:#E6F1FB;color:#185FA5;border-left:3px solid #378ADD;"
+                    : "background:#EAF3DE;color:#2E7D32;border-left:3px solid #4CAF50;";
+                const stripeStyle=pending
+                  ? "background-image:repeating-linear-gradient(45deg,rgba(0,0,0,0),rgba(0,0,0,0) 5px,rgba(255,255,255,0.6) 5px,rgba(255,255,255,0.6) 10px);"
+                  : "";
+                return`<div style="position:absolute;top:${topPx}px;left:2px;right:2px;border-radius:4px;padding:2px 4px;font-size:10px;font-weight:500;overflow:hidden;z-index:2;${evStyle}${stripeStyle}" onclick="event.stopPropagation();openPanel('${dk}',${h})" title="${e.label}${pending?' ⏳':''}">${e.label.slice(0,30)}${pending?" ⏳":""}</div>`;
               }).join("")}
-            </div>`;
+            </td>`;
           }).join("")}
-        </div>
-      </div>
-    </div>
+        </tr>`).join("")}
+      </tbody>
+    </table>
   </div>`;
 }
 
@@ -345,7 +361,7 @@ function renderMonthView(){
         const pending=e.type==="devis"&&!e.accepte;
         const baseS=e.type==="rdv"?getColorStyle(e.couleur||"blue"):(e.type==="devis"?"background:#E6F1FB;color:#185FA5;":"background:#EAF3DE;color:#2E7D32;");
         const stripes=pending?"background-image:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(255,255,255,.5) 3px,rgba(255,255,255,.5) 6px);opacity:.8;":"";
-        return`<div class="mday-ev" style="${baseS}${stripes};border-radius:3px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:9px;">${e.label}${pending?"⏳":""}</div>`;
+        return`<div class="mday-ev" style="${baseS}${stripes};border-radius:3px;padding:1px 4px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:9px;line-height:1.3;">${e.label.slice(0,22)}${e.label.length>22?"…":""}${pending?"⏳":""}</div>`;
       }).join("")}
         ${dayEvs.length>3?`<div style="font-size:9px;color:#888;">+${dayEvs.length-3}</div>`:""}
       </div>`;
