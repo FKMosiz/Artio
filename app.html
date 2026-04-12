@@ -771,8 +771,7 @@ window.sendForSignature=async(dosId,docNum)=>{
   },{onConflict:"token"});
   set({loading:false});
   if(error){alert("Erreur : "+error.message);return}
-  const base=window.location.origin+window.location.pathname.replace(/app\.html$/,"");
-  const link=base+"sign.html?token="+token;
+  const link=window.location.origin+"/sign.html?token="+token;
   try{await navigator.clipboard.writeText(link);}catch(e){}
   alert("✅ Lien de signature créé !\n\n"+link+"\n\n(Copié dans le presse-papier)\n\nEnvoie ce lien à ton client par SMS ou email.");
 };
