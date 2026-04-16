@@ -113,7 +113,13 @@
     body.dark .dossier-body .doc-preview-wrapper{background:#fff!important}
     @media(max-width:580px){.preview-grid{grid-template-columns:1fr}.btn-actions{gap:4px}.btn-small{font-size:11px;padding:4px 8px}}
   
-  </style>
+  
+    .artio-field{background:#fff;color:#1a1a18;}
+    body.dark .artio-field{background:#2a2440!important;border-color:#4a3f70!important;color:#e8e4f0!important}
+    body.dark input[type="date"]{color-scheme:dark;background:#2a2440!important;color:#e8e4f0!important}
+    body.dark select{background:#2a2440!important;color:#e8e4f0!important;border-color:#4a3f70!important}
+    body.dark select option{background:#2a2440!important;color:#e8e4f0!important}
+</style>
 </head>
 <body>
 <div id="root">Chargement...</div>
@@ -486,8 +492,15 @@ async function initAuth(){
     S.user=session.user;
     await loadUserData(session.user.id);
     setupSignatureListener(session.user.id);
+    // Gérer les liens depuis autres pages : ?settings=profil ou ?settings=gmail
+    const sp=new URLSearchParams(window.location.search).get("settings");
+    if(sp==="profil"||sp==="gmail"||sp==="1"){
+      S.showSettings=true;
+      S.settingsPage=(sp==="profil"?"profil":sp==="gmail"?"gmail":"main");
+      history.replaceState(null,"",window.location.pathname);
+    }
     renderApp();
-  }else{window.location.href="login.html";}
+  }else{window.location.href="index.html";}
 }
 
 async function handleAuth(){
@@ -513,30 +526,40 @@ async function handleLogout(){
   await sb.auth.signOut();
   S.user=null;S.entreprise={nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:""};
   S.dossiers=[];S.profilSaved=false;
-  window.location.href="login.html";
+  window.location.href="index.html";
 }
 
 // ——— API CLAUDE ———
-async function callClaude(prompt,maxTokens=400,retries=3){
+async function callClaude(prompt,maxTokens=400,retries=5){
+  // Models list: essayer Sonnet puis fallback Haiku si surchargé
+  const models=["claude-sonnet-4-20250514","claude-haiku-4-5-20251001"];
   for(let attempt=1;attempt<=retries;attempt++){
+    const model=attempt>=3?models[1]:models[0]; // Fallback Haiku à partir de la 3ème tentative
     try{
       const res=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":S.entreprise.api_key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+        body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
       });
       const d=await res.json();
       if(d.error){
-        // Si overloaded et qu'il reste des tentatives, attendre et réessayer
-        if(d.error.type==="overloaded_error"&&attempt<retries){
-          await new Promise(r=>setTimeout(r,2000*attempt));
+        if((d.error.type==="overloaded_error"||d.error.type==="rate_limit_error")&&attempt<retries){
+          const wait=1500*Math.pow(1.5,attempt);
+          console.warn(`IA surchargée, retry ${attempt}/${retries} dans ${Math.round(wait)}ms (modèle: ${model})`);
+          await new Promise(r=>setTimeout(r,wait));
           continue;
         }
         throw new Error(d.error.message);
       }
       return d.content?.map(b=>b.text||"").join("")||"";
     }catch(e){
-      if(attempt===retries) throw e;
+      if(attempt===retries){
+        // Message utilisateur plus clair
+        if(e.message&&(e.message.includes("overloaded")||e.message.includes("Overloaded"))){
+          throw new Error("L'IA est momentanément surchargée. Réessayez dans quelques instants.");
+        }
+        throw e;
+      }
       await new Promise(r=>setTimeout(r,1500*attempt));
     }
   }
@@ -761,7 +784,33 @@ window.markAccepte=async(dosId,docNum)=>{
   dos.statut="devis_accepte";dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,accepte:true}:d);
   await upsertDossier(dos);set({});
 };
-window.sendForSignature=async(dosId,docNum)=>{
+async function genererRelance(dosId,docNum){
+  const dos=S.dossiers.find(d=>d.id===dosId);
+  const doc=dos?.documents?.find(d=>d.docNumber===docNum);
+  if(!doc){alert("Document introuvable.");return}
+  const e=S.entreprise;
+  const joursEcoules=doc.date?Math.floor((Date.now()-new Date(doc.date.split("/").reverse().join("-")))/86400000):14;
+  set({loading:true});
+  try{
+    const prompt=`Tu es un assistant pour ${e.nom||"un prestataire indépendant"} (secteur: ${e.secteur||"services"}).
+Rédige un email de relance professionnel et chaleureux pour un devis non signé.
+Infos: Client: ${doc.client?.nom||dos.client||"le client"} | Devis N°${docNum} | Montant: ${doc.ttc?.toFixed(2)||"?"} € TTC | Envoyé il y a ${joursEcoules} jours | Description: ${doc.description||dos.nom||""}.
+Ton: courtois, sans pression, rappelle juste les éléments clés et propose de répondre à toute question.
+Signe au nom de "${e.nom||"l'entreprise"}". Écris directement l'email sans commentaire.`;
+    const txt=await callClaude(prompt,350);
+    set({loading:false,tab:"email",emailMode:"reponse",generatedText:txt});
+    // Pré-remplir le champ client
+    S.fields.client_nom=doc.client?.nom||dos.client||"";
+    S.fields.client_email=doc.client?.email||"";
+    render();
+    showArtioToast("📩 Email de relance généré — vérifie et envoie !");
+  }catch(err){
+    set({loading:false});
+    alert("Erreur : "+err.message);
+  }
+}
+
+sendForSignature=async(dosId,docNum)=>{
   const dos=S.dossiers.find(d=>d.id===dosId);
   const doc=dos?.documents?.find(d=>d.docNumber===docNum);
   if(!doc){alert("Document introuvable.");return}
@@ -882,12 +931,12 @@ function generatePDF(doc){
   const dl=pdf.splitTextToSize(doc.description,cW);
   pdf.text(dl,m,y);y+=dl.length*4.5+6;
   const tb=[["Main d'œuvre ("+doc.nb_heures+"h × "+doc.entreprise.taux_horaire+"€/h)",doc.nb_heures,parseFloat(doc.entreprise.taux_horaire).toFixed(2)+" €",doc.moHT.toFixed(2)+" €"],...doc.pieces.map(p=>[p.description,p.quantite,parseFloat(p.prix_unitaire).toFixed(2)+" €",(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)+" €"])];
-  pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tb,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[55,138,221],textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:90},1:{cellWidth:18,halign:"center"},2:{cellWidth:34,halign:"right"},3:{cellWidth:28,halign:"right"}}});
+  pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tb,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3,overflow:"linebreak",valign:"top"},headStyles:{fillColor:[55,138,221],textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85,overflow:"linebreak"},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});
   y=pdf.lastAutoTable.finalY+6;
   pdf.setFontSize(9).setFont(undefined,"normal");
-  pdf.text("Total HT :",145,y);pdf.text(doc.totalHT.toFixed(2)+" €",rX,y,{align:"right"});y+=5;
+  pdf.text("Total HT :",135,y);pdf.text(doc.totalHT.toFixed(2)+" €",rX,y,{align:"right"});y+=5;
   if(doc.entreprise.assujetti_tva){
-    pdf.text("TVA ("+doc.tvaRate+"%) :",145,y);pdf.text(doc.tva.toFixed(2)+" €",rX,y,{align:"right"});y+=5;
+    pdf.text("TVA ("+doc.tvaRate+"%) :",135,y);pdf.text(doc.tva.toFixed(2)+" €",rX,y,{align:"right"});y+=5;
   }
   pdf.setFont(undefined,"bold").setFontSize(11).text(doc.entreprise.assujetti_tva?"TOTAL TTC :":"TOTAL :",145,y);pdf.text(doc.ttc.toFixed(2)+" €",rX,y,{align:"right"});y+=10;
   if(!doc.entreprise.assujetti_tva){
@@ -968,20 +1017,17 @@ function renderApp(){
   const e=S.entreprise,apiOk=!!e.api_key;
   document.getElementById("root").innerHTML=`
   <div class="app">
-    <div class="header">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <a href="home.html" style="display:flex;align-items:center;text-decoration:none;flex-shrink:0;">
-          <img src="data:image/png;base64,${LOGO_DARK}" style="height:36px;width:auto;" class="artio-logo" />
-        </a>
-        <div style="display:flex;gap:4px;overflow-x:auto;">
-          <a href="app.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:600;color:#185FA5;background:#E6F1FB;text-decoration:none;white-space:nowrap;">📋 Application</a>
-          <a href="dashboard.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">📊 Tableau de bord</a>
+    <div class="header" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;">
+      <a href="home.html" style="display:flex;align-items:center;text-decoration:none;flex-shrink:0;">
+        <img src="data:image/png;base64,${LOGO_DARK}" style="height:32px;width:auto;" class="artio-logo"/>
+      </a>
+      <div style="display:flex;gap:3px;overflow-x:auto;justify-content:center;">
+        <a href="app.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:600;color:#185FA5;background:#E6F1FB;text-decoration:none;white-space:nowrap;">📋 Application</a>
+        <a href="dashboard.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">📊 Tableau de bord</a>
+        <a href="calendar.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">📅 Calendrier</a>
         <a href="clients.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">👥 Clients</a>
-          <a href="calendar.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">📅 Calendrier</a>
-        </div>
       </div>
-      <div class="user-bar">
-        <span class="user-email">${esc(S.user?.email||"")}</span>
+      <div class="user-bar" style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
         <button class="btn-small btn-gray" title="Paramètres" onclick="set({showSettings:true,settingsPage:'main'})" style="font-size:16px;padding:5px 8px;">⚙</button>
         <button class="btn-small btn-gray" onclick="handleLogout()" style="font-size:11px;">Déconnexion</button>
       </div>
@@ -1197,9 +1243,9 @@ function renderDevisFacture(){
       const input=type==="textarea"
         ?`<textarea placeholder="${ph}" data-fid="${id}">${esc(S.fields[id]||"")}</textarea>`
         :type==="select_heure"
-          ?`<select data-fid="${id}" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;" onchange="S.fields['${id}']=this.value">${heureOpts}</select>`
+          ?`<select data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;" onchange="S.fields['${id}']=this.value">${heureOpts}</select>`
           :type==="date"
-            ?`<input type="date" value="${S.fields[id]||""}" data-fid="${id}" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;font-family:inherit;" oninput="S.fields['${id}']=this.value"/>`
+            ?`<input type="date" value="${S.fields[id]||""}" data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;font-family:inherit;" oninput="S.fields['${id}']=this.value"/>`
             :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'render()':''}"/>`;
       return`<div class="field">
       <label class="label">${label}${opt?`<span class="opt">(optionnel)</span>`:""}</label>
@@ -1293,59 +1339,92 @@ function renderEmailsGmail(){
 }
 
 function renderHistorique(){
-  if(!S.dossiers.length)return`<div class="card" style="text-align:center;padding:2rem;"><p style="color:#888;font-size:13px;">Aucun dossier pour l'instant.</p><p style="color:#999;font-size:12px;margin-top:8px;">Génère un devis pour créer ton premier dossier.</p></div>`;
-  return S.dossiers.map(dos=>{
+  const now=new Date();
+  const devisEnAttente=S.dossiers.filter(d=>d.statut==="devis_envoye").length;
+  const caMois=S.dossiers.reduce((s,d)=>(d.documents||[]).filter(doc=>{
+    if(doc.type!=="facture")return false;
+    const parts=(doc.date||"").split("/");
+    if(parts.length<3)return false;
+    const dt=new Date(parts[2],parts[1]-1,parts[0]);
+    return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear();
+  }).reduce((ss,doc)=>ss+(doc.ttc||0),s),0);
+  const relancesNecessaires=S.dossiers.filter(d=>{
+    if(d.statut!=="devis_envoye")return false;
+    const devis=(d.documents||[]).find(doc=>doc.type==="devis"&&!doc.accepte);
+    if(!devis||!devis.date)return false;
+    const parts=devis.date.split("/");
+    if(parts.length<3)return false;
+    const jours=Math.floor((Date.now()-new Date(parts[2],parts[1]-1,parts[0]))/86400000);
+    return jours>=14;
+  }).length;
+  const statsBar=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem;">
+    <div class="card" style="padding:12px;text-align:center;">
+      <div style="font-size:11px;color:#888;margin-bottom:4px;">CA ce mois</div>
+      <div style="font-size:18px;font-weight:700;color:#534AB7;">${caMois.toLocaleString("fr-FR",{minimumFractionDigits:0})} €</div>
+    </div>
+    <div class="card" style="padding:12px;text-align:center;">
+      <div style="font-size:11px;color:#888;margin-bottom:4px;">Devis en attente</div>
+      <div style="font-size:18px;font-weight:700;color:#E65100;">${devisEnAttente}</div>
+    </div>
+    <div class="card" style="padding:12px;text-align:center;${relancesNecessaires>0?"background:#FFF8E1;border-color:#FFB74D;":""}">
+      <div style="font-size:11px;color:#888;margin-bottom:4px;">À relancer</div>
+      <div style="font-size:18px;font-weight:700;color:${relancesNecessaires>0?"#E65100":"#2E7D32"};">${relancesNecessaires}</div>
+    </div>
+  </div>`;
+  if(!S.dossiers.length)return statsBar+`<div class="card" style="text-align:center;padding:2rem;"><p style="color:#888;font-size:13px;">Aucun dossier pour l'instant.</p></div>`;
+  return statsBar+S.dossiers.map(dos=>{
     const st=(getStatuts()[dos.statut]||getStatuts().devis_envoye);
     const isOpen=S.openDossier===dos.id;
-    const hasFacture=dos.documents.some(d=>d.type==="facture");
-    return`<div class="dossier-card">
+    const hasFacture=(dos.documents||[]).some(d=>d.type==="facture");
+    const jrsDepuis=dos.createdAt?Math.floor((Date.now()-new Date(dos.createdAt))/86400000):0;
+    const needsRelance=dos.statut==="devis_envoye"&&jrsDepuis>=14;
+    return`<div class="dossier-card"${needsRelance?' style="border-left:3px solid #FFB74D;"':''}>
       <div class="dossier-header" onclick="toggleDossier('${dos.id}')">
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
             <span class="badge" style="background:${st.bg};color:${st.color};">${st.label}</span>
+            ${needsRelance?'<span style="font-size:10px;background:#FFF3E0;color:#E65100;padding:2px 6px;border-radius:4px;">📩 À relancer</span>':''}
             <span style="font-size:13px;font-weight:500;">${esc(dos.nom)}</span>
           </div>
-          <p style="font-size:12px;color:#888;">${dos.documents.length} document${dos.documents.length>1?"s":""} · ${dos.createdAt}</p>
+          <p style="font-size:12px;color:#888;">${(dos.documents||[]).length} document${(dos.documents||[]).length>1?"s":""} · ${dos.createdAt||""}</p>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-left:12px;">
           ${dos.statut!=="termine"?`<button class="btn-small btn-teal" onclick="event.stopPropagation();markTermine('${dos.id}')">✓ Clôturer</button>`:""}
           ${S.renamingDossierId===dos.id?`
             <input value="${esc(S.renamingDossierVal)}" onclick="event.stopPropagation()" oninput="S.renamingDossierVal=this.value" onkeydown="if(event.key==='Enter')renameDossier('${dos.id}')" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #378ADD;width:150px;" />
             <button class="btn-small btn-blue" onclick="event.stopPropagation();renameDossier('${dos.id}')">OK</button>
-            <button class="btn-small btn-gray" onclick="event.stopPropagation();set({renamingDossierId:null})">✕</button>
-          `:`<button class="btn-small btn-gray" onclick="event.stopPropagation();set({renamingDossierId:'${dos.id}',renamingDossierVal:'${esc(dos.nom)}'})" title="Renommer">✏️</button>`}
-          ${S.deleteConfirm==="dos_"+dos.id?`<button class="btn-small btn-red" onclick="event.stopPropagation();confirmDeleteDossier('${dos.id}')">Confirmer</button><button class="btn-small btn-gray" onclick="event.stopPropagation();set({deleteConfirm:null})">✕</button>`:`<button class="btn-small btn-red" onclick="event.stopPropagation();set({deleteConfirm:'dos_${dos.id}'})">🗑</button>`}
-          <span style="color:#888;">${isOpen?"▲":"▼"}</span>
+            <button class="btn-small" onclick="event.stopPropagation();set({renamingDossierId:null})">✕</button>
+          `:`<button class="btn-small" onclick="event.stopPropagation();set({renamingDossierId:'${dos.id}',renamingDossierVal:dos.nom||''})">✏</button>`}
+          <button class="btn-small" onclick="event.stopPropagation();set({deleteConfirm:S.deleteConfirm===dos.id?null:dos.id})" style="color:#A32D2D;border-color:#F09595;">🗑</button>
         </div>
       </div>
-      ${isOpen?`<div class="dossier-body">
-        ${dos.documents.map(doc=>`
-          <div class="doc-row">
-            <div style="cursor:pointer;" onclick="togglePreview('${doc.docNumber}')">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:16px;">${doc.type==="devis"?"📋":"💶"}</span>
-                <div>
-                  <span style="font-size:13px;font-weight:500;">${doc.docNumber}</span>
-                  ${doc.accepte?`<span style="font-size:11px;color:#3B6D11;margin-left:6px;">✓ Accepté</span>`:""}
-                  <p style="font-size:12px;color:#888;margin-top:1px;">${doc.date} · ${doc.ttc.toFixed(2)} € TTC</p>
-                </div>
+      ${isOpen?`<div class="dossier-docs" style="padding:12px;border-top:0.5px solid #f0eeea;">
+        ${(dos.documents||[]).map(doc=>{
+          const hasF=(dos.documents||[]).some(d=>d.type==="facture");
+          return`<div style="background:#f9f8f6;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+              <div>
+                <p style="font-size:13px;font-weight:500;">${doc.docNumber||""}</p>
+                <p style="font-size:12px;color:#888;">${doc.date||""} · ${(doc.ttc||0).toFixed(2)} € TTC</p>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="btn-small" onclick="genererPDF(${JSON.stringify(doc).replace(/'/g,"&#39;")})">⬇ PDF</button>
+                ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small btn-blue" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}
+                ${doc.type==="devis"&&doc.accepte&&!hasF?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
+                ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:""}
+                ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#FFF8E1;color:#E65100;border-color:#FFB74D;" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:""}
+                ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button>`:`<button class="btn-small" style="color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
               </div>
             </div>
-            <div class="btn-actions">
-              <button class="btn-small btn-green" onclick="downloadPDF('${storeDoc(doc)}')">⬇ PDF</button>
-              ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small btn-blue" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}
-              ${doc.type==="devis"&&doc.accepte&&!hasFacture?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
-              ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:""}
-              ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small btn-gray" onclick="set({deleteConfirm:null})">✕</button>`:`<button class="btn-small" style="background:transparent;color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
-            </div>
-          </div>
-          ${S.previewDocNum===doc.docNumber?`<div style="background:#fff;border-radius:8px;padding:1rem;margin-bottom:8px;border:0.5px solid #e0deda;">${renderDocPreview(doc)}</div>`:""}
-        `).join("")}
+            ${S.previewDocNum===doc.docNumber?`<div style="background:#fff;border-radius:8px;padding:1rem;border:0.5px solid #e0deda;">${renderDocPreview(doc)}</div>`:
+              `<button class="btn-small" style="font-size:11px;" onclick="set({previewDocNum:S.previewDocNum==='${doc.docNumber}'?null:'${doc.docNumber}'})">👁 Aperçu</button>`}
+          </div>`;
+        }).join("")}
+        ${S.deleteConfirm===dos.id?`<div style="padding:8px 0;"><button class="btn-small btn-red" onclick="deleteDossier('${dos.id}')">Confirmer suppression</button> <button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button></div>`:""}
       </div>`:""}
     </div>`;
   }).join("");
 }
-
 function renderDocPreview(doc){
   return`<div class="doc-preview-wrapper" style="font-size:13px;line-height:1.7;">
     <div class="preview-grid">

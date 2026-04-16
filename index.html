@@ -224,6 +224,15 @@ function applyLangue(){
   localStorage.setItem("artio_langue",S.langue);
 }
 
+async function forgotPassword(){
+  const emailEl=document.getElementById("auth-email");
+  const email=emailEl?.value.trim();
+  if(!email){alert("Entre ton email dans le champ avant de cliquer.");emailEl?.focus();return}
+  const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+"/index.html"});
+  if(error){alert("Erreur : "+error.message);return}
+  alert("✅ Un email de réinitialisation a été envoyé à "+email+".\n\nVérifie ta boîte (et tes spams).");
+}
+
 async function handleAuth(){
   const emailEl=document.getElementById("auth-email");
   const passEl=document.getElementById("auth-password");
@@ -283,6 +292,7 @@ function renderAuth(){
       <button class="btn-primary" ${S.authLoading?"disabled":""} onclick="handleAuth()">
         ${S.authLoading?L("loading_btn"):(t==="login"?L("connexion_btn"):L("creation_btn"))}
       </button>
+      ${t==="login"?`<p style="text-align:center;margin-top:12px;font-size:12px;"><a href="javascript:forgotPassword()" style="color:#534AB7;text-decoration:none;">Mot de passe oublié ?</a></p>`:""}
     </div>
   </div>`;
 }

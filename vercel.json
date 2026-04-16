@@ -2,19 +2,47 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/",          "destination": "/index.html"     },
-    { "source": "/home",      "destination": "/home.html"      },
-    { "source": "/app",       "destination": "/app.html"       },
-    { "source": "/clients",   "destination": "/clients.html"   },
-    { "source": "/dashboard", "destination": "/dashboard.html" },
-    { "source": "/calendar",  "destination": "/calendar.html"  },
-    { "source": "/sign",      "destination": "/sign.html"      }
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/home",
+      "destination": "/home.html"
+    },
+    {
+      "source": "/app",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/clients",
+      "destination": "/clients.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/calendar",
+      "destination": "/calendar.html"
+    },
+    {
+      "source": "/sign",
+      "destination": "/sign.html"
+    },
+    {
+      "source": "/profil",
+      "destination": "/profil.html"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     }
   ]
