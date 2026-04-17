@@ -1460,7 +1460,7 @@ function renderHistorique(){
           </div>`;
         }).join("")}
       </div>`:""}
-    ${S.deleteConfirm===dos.id?`<div style="padding:10px 16px;background:#FCEBEB;border-top:0.5px solid #F09595;"><button class="btn-small btn-red" onclick="confirmDeleteDossier('${dos.id}')">Confirmer suppression</button> <button class="btn-small" onclick="set({deleteConfirm:null})" style="margin-left:8px;">Annuler</button></div>`:""}
+    ${S.deleteConfirm===dos.id?`<div style="padding:10px 16px;background:#FCEBEB;border-top:0.5px solid #F09595;border-radius:0 0 12px 12px;display:flex;align-items:center;gap:8px;"><span style="font-size:13px;color:#A32D2D;flex:1;">Supprimer ce dossier définitivement ?</span><button class="btn-small btn-red" onclick="confirmDeleteDossier('${dos.id}')">Supprimer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button></div>`:""}
     </div>`;
   }).join("");
 }
