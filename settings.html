@@ -162,7 +162,6 @@ const LANG_STORE={
 function LL(k){const l=localStorage.getItem('artio_langue')||'fr';return(LANG_STORE[k]||{})[l]||(LANG_STORE[k]||{}).fr||k;}
 function MOIS_T(){return Array.from({length:12},(_,i)=>LL('mois_'+i));}
 function JOURS_T(){return Array.from({length:7},(_,i)=>LL('jours_'+i));}
-function setLang(code){localStorage.setItem('artio_langue',code);setTimeout(()=>window.location.reload(),100);}
 function setTheme(dark){if(dark)document.body.classList.add('dark');else document.body.classList.remove('dark');localStorage.setItem('artio_dark',dark?'1':'0');}
 
 let user=null, profil={}, activeTab="profil", syncing=false;
@@ -202,11 +201,10 @@ function render(){
     <div class="tab-bar">
       <button class="tab-btn ${activeTab==="profil"?"active":""}" onclick="activeTab='profil';render()">🏢 ${LL("profil_titre").replace("🏢 ","")}</button>
       <button class="tab-btn ${activeTab==="gmail"?"active":""}" onclick="activeTab='gmail';render()">📧 Gmail</button>
-      <button class="tab-btn ${activeTab==="langue"?"active":""}" onclick="activeTab='langue';render()">🌐 ${LL("set_langue")}</button>
       <button class="tab-btn ${activeTab==="theme"?"active":""}" onclick="activeTab='theme';render()">🎨 ${LL("set_theme")}</button>
     </div>
 
-    ${activeTab==="profil"?renderProfil():activeTab==="gmail"?renderGmail():activeTab==="langue"?renderLangue():renderTheme()}
+    ${activeTab==="profil"?renderProfil():activeTab==="gmail"?renderGmail():renderTheme()}
   </div>`;
 }
 
@@ -318,17 +316,6 @@ function doGmailDisconnect(){
   }
 })();
 
-function renderLangue(){
-  const lang=localStorage.getItem("artio_langue")||"fr";
-  return`<div class="card">
-    <p class="section-title">${LL("set_langue")}</p>
-    ${LANGS.map(([code,flag,name])=>`
-      <button class="lang-btn ${lang===code?"active":""}" onclick="setLang('${code}')">
-        <span>${flag} ${name}</span>
-        ${lang===code?'<span>✓</span>':''}
-      </button>`).join("")}
-  </div>`;
-}
 
 function renderTheme(){
   const dk=document.body.classList.contains("dark");
@@ -379,9 +366,9 @@ async function saveProfil(){
   user=session.user;
   const{data:p}=await sb.from("profils").select("*").eq("user_id",user.id).single();
   if(p)profil={nom:p.nom||"",adresse:p.adresse||"",tel:p.tel||"",email:p.email||"",siret:p.siret||"",taux_horaire:p.taux_horaire||"",api_key:p.api_key||"",assujetti_tva:p.assujetti_tva||false,secteur:p.secteur||"",conditions_paiement:p.conditions_paiement||"",delai_paiement:p.delai_paiement||"30"};
-  // Si arrivé depuis ?tab=...
+  // Si arrivé depuis ?tab=langue ou ?tab=theme
   const tab=new URLSearchParams(location.search).get("tab");
-  if(tab&&["profil","gmail","langue","theme"].includes(tab))activeTab=tab;
+  if(tab&&["profil","gmail","theme"].includes(tab))activeTab=tab;
   history.replaceState(null,"",location.pathname);
   render();
 })();
