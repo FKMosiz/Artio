@@ -260,7 +260,7 @@ function openClient(id){
         </div>
       </div>`;
     }).join("")}
-    ${c._source!=="implicit_hidden"?`
+    ${c._source==="db"?`
     <div style="margin-top:1.5rem;border-top:0.5px solid #e0deda;padding-top:1rem;">
       <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Modifier</div>
       <div class="field"><label class="label">Nom</label><input id="edit-nom" type="text" value="${esc(c.nom)}"/></div>
@@ -268,11 +268,7 @@ function openClient(id){
       <div class="field"><label class="label">Téléphone <span style="font-size:11px;color:#888;font-weight:400;">(optionnel)</span></label><input id="edit-tel" type="tel" value="${esc(c.tel||"")}"/></div>
       <div class="field"><label class="label">Adresse <span style="font-size:11px;color:#888;font-weight:400;">(optionnel)</span></label><input id="edit-adresse" type="text" value="${esc(c.adresse||"")}"/></div>
       <div class="field"><label class="label">Notes <span style="font-size:11px;color:#888;font-weight:400;">(optionnel)</span></label><textarea id="edit-notes" rows="2">${esc(c.notes||"")}</textarea></div>
-      ${c._source==="implicit"?
-        `<p style="font-size:12px;color:#888;margin-bottom:8px;">Ce client vient d'un dossier. Pour le modifier, crée-le d'abord comme client officiel.</p>
-        <button class="btn-primary" onclick="convertAndSave('${c.nom}','${c.id}')" style="width:100%;">Créer et enregistrer</button>`
-        :`<button class="btn-primary" onclick="saveClient('${c.id}')" style="width:100%;margin-top:4px;">Enregistrer</button>`
-      }
+      <button class="btn-primary" onclick="saveClient('${c.id}')" style="width:100%;margin-top:4px;">Enregistrer</button>
     </div>`:""}`;
 
   document.getElementById("panel").classList.add("open");
@@ -290,7 +286,7 @@ function openForm(){
     <div class="field"><label class="label">Téléphone <span style="font-size:11px;color:#888;font-weight:400;">(optionnel)</span></label><input id="new-tel" type="tel" placeholder="06 12 34 56 78"/></div>
     <div class="field"><label class="label">Adresse <span style="font-size:11px;color:#888;font-weight:400;">(optionnel)</span></label><input id="new-adresse" type="text" placeholder="12 rue de la Paix..."/></div>
     <div class="field"><label class="label">Notes <span style="font-size:11px;color:#888;font-weight:400;">(optionnel)</span></label><textarea id="new-notes" rows="3" placeholder="Informations utiles..."></textarea></div>
-    <button class="btn-primary" onclick="createClient()" style="width:100%;margin-top:8px;">Créer le client</button>`;
+    <button class="btn-primary" onclick="addClient()" style="width:100%;margin-top:8px;">Créer le client</button>`;
   document.getElementById("panel").classList.add("open");
   document.getElementById("ov").classList.add("open");
 }
@@ -300,70 +296,45 @@ function closePanel(){
   document.getElementById("ov").classList.remove("open");
 }
 
-window.createClient=async function(){
-  const nom=document.getElementById("new-nom")?.value.trim();
-  if(!nom){alert("Le nom est requis.");return}
+window.addClient=async function(){
+  const nom=(document.getElementById("new-nom")?.value||"").trim();
+  if(!nom){alert("Le nom est requis.");return;}
 
-  // Vérifier que la session est toujours valide
-  const{data:{session:sess}}=await sb.auth.getSession();
-  if(!sess){alert("Session expirée. Reconnecte-toi.");window.location.href="index.html";return;}
-  if(!user||!user.id){user=sess.user;}
+  // Rafraîchir session au cas où
+  const{data:{session:s2}}=await sb.auth.getSession();
+  if(!s2){alert("Session expirée, reconnecte-toi.");location.href="index.html";return;}
+  user=s2.user;
 
-  const email=document.getElementById("new-email")?.value.trim()||"";
-  const tel=document.getElementById("new-tel")?.value.trim()||"";
-  const adresse=document.getElementById("new-adresse")?.value.trim()||"";
-  const notes=document.getElementById("new-notes")?.value.trim()||"";
+  const obj={
+    user_id:user.id,
+    nom:nom,
+    email:(document.getElementById("new-email")?.value||"").trim(),
+    tel:(document.getElementById("new-tel")?.value||"").trim(),
+    adresse:(document.getElementById("new-adresse")?.value||"").trim(),
+    notes:(document.getElementById("new-notes")?.value||"").trim()
+  };
 
-  const payload={user_id:user.id,nom,email,tel,adresse,notes};
-  console.log("INSERT client payload:",payload,"user.id:",user.id);
-
-  const{data,error}=await sb.from("clients").insert([payload]).select();
-
-  if(error){
-    console.error("Erreur INSERT clients:",JSON.stringify(error));
-    alert("Erreur Supabase:\n" + error.message + "\n\nCode: " + error.code + "\n\nDétails: " + (error.details||"") + "\n\nHint: " + (error.hint||""));
+  // Insert sans tableau ni .select() — le plus simple possible
+  const res=await sb.from("clients").insert(obj);
+  if(res.error){
+    alert("Erreur Supabase:\n"+res.error.message+"\nCode: "+res.error.code+"\nHint: "+(res.error.hint||""));
+    console.error("addClient error:",res.error);
     return;
   }
-  if(data&&data.length>0){
-    clients.push(data[0]);
-    closePanel();
-    render();
-    let t=document.getElementById("c-toast");
-    if(!t){t=document.createElement("div");t.id="c-toast";t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#534AB7;color:#fff;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:500;z-index:9999;";document.body.appendChild(t);}
-    t.textContent="✅ Client "+nom+" créé !";t.style.opacity="1";
-    setTimeout(()=>{t.style.opacity="0";},3000);
-  }else{
-    alert("Insert sans erreur mais pas de données retournées. Vérifie la RLS Supabase.");
-  }
+
+  // Recharger depuis Supabase
+  const{data:fresh}=await sb.from("clients").select("*").eq("user_id",user.id).order("nom");
+  clients=fresh||clients;
+  closePanel();render();
+
+  // Toast
+  const toast=document.createElement("div");
+  toast.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#534AB7;color:#fff;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:500;z-index:9999;";
+  toast.textContent="✅ Client "+nom+" ajouté !";
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(),3000);
 };
 
-
-window.convertAndSave=async function(nom,implicitId){
-  // Créer un vrai client DB depuis un client implicit (issu d'un dossier)
-  const email=document.getElementById("edit-email")?.value.trim()||"";
-  const tel=document.getElementById("edit-tel")?.value.trim()||"";
-  const adresse=document.getElementById("edit-adresse")?.value.trim()||"";
-  const notes=document.getElementById("edit-notes")?.value.trim()||"";
-  const nomEdit=document.getElementById("edit-nom")?.value.trim()||nom;
-
-  const{data:{session:sess}}=await sb.auth.getSession();
-  if(!sess){alert("Session expirée.");return;}
-  if(!user||!user.id){user=sess.user;}
-
-  const{data,error}=await sb.from("clients").insert([{
-    user_id:user.id,nom:nomEdit,email,tel,adresse,notes
-  }]).select();
-
-  if(error){alert("Erreur: "+error.message);return;}
-  if(data&&data[0]){
-    clients.push(data[0]);
-    closePanel();render();
-    let t=document.getElementById("c-toast");
-    if(!t){t=document.createElement("div");t.id="c-toast";t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#534AB7;color:#fff;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:500;z-index:9999;";document.body.appendChild(t);}
-    t.textContent="✅ Client "+nomEdit+" créé !";t.style.opacity="1";
-    setTimeout(()=>{t.style.opacity="0";},3000);
-  }
-};
 
 window.saveClient=async function(id){
   const patch={
@@ -375,15 +346,9 @@ window.saveClient=async function(id){
     updated_at:new Date().toISOString()
   };
   if(!patch.nom){alert("Le nom est requis.");return}
-  console.log("UPDATE client id:",id,"user_id:",user?.id,"patch:",patch);
-  const{data,error}=await sb.from("clients").update(patch).eq("id",id).eq("user_id",user.id).select();
-  if(error){
-    console.error("Erreur UPDATE clients:",JSON.stringify(error));
-    alert("Erreur:\n"+error.message+"\nCode: "+error.code+"\nHint: "+(error.hint||""));
-    return;
-  }
-  console.log("UPDATE résultat:",data);
-  const ci=clients.findIndex(cl=>cl.id===id);
+  const{error}=await sb.from("clients").update(patch).eq("id",id).eq("user_id",user.id);
+  if(error){alert("Erreur : "+error.message);return}
+  const ci=clients.findIndex(c=>c.id===id);
   if(ci>-1)clients[ci]={...clients[ci],...patch};
   closePanel();render();
   let t=document.getElementById("c-toast");
