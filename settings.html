@@ -166,6 +166,8 @@ function setLang(code){localStorage.setItem('artio_langue',code);setTimeout(()=>
 function setTheme(dark){if(dark)document.body.classList.add('dark');else document.body.classList.remove('dark');localStorage.setItem('artio_dark',dark?'1':'0');}
 
 let user=null, profil={}, activeTab="profil", syncing=false;
+let gmailClientId=localStorage.getItem("artio_gmail_client_id")||"";
+let gmailToken=sessionStorage.getItem("gmail_token")||null;
 
 const LANGS=[["fr","🇫🇷","Français"],["en","🇬🇧","English"],["es","🇪🇸","Español"],["zh","🇨🇳","中文"]];
 
@@ -199,11 +201,12 @@ function render(){
 
     <div class="tab-bar">
       <button class="tab-btn ${activeTab==="profil"?"active":""}" onclick="activeTab='profil';render()">🏢 ${LL("profil_titre").replace("🏢 ","")}</button>
+      <button class="tab-btn ${activeTab==="gmail"?"active":""}" onclick="activeTab='gmail';render()">📧 Gmail</button>
       <button class="tab-btn ${activeTab==="langue"?"active":""}" onclick="activeTab='langue';render()">🌐 ${LL("set_langue")}</button>
       <button class="tab-btn ${activeTab==="theme"?"active":""}" onclick="activeTab='theme';render()">🎨 ${LL("set_theme")}</button>
     </div>
 
-    ${activeTab==="profil"?renderProfil():activeTab==="langue"?renderLangue():renderTheme()}
+    ${activeTab==="profil"?renderProfil():activeTab==="gmail"?renderGmail():activeTab==="langue"?renderLangue():renderTheme()}
   </div>`;
 }
 
@@ -255,6 +258,65 @@ function renderProfil(){
     ${syncing?LL("profil_saving"):LL("profil_save")}
   </button>`;
 }
+
+function renderGmail(){
+  return`<div class="card">
+    <p style="font-size:14px;font-weight:600;margin-bottom:6px;">📧 Connexion Gmail</p>
+    <p style="font-size:12px;color:#888;margin-bottom:1rem;">Connecte ton compte Gmail pour répondre directement depuis l'onglet Email de l'application. Nécessite un Client ID OAuth 2.0 Google.</p>
+    ${gmailToken?`
+      <div style="background:#EAF3DE;border-radius:8px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:16px;">✅</span>
+        <span style="font-size:13px;color:#2E7D32;font-weight:500;">Gmail connecté</span>
+      </div>
+      <button class="btn-primary" style="background:#E24B4A;margin-bottom:8px;" onclick="doGmailDisconnect()">Déconnecter Gmail</button>
+    `:`
+      <div class="field">
+        <label class="label">Google Client ID OAuth 2.0</label>
+        <input type="text" id="gmail-client-id" value="${esc(gmailClientId)}" placeholder="xxxx.apps.googleusercontent.com" oninput="gmailClientId=this.value;localStorage.setItem('artio_gmail_client_id',this.value)"/>
+        <p style="font-size:11px;color:#888;margin-top:5px;">
+          <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:#534AB7;">Créer un projet Google Cloud → Activer Gmail API → Créer un Client ID OAuth 2.0 →</a>
+          Ajoute <code style="background:#f0eeea;padding:1px 4px;border-radius:4px;">https://artio-sand.vercel.app/settings.html</code> comme URI de redirection autorisée.
+        </p>
+      </div>
+      <button class="btn-primary" onclick="doGmailConnect()">Se connecter à Gmail</button>
+    `}
+    <div style="margin-top:1rem;padding-top:1rem;border-top:0.5px solid #f0eeea;">
+      <p style="font-size:12px;color:#888;font-weight:600;margin-bottom:6px;">Comment ça marche ?</p>
+      <p style="font-size:12px;color:#888;line-height:1.6;">Une fois connecté, l'onglet Email de l'application peut lire tes emails non lus et générer des réponses automatiques via Claude. Les emails ne sont jamais stockés.</p>
+    </div>
+  </div>`;
+}
+
+function doGmailConnect(){
+  const clientId=(document.getElementById("gmail-client-id")?.value||gmailClientId).trim();
+  if(!clientId){alert("Entre ton Client ID Google OAuth 2.0.");return}
+  localStorage.setItem("artio_gmail_client_id",clientId);
+  const scope=encodeURIComponent("https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send");
+  const redirect=encodeURIComponent(window.location.origin+"/settings.html");
+  window.location.href=`https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirect}&response_type=token&scope=${scope}&prompt=consent`;
+}
+
+function doGmailDisconnect(){
+  gmailToken=null;
+  sessionStorage.removeItem("gmail_token");
+  render();
+  toast("Gmail déconnecté");
+}
+
+// Intercepter le callback OAuth Gmail
+(function checkGmailOAuthCallback(){
+  const hash=window.location.hash;
+  if(hash&&hash.includes("access_token")){
+    const params=new URLSearchParams(hash.substring(1));
+    const token=params.get("access_token");
+    if(token){
+      gmailToken=token;
+      sessionStorage.setItem("gmail_token",token);
+      history.replaceState(null,"",location.pathname);
+      activeTab="gmail";
+    }
+  }
+})();
 
 function renderLangue(){
   const lang=localStorage.getItem("artio_langue")||"fr";
@@ -317,9 +379,9 @@ async function saveProfil(){
   user=session.user;
   const{data:p}=await sb.from("profils").select("*").eq("user_id",user.id).single();
   if(p)profil={nom:p.nom||"",adresse:p.adresse||"",tel:p.tel||"",email:p.email||"",siret:p.siret||"",taux_horaire:p.taux_horaire||"",api_key:p.api_key||"",assujetti_tva:p.assujetti_tva||false,secteur:p.secteur||"",conditions_paiement:p.conditions_paiement||"",delai_paiement:p.delai_paiement||"30"};
-  // Si arrivé depuis ?tab=langue ou ?tab=theme
+  // Si arrivé depuis ?tab=...
   const tab=new URLSearchParams(location.search).get("tab");
-  if(tab)activeTab=tab;
+  if(tab&&["profil","gmail","langue","theme"].includes(tab))activeTab=tab;
   history.replaceState(null,"",location.pathname);
   render();
 })();
