@@ -1055,7 +1055,7 @@ function renderApp(){
         <a href="clients.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">👥 Clients</a>
       </div>
       <div class="user-bar" style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-        <button class="btn-small btn-gray" title="Paramètres" onclick="set({showSettings:true,settingsPage:'main'})" style="font-size:16px;padding:5px 8px;">⚙</button>
+        <button class="btn-small btn-gray" title="Paramètres" onclick="location.href='settings.html'" style="font-size:16px;padding:5px 8px;">⚙</button>
         <button class="btn-small btn-gray" onclick="handleLogout()" style="font-size:11px;">Déconnexion</button>
       </div>
     </div>
@@ -1103,7 +1103,7 @@ function renderApp(){
         `}
       </div>
     `:`
-    <button onclick="window.location.href='profil.html'" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:10px;">
+    <button onclick="set({settingsPage:'profil'})" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:10px;">
       <span style="font-size:20px;">🏢</span>
       <div>
         <p style="font-size:14px;font-weight:500;margin:0;">${L("mon_entreprise")}</p>

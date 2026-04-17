@@ -33,6 +33,10 @@
     {
       "source": "/profil",
       "destination": "/profil.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/settings.html"
     }
   ],
   "headers": [
