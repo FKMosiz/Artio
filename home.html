@@ -172,17 +172,10 @@ function LL(key){
     body.dark label,body.dark .label,body.dark p,body.dark span,body.dark h1,body.dark h2,body.dark h3{color:#e8e4f0!important}
     body.dark .opt{color:#a090c0!important}
     body.dark .dossier-header span,body.dark .dossier-header div,body.dark .dossier-header p{color:#e8e4f0!important}
-    /* settings-panel css deduplicated */
-    body.dark .settings-panel{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
-    body.dark .settings-panel *{color:#e8e4f0!important}
     body.dark .tva-box{background:#2a2440!important}
     body.dark .tva-box span,body.dark .tva-box p,body.dark .tva-box label{color:#AFA9EC!important}
-    body.dark .settings-panel input[type="checkbox"]{accent-color:#534AB7}
-    body.dark .settings-panel button{color:#e8e4f0!important}
-    body.dark .settings-panel p,body.dark .settings-panel label,body.dark .settings-panel span{color:#e8e4f0!important}
     .artio-logo{transition:filter 0.2s}
     body.dark .artio-logo{filter:brightness(0) invert(1) drop-shadow(0 0 3px rgba(255,255,255,0.6))}
-    /* settings-overlay css deduplicated */
     body.dark .doc-preview-wrapper{background:#fff!important;color:#1a1a18!important;border-radius:8px;padding:1rem}
     body.dark .doc-preview-wrapper *{color:#1a1a18!important}
     body.dark .doc-preview-wrapper .preview-table th{background:#E6F1FB!important;color:#185FA5!important}
@@ -224,14 +217,6 @@ function LL(key){
     body.dark .artio-logo{filter:brightness(0) invert(1) drop-shadow(0 0 4px rgba(175,169,236,.5))}
     #loading{display:none;font-size:13px;color:#888;margin-top:1rem;}
   
-    .settings-panel{position:fixed;top:0;right:0;bottom:0;width:320px;background:#fff;border-left:0.5px solid #e0deda;padding:1.5rem;z-index:1000;box-shadow:-4px 0 20px rgba(0,0,0,.1);overflow-y:auto;transform:translateX(100%);transition:transform .25s ease}
-    .settings-panel.open{transform:translateX(0)}
-    .settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:999}
-    .settings-overlay.open{display:block}
-    body.dark .settings-panel{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
-    body.dark .settings-panel *{color:#e8e4f0!important}
-    body.dark .settings-panel .lang-opt-active{background:#534AB7!important;color:#fff!important}
-    body.dark .settings-panel .theme-btn.active{background:#534AB7!important;color:#fff!important}
 
   </style>
 </head>
@@ -261,10 +246,10 @@ function LL(key){
         <div class="home-btn-text"><span data-i18n="nav_cli_txt">Clients</span><div class="home-btn-sub"><span data-i18n="home_cli_sub_txt">Carnet client et historique</span></div></div>
       </a>
       <div class="divider"></div>
-      <button id="settings-btn" class="home-btn" style="width:100%;text-align:left;">
+      <a href="settings.html" class="home-btn" style="width:100%;text-align:left;">
         <span class="home-btn-icon">⚙️</span>
-        <div class="home-btn-text"><span data-i18n="nav_param_txt">Paramètres</span><div class="home-btn-sub"><span data-i18n="home_param_sub_txt">Profil, entreprise, clé API</span></div></div>
-      </button>
+        <div class="home-btn-text"><span>Paramètres</span><div class="home-btn-sub"><span>Profil, entreprise, clé API</span></div></div>
+      </a>
       <button onclick="doLogout()" class="home-btn danger">
         <span class="home-btn-icon">🚪</span>
         <div class="home-btn-text"><span data-i18n="nav_deco_txt">Déconnexion</span></div>
@@ -409,48 +394,8 @@ function JOURS_T(){return Array.from({length:7},(_,i)=>LL('jours_'+i));}
 function setLang(code){localStorage.setItem('artio_langue',code);setTimeout(()=>window.location.reload(),100);}
 function setTheme(dark){if(dark)document.body.classList.add('dark');else document.body.classList.remove('dark');localStorage.setItem('artio_dark',dark?'1':'0');}
 
-function renderSettingsPanel(){
-  const dk=document.body.classList.contains('dark');
-  const lang=localStorage.getItem('artio_langue')||'fr';
-  const langs=[['fr','🇫🇷 Français'],['en','🇬🇧 English'],['es','🇪🇸 Español'],['zh','🇨🇳 中文']];
-  document.getElementById('sp').innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-      <p style="font-size:16px;font-weight:600;">${LL('set_titre')}</p>
-      <button onclick="closeSettings()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;">×</button>
-    </div>
-    <a href="profil.html" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:10px;text-decoration:none;color:inherit;">
-      <span style="font-size:20px;">🏢</span>
-      <div><p style="font-size:14px;font-weight:500;margin:0;">${LL('set_entreprise')}</p><p style="font-size:12px;color:#888;margin:0;">${LL('set_ent_sub')}</p></div>
-      <span style="margin-left:auto;color:#888;">›</span>
-    </a>
-    <a href="app.html?settings=gmail" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:20px;text-decoration:none;color:inherit;">
-      <span style="font-size:20px;">📧</span>
-      <div><p style="font-size:14px;font-weight:500;margin:0;">${LL('set_gmail')}</p><p style="font-size:12px;color:#888;margin:0;">${LL('set_gmail_sub')}</p></div>
-      <span style="margin-left:auto;color:#888;">›</span>
-    </a>
-    <p style="font-size:13px;font-weight:600;color:#888;margin-bottom:8px;">${LL('set_langue')}</p>
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px;">
-      ${langs.map(([code,label])=>`
-        <button onclick="setLang('${code}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;border:0.5px solid ${lang===code?'#534AB7':'#e0deda'};background:${lang===code?'#534AB7':'transparent'};color:${lang===code?'#fff':'inherit'};cursor:pointer;font-size:13px;width:100%;text-align:left;">
-          ${label}
-        </button>`).join('')}
-    </div>
-    <p style="font-size:13px;font-weight:600;color:#888;margin-bottom:8px;">${LL('set_theme')}</p>
-    <div style="display:flex;gap:8px;">
-      <button onclick="setTheme(false)" style="flex:1;padding:9px;border-radius:8px;border:0.5px solid ${!dk?'#534AB7':'#e0deda'};background:${!dk?'#534AB7':'transparent'};color:${!dk?'#fff':'inherit'};cursor:pointer;font-size:13px;">${LL('set_clair')}</button>
-      <button onclick="setTheme(true)" style="flex:1;padding:9px;border-radius:8px;border:0.5px solid ${dk?'#534AB7':'#e0deda'};background:${dk?'#534AB7':'transparent'};color:${dk?'#fff':'inherit'};cursor:pointer;font-size:13px;">${LL('set_sombre')}</button>
-    </div>
-  `;
-}
-let settingsOpen=false;
-function openSettings(){settingsOpen=true;document.getElementById('sp').classList.add('open');document.getElementById('sov').classList.add('open');renderSettingsPanel();}
-function closeSettings(){settingsOpen=false;document.getElementById('sp').classList.remove('open');document.getElementById('sov').classList.remove('open');}
-document.addEventListener('click',e=>{if(e.target.closest('#settings-btn')){openSettings();}});
-
 
 </script>
 
-<div class="settings-overlay" id="sov" onclick="closeSettings()"></div>
-<div class="settings-panel" id="sp"></div>
 </body>
 </html>
