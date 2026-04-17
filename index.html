@@ -153,6 +153,7 @@ const LABELS={
     subtitle:"Assistant administratif pour indépendants",
     settings:"Paramètres",langue_lbl:"Langue",theme_lbl:"Thème",clair:"Clair",sombre:"Sombre",
     mon_entreprise_desc:"Infos, SIRET, taux horaire, clé API",
+    mot_de_passe_oublie:"Mot de passe oublié ?",reinitialiser:"Réinitialiser le mot de passe",email_reinit:"Entre ton email pour recevoir un lien de réinitialisation.",envoyer_lien:"Envoyer le lien",envoi_en_cours:"Envoi en cours...",email_envoye:"📬 Email envoyé !",email_envoye_msg:"Vérifie ta boîte de réception et tes spams.",retour_connexion:"← Retour à la connexion",
   },
   en:{
     devis:"📋 Quote",facture:"💶 Invoice",email:"✉️ Email",historique:"🗂 Files",
@@ -171,6 +172,7 @@ const LABELS={
     subtitle:"Administrative assistant for freelancers",
     settings:"Settings",langue_lbl:"Language",theme_lbl:"Theme",clair:"Light",sombre:"Dark",
     mon_entreprise_desc:"Info, VAT, hourly rate, API key",
+    mot_de_passe_oublie:"Forgot password?",reinitialiser:"Reset password",email_reinit:"Enter your email to receive a reset link.",envoyer_lien:"Send link",envoi_en_cours:"Sending...",email_envoye:"📬 Email sent!",email_envoye_msg:"Check your inbox and spam.",retour_connexion:"← Back to login",
   },
   es:{
     devis:"📋 Presupuesto",facture:"💶 Factura",email:"✉️ Email",historique:"🗂 Carpetas",
@@ -189,6 +191,7 @@ const LABELS={
     subtitle:"Asistente administrativo para autónomos",
     settings:"Ajustes",langue_lbl:"Idioma",theme_lbl:"Tema",clair:"Claro",sombre:"Oscuro",
     mon_entreprise_desc:"Info, NIF, tarifa horaria, clave API",
+    mot_de_passe_oublie:"¿Olvidaste tu contraseña?",reinitialiser:"Restablecer contraseña",email_reinit:"Ingresa tu email para recibir un enlace.",envoyer_lien:"Enviar enlace",envoi_en_cours:"Enviando...",email_envoye:"📬 ¡Email enviado!",email_envoye_msg:"Revisa tu bandeja y spam.",retour_connexion:"← Volver al inicio de sesión",
   },
   zh:{
     devis:"📋 报价单",facture:"💶 发票",email:"✉️ 邮件",historique:"🗂 档案",
@@ -207,6 +210,7 @@ const LABELS={
     subtitle:"独立从业者行政助手",
     settings:"设置",langue_lbl:"语言",theme_lbl:"主题",clair:"浅色",sombre:"深色",
     mon_entreprise_desc:"信息、税号、时薪、API密钥",
+    mot_de_passe_oublie:"忘记密码？",reinitialiser:"重置密码",email_reinit:"输入您的邮箱以接收重置链接。",envoyer_lien:"发送链接",envoi_en_cours:"发送中...",email_envoye:"📬 邮件已发送！",email_envoye_msg:"请检查您的收件箱。",retour_connexion:"← 返回登录",
   },
 };
 function L(key){return(LABELS[S.langue]||LABELS.fr)[key]||key}
@@ -270,21 +274,21 @@ function renderAuth(){
     ${S.authView==="forgot_sent"?`
     <div style="text-align:center;padding:1.5rem;background:#EAF3DE;border-radius:12px;border:0.5px solid #A5D6A7;">
       <p style="font-size:32px;margin-bottom:12px;">📬</p>
-      <p style="font-size:16px;font-weight:600;margin-bottom:8px;">Email envoyé !</p>
-      <p style="font-size:13px;color:#555;">Vérifie ta boîte de réception et tes spams.</p>
+      <p style="font-size:16px;font-weight:600;margin-bottom:8px;">${L("email_envoye")}</p>
+      <p style="font-size:13px;color:#555;">${L("email_envoye_msg")}</p>
     </div>
-    <button onclick="S.authView='login';render()" style="width:100%;margin-top:16px;padding:12px;background:transparent;border:0.5px solid #d0d0cc;border-radius:8px;font-size:13px;cursor:pointer;">← Retour à la connexion</button>
+    <button onclick="S.authView='login';render()" style="width:100%;margin-top:16px;padding:12px;background:transparent;border:0.5px solid #d0d0cc;border-radius:8px;font-size:13px;cursor:pointer;">${L("retour_connexion")}</button>
     `:`
-    <p style="font-size:20px;font-weight:700;margin-bottom:6px;">Mot de passe oublié</p>
-    <p style="font-size:13px;color:#888;margin-bottom:1.5rem;">Entre ton email pour recevoir un lien de réinitialisation.</p>
+    <p style="font-size:20px;font-weight:700;margin-bottom:6px;">${L("reinitialiser")}</p>
+    <p style="font-size:13px;color:#888;margin-bottom:1.5rem;">${L("email_reinit")}</p>
     ${S.authError?`<p style="color:#A32D2D;font-size:13px;margin-bottom:12px;">${S.authError}</p>`:""}
     <div class="field"><label class="label">Email</label>
       <input id="forgot-email" type="email" placeholder="contact@email.com" onkeydown="if(event.key==='Enter')forgotPassword()"/>
     </div>
     <button class="btn-primary" ${S.authLoading?"disabled":""} onclick="forgotPassword()">
-      ${S.authLoading?"Envoi en cours...":"Envoyer le lien"}
+      ${S.authLoading?L("envoi_en_cours"):L("envoyer_lien")}
     </button>
-    <button onclick="S.authView='login';S.authError='';render()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:none;font-size:13px;cursor:pointer;color:#666;">← Retour à la connexion</button>
+    <button onclick="S.authView='login';S.authError='';render()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:none;font-size:13px;cursor:pointer;color:#666;">${L("retour_connexion")}</button>
     `}
   </div>`;
     return;
@@ -324,7 +328,7 @@ function renderAuth(){
       <button class="btn-primary" ${S.authLoading?"disabled":""} onclick="handleAuth()">
         ${S.authLoading?L("loading_btn"):(t==="login"?L("connexion_btn"):L("creation_btn"))}
       </button>
-      ${t==="login"?`<p style="text-align:center;margin-top:12px;font-size:12px;"><a href="javascript:void(0)" onclick="S.authView='forgot';S.authError='';render()" style="color:#534AB7;text-decoration:none;">Mot de passe oublié ?</a></p>`:""}
+      ${t==="login"?`<p style="text-align:center;margin-top:12px;font-size:12px;"><a href="javascript:void(0)" onclick="S.authView='forgot';S.authError='';render()" style="color:#534AB7;text-decoration:none;">${L("mot_de_passe_oublie")}</a></p>`:""}
     </div>
   </div>`;
 }

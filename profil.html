@@ -253,6 +253,59 @@ function render(){
   await loadProfil();
   render();
 })();
+
+// ── Settings Panel ──
+let settingsOpen=false;
+
+function openSettings(){settingsOpen=true;document.getElementById("sp").classList.add("open");document.getElementById("sov").classList.add("open");}
+function closeSettings(){settingsOpen=false;document.getElementById("sp").classList.remove("open");document.getElementById("sov").classList.remove("open");}
+
+function renderSettingsPanel(){
+  const dk=document.body.classList.contains("dark");
+  const langs=[["fr","🇫🇷","Français"],["en","🇬🇧","English"],["es","🇪🇸","Español"],["zh","🇨🇳","中文"]];
+  const lang=localStorage.getItem("artio_langue")||"fr";
+  document.getElementById("sp").innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+      <p style="font-size:16px;font-weight:600;">Paramètres</p>
+      <button onclick="closeSettings()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;">×</button>
+    </div>
+    <a href="profil.html" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:10px;text-decoration:none;color:inherit;">
+      <span style="font-size:20px;">🏢</span>
+      <div><p style="font-size:14px;font-weight:500;margin:0;">Mon entreprise</p><p style="font-size:12px;color:#888;margin:0;">Infos, SIRET, taux horaire, clé API</p></div>
+      <span style="margin-left:auto;color:#888;">›</span>
+    </a>
+    <a href="app.html?settings=gmail" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:20px;text-decoration:none;color:inherit;">
+      <span style="font-size:20px;">📧</span>
+      <div><p style="font-size:14px;font-weight:500;margin:0;">Connexion Gmail</p><p style="font-size:12px;color:#888;margin:0;">Connecte Gmail pour répondre automatiquement</p></div>
+      <span style="margin-left:auto;color:#888;">›</span>
+    </a>
+    <p style="font-size:13px;font-weight:600;color:#888;margin-bottom:8px;">LANGUE</p>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px;">
+      ${langs.map(([code,flag,name])=>`
+        <button onclick="setLang('${code}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;border:0.5px solid ${lang===code?"#534AB7":"#e0deda"};background:${lang===code?"#534AB7":"transparent"};color:${lang===code?"#fff":"inherit"};cursor:pointer;font-size:13px;width:100%;text-align:left;">
+          ${flag} ${name}
+        </button>`).join("")}
+    </div>
+    <p style="font-size:13px;font-weight:600;color:#888;margin-bottom:8px;">THÈME</p>
+    <div style="display:flex;gap:8px;">
+      <button onclick="setTheme(false)" style="flex:1;padding:9px;border-radius:8px;border:0.5px solid ${!dk?"#534AB7":"#e0deda"};background:${!dk?"#534AB7":"transparent"};color:${!dk?"#fff":"inherit"};cursor:pointer;font-size:13px;">☀️ Clair</button>
+      <button onclick="setTheme(true)" style="flex:1;padding:9px;border-radius:8px;border:0.5px solid ${dk?"#534AB7":"#e0deda"};background:${dk?"#534AB7":"transparent"};color:${dk?"#fff":"inherit"};cursor:pointer;font-size:13px;">🌙 Sombre</button>
+    </div>
+  `;
+}
+
+function setLang(code){localStorage.setItem("artio_langue",code);renderSettingsPanel();setTimeout(()=>window.location.reload(),300);}
+function setTheme(dark){
+  if(dark)document.body.classList.add("dark");
+  else document.body.classList.remove("dark");
+  localStorage.setItem("artio_dark",dark?"1":"0");
+  renderSettingsPanel();
+}
+
+// Ouvrir le panel au clic ⚙
+document.addEventListener("click",e=>{
+  if(e.target.closest("#settings-btn")){openSettings();renderSettingsPanel();}
+});
 </script>
 <div class="settings-overlay" id="sov" onclick="closeSettings()"></div>
 <div class="settings-panel" id="sp"></div>

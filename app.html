@@ -931,7 +931,7 @@ function generatePDF(doc){
   y=58;pdf.setDrawColor(220,220,220).line(m,y,W-m,y);y+=8;
   pdf.setFontSize(9).setFont(undefined,"bold").text("CLIENT",m,y);y+=5;
   pdf.setFont(undefined,"normal").text(doc.client.nom,m,y);y+=4;
-  pdf.text(doc.client.adresse,m,y);y+=4;
+  if(doc.client?.adresse){pdf.text(doc.client.adresse,m,y);y+=4;}
   if(doc.client.tel){pdf.text("Tél : "+doc.client.tel,m,y);y+=4}
   y+=3;
   if(doc.adresse_travaux){pdf.setFont(undefined,"bold").text("ADRESSE DES TRAVAUX",m,y);y+=5;pdf.setFont(undefined,"normal").text(doc.adresse_travaux,m,y);y+=8}
@@ -939,7 +939,15 @@ function generatePDF(doc){
   pdf.setFont(undefined,"normal");
   const dl=pdf.splitTextToSize(doc.description,cW);
   pdf.text(dl,m,y);y+=dl.length*4.5+6;
-  const tb=[["Main d'œuvre ("+doc.nb_heures+"h × "+doc.entreprise.taux_horaire+"€/h)",doc.nb_heures,parseFloat(doc.entreprise.taux_horaire).toFixed(2)+" €",doc.moHT.toFixed(2)+" €"],...doc.pieces.map(p=>[p.description,p.quantite,parseFloat(p.prix_unitaire).toFixed(2)+" €",(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)+" €"])];
+  const _nh=parseFloat(doc.nb_heures)||0;
+  const _th=parseFloat(doc.entreprise?.taux_horaire)||0;
+  const moRow=_nh>0?[["Main d'œuvre ("+_nh+"h × "+_th+"€/h)",_nh,_th.toFixed(2)+" €",(_nh*_th).toFixed(2)+" €"]]:[];
+  const pieceRows=(doc.pieces||[]).filter(p=>p&&p.description).map(p=>{
+    const qu=parseFloat(p.quantite)||1,pu=parseFloat(p.prix_unitaire)||0;
+    return[p.description,qu,pu.toFixed(2)+" €",(qu*pu).toFixed(2)+" €"];
+  });
+  const tb=[...moRow,...pieceRows];
+  if(tb.length===0)tb.push(["Prestation",1,doc.ttc?.toFixed(2)+" €",doc.ttc?.toFixed(2)+" €"]);
   pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tb,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3,overflow:"linebreak",valign:"top"},headStyles:{fillColor:[55,138,221],textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85,overflow:"linebreak"},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});
   y=pdf.lastAutoTable.finalY+6;
   pdf.setFontSize(9).setFont(undefined,"normal");
