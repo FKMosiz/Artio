@@ -232,7 +232,6 @@ async function loadUserData(userId){
       });
       S.dossiers.forEach(d=>(d.documents||[]).forEach(doc=>{if(doc.docNumber)storeDoc(doc);}));
     }
-    await checkAndConvertPendingSignatures();
   }catch(e){console.error("loadUserData exception:",e)}
 }
 
@@ -510,6 +509,7 @@ async function initAuth(){
       S.settingsPage=(sp==="profil"?"profil":sp==="gmail"?"gmail":"main");
       history.replaceState(null,"",window.location.pathname);
     }
+    await checkAndConvertPendingSignatures();
     renderApp();
   }else{window.location.href="index.html";}
 }
@@ -852,21 +852,38 @@ convertToFacture=async(dosId,docNum)=>{
   storeDoc(factDoc);
   await upsertDossier(dos);set({convertingId:null});
 };
-// ── Vérifier au chargement si des devis signés n'ont pas encore de facture ──
+// ── Convertir les devis signés sans facture (app était fermée) ──
 async function checkAndConvertPendingSignatures(){
-  const pending=S.dossiers.filter(dos=>
-    dos.statut==="devis_accepte" &&
-    !(dos.documents||[]).some(d=>d.type==="facture")
-  );
-  for(const dos of pending){
-    const devis=(dos.documents||[]).find(d=>d.type==="devis"&&d.accepte);
-    if(devis){
-      try{
-        await convertToFacture(dos.id,devis.docNumber);
-      }catch(e){console.error("Auto-conversion facture échouée:",e);}
+  try{
+    // Interroger signatures : tous les devis signés de cet artisan
+    const{data:sigs}=await sb.from("signatures")
+      .select("dossier_id,doc_number")
+      .eq("user_id",S.user.id)
+      .eq("status","signed");
+    if(!sigs||!sigs.length)return;
+    let converted=0;
+    for(const sig of sigs){
+      const dos=S.dossiers.find(d=>d.id===sig.dossier_id);
+      if(!dos)continue;
+      // Déjà une facture → skip
+      if((dos.documents||[]).some(d=>d.type==="facture"))continue;
+      // Trouver le devis correspondant
+      const devis=(dos.documents||[]).find(d=>d.type==="devis"&&d.docNumber===sig.doc_number);
+      if(!devis)continue;
+      // Marquer le devis comme accepté si pas encore fait
+      if(!devis.accepte){
+        dos.documents=dos.documents.map(d=>d.docNumber===sig.doc_number?{...d,accepte:true}:d);
+        dos.statut="devis_accepte";
+      }
+      // Créer la facture
+      await convertToFacture(dos.id,sig.doc_number);
+      converted++;
     }
-  }
-  if(pending.length>0) render();
+    if(converted>0){
+      showArtioToast("✅ "+converted+" devis signé(s) converti(s) en facture automatiquement");
+      render();
+    }
+  }catch(e){console.error("checkAndConvert error:",e);}
 }
 
 window.startRename=function(id){
