@@ -232,6 +232,7 @@ async function loadUserData(userId){
       });
       S.dossiers.forEach(d=>(d.documents||[]).forEach(doc=>{if(doc.docNumber)storeDoc(doc);}));
     }
+    await checkAndConvertPendingSignatures();
   }catch(e){console.error("loadUserData exception:",e)}
 }
 
@@ -851,6 +852,23 @@ convertToFacture=async(dosId,docNum)=>{
   storeDoc(factDoc);
   await upsertDossier(dos);set({convertingId:null});
 };
+// ── Vérifier au chargement si des devis signés n'ont pas encore de facture ──
+async function checkAndConvertPendingSignatures(){
+  const pending=S.dossiers.filter(dos=>
+    dos.statut==="devis_accepte" &&
+    !(dos.documents||[]).some(d=>d.type==="facture")
+  );
+  for(const dos of pending){
+    const devis=(dos.documents||[]).find(d=>d.type==="devis"&&d.accepte);
+    if(devis){
+      try{
+        await convertToFacture(dos.id,devis.docNumber);
+      }catch(e){console.error("Auto-conversion facture échouée:",e);}
+    }
+  }
+  if(pending.length>0) render();
+}
+
 window.startRename=function(id){
   const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;
   set({renamingDossierId:id,renamingDossierVal:dos.nom||''});
@@ -1460,7 +1478,7 @@ function renderHistorique(){
           </div>`;
         }).join("")}
       </div>`:""}
-    ${S.deleteConfirm===dos.id?`<div style="padding:10px 16px;background:#FCEBEB;border-top:0.5px solid #F09595;border-radius:0 0 12px 12px;display:flex;align-items:center;gap:8px;"><span style="font-size:13px;color:#A32D2D;flex:1;">Supprimer ce dossier définitivement ?</span><button class="btn-small btn-red" onclick="confirmDeleteDossier('${dos.id}')">Supprimer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button></div>`:""}
+    ${S.deleteConfirm===dos.id?`<div style="padding:10px 16px;background:#FCEBEB;border-top:0.5px solid #F09595;border-radius:0 0 12px 12px;display:flex;align-items:center;gap:8px;"><span style="font-size:13px;color:#A32D2D;flex:1;">Supprimer ce dossier définitivement ?</span><button class="btn-small btn-red" onclick="confirmDeleteDossier('${dos.id}')">Supprimer</button><button class="btn-small" onclick="set({deleteConfirm:null})" style="margin-left:8px;">Annuler</button></div>`:""}
     </div>`;
   }).join("");
 }
