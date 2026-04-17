@@ -781,6 +781,7 @@ const nom=civStr+(travStr?" — "+travStr:"");
     const dos={id:uid(),nom,client:f.client_nom,statut:tab==="devis"?"devis_envoye":"facture",createdAt:todayFR(),documents:[doc]};
     await upsertDossier(dos);
     storeDoc(doc);
+
     S.dossiers=[dos,...S.dossiers];
     set({loading:false,generatedDoc:doc,openDossier:dos.id,tab:"historique"});
   }catch(err){set({loading:false});alert("Erreur : "+err.message)}
@@ -1458,7 +1459,7 @@ function renderHistorique(){
               `<button class="btn-small" style="font-size:11px;" onclick="set({previewDocNum:S.previewDocNum==='${doc.docNumber}'?null:'${doc.docNumber}'})">👁 Aperçu</button>`}
           </div>`;
         }).join("")}
-        ${S.deleteConfirm===dos.id?`<div style="padding:8px 0;"><button class="btn-small btn-red" onclick="deleteDossier('${dos.id}')">Confirmer suppression</button> <button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button></div>`:""}
+        ${S.deleteConfirm===dos.id?`<div style="padding:8px 0;"><button class="btn-small btn-red" onclick="confirmDeleteDossier('${dos.id}')">Confirmer suppression</button> <button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button></div>`:""}
       </div>`:""}
     </div>`;
   }).join("");
