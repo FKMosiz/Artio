@@ -115,6 +115,15 @@
   
   
     .artio-field{background:#fff;color:#1a1a18;}
+    body.dark .dossier-card{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
+    body.dark .dossier-header{color:#e8e4f0!important}
+    body.dark .dossier-header span{color:#e8e4f0!important}
+    body.dark .dossier-docs{background:#16122a!important}
+    body.dark .btn-small{background:#2a2440!important;border-color:#4a3f70!important;color:#e8e4f0!important}
+    body.dark .btn-small.btn-teal{background:#0a3030!important;color:#4DB6AC!important;border-color:#4DB6AC!important}
+    body.dark .btn-small.btn-blue{background:#1a2a40!important;color:#7FB8F0!important;border-color:#378ADD!important}
+    body.dark .btn-small.btn-red{background:#3a1a1a!important;color:#FF8A80!important;border-color:#EF5350!important}
+    body.dark .dossier-docs>div{background:#261e3a!important}
     body.dark .artio-field{background:#2a2440!important;border-color:#4a3f70!important;color:#e8e4f0!important}
     body.dark input[type="date"]{color-scheme:dark;background:#2a2440!important;color:#e8e4f0!important}
     body.dark select{background:#2a2440!important;color:#e8e4f0!important;border-color:#4a3f70!important}
@@ -649,7 +658,7 @@ window.startVoice=()=>{
   voiceCallback=async t=>{
     try{
       const raw=await callClaude(
-`Tu es un assistant pour ${S.entreprise.secteur||"un prestataire indépendant"}. Analyse cette dictée et retourne UNIQUEMENT un objet JSON valide, sans texte avant ou après, sans balises markdown.
+`Tu es un assistant pour ${S.entreprise.secteur||"un prestataire indépendant"}. L'utilisateur parle en ${({'fr':'français','en':'anglais','es':'espagnol','zh':'chinois'})[S.langue]||'français'}. Analyse cette dictée et retourne UNIQUEMENT un objet JSON valide, sans texte avant ou après, sans balises markdown.
 
 Dictée: "${t}"
 Taux horaire artisan: ${S.entreprise.taux_horaire}€/h
@@ -744,7 +753,7 @@ window.handleGenerate=async()=>{
     set({loading:true,generatedText:""});
     try{
       const prompt=S.emailMode==="reponse"
-        ?`Rédige une réponse email professionnelle pour ${e.nom}.\nClient : ${f.client_nom}\nMessage : ${f.message}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`
+        ?`Rédige une réponse email professionnelle en ${{"fr":"français","en":"English","es":"español","zh":"中文"}[S.langue]||"français"} pour ${e.nom}.\nClient : ${f.client_nom}\nMessage : ${f.message}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`
         :`Rédige un email de mise à jour pour ${e.nom}.\nTon souhaité: ${(S.emailTons||["vouvoiement"]).join(" + ")}.\nClient : ${f.client_nom}\nChantier : ${f.adresse_travaux||""}\nAvancement : ${f.avancement}\nProchaine étape : ${f.suite||"à définir"}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`;
       const text=await callClaude(prompt,500);
       set({loading:false,generatedText:text});
@@ -759,7 +768,7 @@ window.handleGenerate=async()=>{
     const docNumber=await getNextNum(tab,S.user.id);
     const pv=S.pieces.filter(p=>p.description&&p.quantite&&p.prix_unitaire);
     const totaux=calcTotaux(f.nb_heures,e.taux_horaire,pv,e.assujetti_tva?(f.tva||"0"):"0");
-    const desc=await callClaude(`Tu es un assistant administratif pour ${S.entreprise.secteur||"un prestataire indépendant"} (jamais un plombier par défaut). Rédige en 2-3 phrases professionnelles la description de cette prestation : ${f.travaux}. Adapte le vocabulaire au secteur d'activité. Paragraphe fluide, pas de liste, pas de mise en forme.`,300);
+    const desc=await callClaude(`Tu es un assistant administratif pour ${S.entreprise.secteur||"un prestataire indépendant"}. Rédige en 2-3 phrases professionnelles la description de cette prestation : ${f.travaux}. Adapte le vocabulaire au secteur. IMPORTANT: Réponds obligatoirement en ${({'fr':'français','en':'English','es':'español','zh':'中文'})[S.langue]||'français'}. Paragraphe fluide, pas de liste.`,300);
     const doc={type:tab,docNumber,date:todayFR(),validUntil:tab==="devis"?addDays(parseInt(S.entreprise.delai_paiement)||30):null,accepte:false,entreprise:{...e},client:{nom:f.client_nom,adresse:f.client_adresse,tel:f.client_tel||"",email:f.client_email||""},adresse_travaux:f.client_adresse||"",date_prestation:f.date_prestation||"",heure_prestation:f.heure_prestation||"",heure_fin_prestation:f.heure_fin_prestation||"",description:desc,nb_heures:f.nb_heures,pieces:pv,...totaux};
     // Nom du dossier = Civilité + Nom client + aperçu prestation
 const civStr=f.client_nom?f.client_nom.trim():"Client";
@@ -795,7 +804,7 @@ async function genererRelance(dosId,docNum){
     const prompt=`Tu es un assistant pour ${e.nom||"un prestataire indépendant"} (secteur: ${e.secteur||"services"}).
 Rédige un email de relance professionnel et chaleureux pour un devis non signé.
 Infos: Client: ${doc.client?.nom||dos.client||"le client"} | Devis N°${docNum} | Montant: ${doc.ttc?.toFixed(2)||"?"} € TTC | Envoyé il y a ${joursEcoules} jours | Description: ${doc.description||dos.nom||""}.
-Ton: courtois, sans pression, rappelle juste les éléments clés et propose de répondre à toute question.
+Langue: ${{"fr":"français","en":"English","es":"español","zh":"中文"}[S.langue]||"français"}. Ton: courtois, sans pression, rappelle juste les éléments clés.
 Signe au nom de "${e.nom||"l'entreprise"}". Écris directement l'email sans commentaire.`;
     const txt=await callClaude(prompt,350);
     set({loading:false,tab:"email",emailMode:"reponse",generatedText:txt});
@@ -968,6 +977,8 @@ function generatePDF(doc){
   pdf.setFontSize(7).setTextColor(150).text(doc.entreprise.nom+" — SIRET : "+doc.entreprise.siret,W/2,287,{align:"center"});
   pdf.save(doc.docNumber+".pdf");
 }
+window.genererPDF=generatePDF;
+
 
 // ——— REALTIME SIGNATURE LISTENER ———
 function setupSignatureListener(userId){
@@ -989,7 +1000,23 @@ function setupSignatureListener(userId){
           render();
           const nom=payload.new?.doc_data?.client?.nom||"";
           const num=payload.new?.doc_number||"";
-          showToast("✅ Devis "+num+" signé par "+nom+" !");
+          const dosId=payload.new?.dossier_id||(payload.new?.doc_data?._dossier_id)||"";
+          // Convertir automatiquement en facture
+          if(dosId&&num){
+            try{
+              const dos=S.dossiers.find(d=>d.id===dosId);
+              if(dos&&!dos.documents.some(d=>d.type==="facture")){
+                await convertToFacture(dosId,num);
+                showToast("✅ Devis "+num+" signé par "+nom+" — Facture générée automatiquement !");
+              }else{
+                showToast("✅ Devis "+num+" signé par "+nom+" !");
+              }
+            }catch(e){
+              showToast("✅ Devis "+num+" signé par "+nom+" !");
+            }
+          }else{
+            showToast("✅ Devis "+num+" signé par "+nom+" !");
+          }
         }
       }
     })
@@ -1050,7 +1077,12 @@ function renderApp(){
     </div>
 
     ${S.settingsPage==="profil"?`
-      ${renderProfil()}
+      <div style="text-align:center;padding:2rem 1rem;">
+        <p style="font-size:32px;margin-bottom:12px;">🏢</p>
+        <p style="font-size:15px;font-weight:600;margin-bottom:8px;">Mon entreprise</p>
+        <p style="font-size:13px;color:#888;margin-bottom:1.5rem;">Configure tes informations, SIRET, taux horaire et clé API.</p>
+        <a href="profil.html" style="display:block;padding:12px;background:#534AB7;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;">Ouvrir les paramètres →</a>
+      </div>
     `:S.settingsPage==="gmail"?`
       <div>
         <p style="font-size:14px;font-weight:500;margin-bottom:8px;">📧 Connexion Gmail</p>

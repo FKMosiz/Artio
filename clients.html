@@ -4,7 +4,86 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Artio — Clients</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+// ── Système de langue partagé ──
+const LANG_STORE={
+  fr:{
+    app:"📋 Application", dashboard:"📊 Tableau de bord", calendar:"📅 Calendrier",
+    clients:"👥 Clients", settings:"⚙ Paramètres", logout:"Déconnexion",
+    save:"Enregistrer", cancel:"Annuler", confirm:"Confirmer", delete:"Supprimer",
+    loading:"Chargement...", error:"Erreur", success:"Succès",
+    mon_entreprise:"🏢 Mon entreprise", connexion_gmail:"📧 Connexion Gmail",
+    langue_lbl:"LANGUE", theme_lbl:"THÈME", clair:"☀️ Clair", sombre:"🌙 Sombre",
+    nouveau:"+ Nouveau", rechercher:"Rechercher...", aucun:"Aucun résultat",
+    // Clients
+    nouveau_client:"+ Nouveau client", nom:"Nom", email:"Email", tel:"Téléphone",
+    adresse:"Adresse", notes:"Notes", historique:"HISTORIQUE", nouveau_devis:"📋 Nouveau devis",
+    modifier:"Modifier", supprimer_client:"Supprimer ce client",
+    // Profil
+    profil_titre:"🏢 Mon entreprise", profil_sous:"Ces informations apparaîtront sur tous tes devis et factures.",
+    secteur:"Secteur d'activité", siret:"SIRET *", taux_horaire:"Taux horaire (€ HT) *",
+    assujetti_tva:"Je suis assujetti à la TVA", conditions_paiement:"Conditions de paiement",
+    delai_validite:"Délai de validité du devis (jours)", cle_api:"Clé API Anthropic *",
+    enregistrer:"✓ Enregistrer", enregistrement:"Enregistrement..."
+  },
+  en:{
+    app:"📋 App", dashboard:"📊 Dashboard", calendar:"📅 Calendar",
+    clients:"👥 Clients", settings:"⚙ Settings", logout:"Logout",
+    save:"Save", cancel:"Cancel", confirm:"Confirm", delete:"Delete",
+    loading:"Loading...", error:"Error", success:"Success",
+    mon_entreprise:"🏢 My Business", connexion_gmail:"📧 Gmail Connection",
+    langue_lbl:"LANGUAGE", theme_lbl:"THEME", clair:"☀️ Light", sombre:"🌙 Dark",
+    nouveau:"+ New", rechercher:"Search...", aucun:"No results",
+    nouveau_client:"+ New client", nom:"Name", email:"Email", tel:"Phone",
+    adresse:"Address", notes:"Notes", historique:"HISTORY", nouveau_devis:"📋 New quote",
+    modifier:"Edit", supprimer_client:"Delete this client",
+    profil_titre:"🏢 My Business", profil_sous:"This information will appear on all your quotes and invoices.",
+    secteur:"Industry", siret:"Company ID *", taux_horaire:"Hourly rate (€ excl. tax) *",
+    assujetti_tva:"I am registered for VAT", conditions_paiement:"Payment terms",
+    delai_validite:"Quote validity period (days)", cle_api:"Anthropic API Key *",
+    enregistrer:"✓ Save", enregistrement:"Saving..."
+  },
+  es:{
+    app:"📋 Aplicación", dashboard:"📊 Panel", calendar:"📅 Calendario",
+    clients:"👥 Clientes", settings:"⚙ Ajustes", logout:"Cerrar sesión",
+    save:"Guardar", cancel:"Cancelar", confirm:"Confirmar", delete:"Eliminar",
+    loading:"Cargando...", error:"Error", success:"Éxito",
+    mon_entreprise:"🏢 Mi empresa", connexion_gmail:"📧 Conexión Gmail",
+    langue_lbl:"IDIOMA", theme_lbl:"TEMA", clair:"☀️ Claro", sombre:"🌙 Oscuro",
+    nouveau:"+ Nuevo", rechercher:"Buscar...", aucun:"Sin resultados",
+    nouveau_client:"+ Nuevo cliente", nom:"Nombre", email:"Email", tel:"Teléfono",
+    adresse:"Dirección", notes:"Notas", historique:"HISTORIAL", nouveau_devis:"📋 Nuevo presupuesto",
+    modifier:"Editar", supprimer_client:"Eliminar cliente",
+    profil_titre:"🏢 Mi empresa", profil_sous:"Esta información aparecerá en todos tus presupuestos y facturas.",
+    secteur:"Sector", siret:"N° empresa *", taux_horaire:"Tarifa horaria (€ excl. impuestos) *",
+    assujetti_tva:"Estoy registrado para el IVA", conditions_paiement:"Condiciones de pago",
+    delai_validite:"Validez del presupuesto (días)", cle_api:"Clave API Anthropic *",
+    enregistrer:"✓ Guardar", enregistrement:"Guardando..."
+  },
+  zh:{
+    app:"📋 应用", dashboard:"📊 仪表板", calendar:"📅 日历",
+    clients:"👥 客户", settings:"⚙ 设置", logout:"退出登录",
+    save:"保存", cancel:"取消", confirm:"确认", delete:"删除",
+    loading:"加载中...", error:"错误", success:"成功",
+    mon_entreprise:"🏢 我的企业", connexion_gmail:"📧 Gmail连接",
+    langue_lbl:"语言", theme_lbl:"主题", clair:"☀️ 浅色", sombre:"🌙 深色",
+    nouveau:"+ 新建", rechercher:"搜索...", aucun:"无结果",
+    nouveau_client:"+ 新客户", nom:"姓名", email:"邮箱", tel:"电话",
+    adresse:"地址", notes:"备注", historique:"历史记录", nouveau_devis:"📋 新报价",
+    modifier:"编辑", supprimer_client:"删除客户",
+    profil_titre:"🏢 我的企业", profil_sous:"此信息将出现在您的所有报价单和发票上。",
+    secteur:"行业", siret:"公司编号 *", taux_horaire:"小时费率（不含税）*",
+    assujetti_tva:"我已注册增值税", conditions_paiement:"付款条件",
+    delai_validite:"报价有效期（天）", cle_api:"Anthropic API密钥 *",
+    enregistrer:"✓ 保存", enregistrement:"保存中..."
+  }
+};
+function LL(key){
+  const lang=localStorage.getItem("artio_langue")||"fr";
+  return(LANG_STORE[lang]||LANG_STORE.fr)[key]||(LANG_STORE.fr[key]||key);
+}
+
+</script>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh}
@@ -220,27 +299,52 @@ function closePanel(){
 window.createClient=async function(){
   const nom=document.getElementById("new-nom")?.value.trim();
   if(!nom){alert("Le nom est requis.");return}
-  const payload={
-    user_id:user.id,nom,
-    email:document.getElementById("new-email")?.value.trim()||"",
-    tel:document.getElementById("new-tel")?.value.trim()||"",
-    adresse:document.getElementById("new-adresse")?.value.trim()||"",
-    notes:document.getElementById("new-notes")?.value.trim()||""
-  };
-  try{
-    const{data,error}=await sb.from("clients").insert(payload).select().single();
-    if(error){alert("Erreur Supabase : "+error.message);console.error(error);return}
-    clients.push(data);
-    closePanel();render();
-  }catch(e){alert("Erreur : "+e.message);console.error(e)}
+  const email=document.getElementById("new-email")?.value.trim()||"";
+  const tel=document.getElementById("new-tel")?.value.trim()||"";
+  const adresse=document.getElementById("new-adresse")?.value.trim()||"";
+  const notes=document.getElementById("new-notes")?.value.trim()||"";
+
+  const{data,error}=await sb.from("clients").insert([{
+    user_id:user.id,nom,email,tel,adresse,notes
+  }]).select();
+
+  if(error){
+    console.error("Insert client erreur:",error);
+    alert("Erreur : "+error.message+"\n\nCode : "+error.code);
+    return;
+  }
+  if(data&&data[0]){
+    clients.push(data[0]);
+    closePanel();
+    render();
+    // Toast de confirmation
+    let t=document.getElementById("c-toast");
+    if(!t){t=document.createElement("div");t.id="c-toast";t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#534AB7;color:#fff;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:500;z-index:9999;";document.body.appendChild(t);}
+    t.textContent="✅ Client "+nom+" créé !";t.style.opacity="1";
+    setTimeout(()=>{t.style.opacity="0";},3000);
+  }
 };
 
+
 window.saveClient=async function(id){
-  const patch={nom:document.getElementById("edit-nom")?.value.trim()||"",email:document.getElementById("edit-email")?.value.trim()||"",tel:document.getElementById("edit-tel")?.value.trim()||"",adresse:document.getElementById("edit-adresse")?.value.trim()||"",notes:document.getElementById("edit-notes")?.value.trim()||"",updated_at:new Date().toISOString()};
-  await sb.from("clients").update(patch).eq("id",id);
-  const idx=clients.findIndex(c=>c.id===id);
-  if(idx>-1)clients[idx]={...clients[idx],...patch};
+  const patch={
+    nom:document.getElementById("edit-nom")?.value.trim()||"",
+    email:document.getElementById("edit-email")?.value.trim()||"",
+    tel:document.getElementById("edit-tel")?.value.trim()||"",
+    adresse:document.getElementById("edit-adresse")?.value.trim()||"",
+    notes:document.getElementById("edit-notes")?.value.trim()||"",
+    updated_at:new Date().toISOString()
+  };
+  if(!patch.nom){alert("Le nom est requis.");return}
+  const{error}=await sb.from("clients").update(patch).eq("id",id).eq("user_id",user.id);
+  if(error){alert("Erreur : "+error.message);return}
+  const ci=clients.findIndex(c=>c.id===id);
+  if(ci>-1)clients[ci]={...clients[ci],...patch};
   closePanel();render();
+  let t=document.getElementById("c-toast");
+  if(!t){t=document.createElement("div");t.id="c-toast";t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#534AB7;color:#fff;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:500;z-index:9999;";document.body.appendChild(t);}
+  t.textContent="✅ Client mis à jour !";t.style.opacity="1";
+  setTimeout(()=>{t.style.opacity="0";},3000);
 };
 
 window.deleteClient=async function(id){
@@ -289,7 +393,7 @@ function renderSettingsPanel(){
   `;
 }
 
-function setLang(code){localStorage.setItem("artio_langue",code);renderSettingsPanel();}
+function setLang(code){localStorage.setItem("artio_langue",code);renderSettingsPanel();setTimeout(()=>window.location.reload(),300);}
 function setTheme(dark){
   if(dark)document.body.classList.add("dark");
   else document.body.classList.remove("dark");

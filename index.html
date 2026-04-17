@@ -127,6 +127,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 let S = {
   view:"auth",
   authTab:"login",
+  authView:"login",  // "login" | "register" | "forgot" | "forgot_sent"
   authLoading:false,
   authError:"",
   authSuccess:"",
@@ -225,12 +226,14 @@ function applyLangue(){
 }
 
 async function forgotPassword(){
-  const emailEl=document.getElementById("auth-email");
+  const emailEl=document.getElementById("forgot-email");
   const email=emailEl?.value.trim();
-  if(!email){alert("Entre ton email dans le champ avant de cliquer.");emailEl?.focus();return}
+  if(!email){if(emailEl)emailEl.focus();return}
+  S.authLoading=true;render();
   const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+"/index.html"});
-  if(error){alert("Erreur : "+error.message);return}
-  alert("✅ Un email de réinitialisation a été envoyé à "+email+".\n\nVérifie ta boîte (et tes spams).");
+  S.authLoading=false;
+  if(error){S.authError=error.message;render();return}
+  S.authView="forgot_sent";render();
 }
 
 async function handleAuth(){
@@ -257,6 +260,35 @@ function render(){
 }
 
 function renderAuth(){
+  // Vue "mot de passe oublié"
+  if(S.authView==="forgot"||S.authView==="forgot_sent"){
+    document.getElementById("root").innerHTML=`
+  <div class="auth-box">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <img src="data:image/png;base64,${LOGO_DARK}" style="height:44px;width:auto;" class="artio-logo"/>
+    </div>
+    ${S.authView==="forgot_sent"?`
+    <div style="text-align:center;padding:1.5rem;background:#EAF3DE;border-radius:12px;border:0.5px solid #A5D6A7;">
+      <p style="font-size:32px;margin-bottom:12px;">📬</p>
+      <p style="font-size:16px;font-weight:600;margin-bottom:8px;">Email envoyé !</p>
+      <p style="font-size:13px;color:#555;">Vérifie ta boîte de réception et tes spams.</p>
+    </div>
+    <button onclick="S.authView='login';render()" style="width:100%;margin-top:16px;padding:12px;background:transparent;border:0.5px solid #d0d0cc;border-radius:8px;font-size:13px;cursor:pointer;">← Retour à la connexion</button>
+    `:`
+    <p style="font-size:20px;font-weight:700;margin-bottom:6px;">Mot de passe oublié</p>
+    <p style="font-size:13px;color:#888;margin-bottom:1.5rem;">Entre ton email pour recevoir un lien de réinitialisation.</p>
+    ${S.authError?`<p style="color:#A32D2D;font-size:13px;margin-bottom:12px;">${S.authError}</p>`:""}
+    <div class="field"><label class="label">Email</label>
+      <input id="forgot-email" type="email" placeholder="contact@email.com" onkeydown="if(event.key==='Enter')forgotPassword()"/>
+    </div>
+    <button class="btn-primary" ${S.authLoading?"disabled":""} onclick="forgotPassword()">
+      ${S.authLoading?"Envoi en cours...":"Envoyer le lien"}
+    </button>
+    <button onclick="S.authView='login';S.authError='';render()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:none;font-size:13px;cursor:pointer;color:#666;">← Retour à la connexion</button>
+    `}
+  </div>`;
+    return;
+  }
   const t=S.authTab;
   document.getElementById("root").innerHTML=`
   <div class="auth-box">
@@ -292,7 +324,7 @@ function renderAuth(){
       <button class="btn-primary" ${S.authLoading?"disabled":""} onclick="handleAuth()">
         ${S.authLoading?L("loading_btn"):(t==="login"?L("connexion_btn"):L("creation_btn"))}
       </button>
-      ${t==="login"?`<p style="text-align:center;margin-top:12px;font-size:12px;"><a href="javascript:forgotPassword()" style="color:#534AB7;text-decoration:none;">Mot de passe oublié ?</a></p>`:""}
+      ${t==="login"?`<p style="text-align:center;margin-top:12px;font-size:12px;"><a href="javascript:void(0)" onclick="S.authView='forgot';S.authError='';render()" style="color:#534AB7;text-decoration:none;">Mot de passe oublié ?</a></p>`:""}
     </div>
   </div>`;
 }
