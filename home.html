@@ -245,29 +245,29 @@ function LL(key){
     <div class="home-nav" id="nav-auth">
       <a href="app.html" class="home-btn primary">
         <span class="home-btn-icon">📋</span>
-        <div class="home-btn-text">Application<div class="home-btn-sub">${LL("home_app_sub")}</div></div>
+        <div class="home-btn-text"><span data-i18n="nav_app_txt">Application</span><div class="home-btn-sub"><span data-i18n="home_app_sub_txt">Devis, factures, emails, dossiers</span></div></div>
       </a>
       <a href="dashboard.html" class="home-btn home-btn-green">
         <span class="home-btn-icon">📊</span>
-        <div class="home-btn-text">Tableau de bord<div class="home-btn-sub">${LL("home_dash_sub")}</div></div>
+        <div class="home-btn-text"><span data-i18n="nav_dash_txt">Tableau de bord</span><div class="home-btn-sub"><span data-i18n="home_dash_sub_txt">Suivi financier et déclarations</span></div></div>
       </a>
       <a href="calendar.html" class="home-btn home-btn-orange">
         <span class="home-btn-icon">📅</span>
-        <div class="home-btn-text">Calendrier<div class="home-btn-sub">${LL("home_cal_sub")}</div></div>
+        <div class="home-btn-text"><span data-i18n="nav_cal_txt">Calendrier</span><div class="home-btn-sub"><span data-i18n="home_cal_sub_txt">Rendez-vous et planning</span></div></div>
       </a>
       <div class="divider"></div>
       <a href="clients.html" class="home-btn home-btn-purple">
         <span class="home-btn-icon">👥</span>
-        <div class="home-btn-text">Clients<div class="home-btn-sub">${LL("home_cli_sub")}</div></div>
+        <div class="home-btn-text"><span data-i18n="nav_cli_txt">Clients</span><div class="home-btn-sub"><span data-i18n="home_cli_sub_txt">Carnet client et historique</span></div></div>
       </a>
       <div class="divider"></div>
       <button id="settings-btn" class="home-btn" style="width:100%;text-align:left;">
         <span class="home-btn-icon">⚙️</span>
-        <div class="home-btn-text">Paramètres<div class="home-btn-sub">${LL("home_param_sub")}</div></div>
+        <div class="home-btn-text"><span data-i18n="nav_param_txt">Paramètres</span><div class="home-btn-sub"><span data-i18n="home_param_sub_txt">Profil, entreprise, clé API</span></div></div>
       </button>
       <button onclick="doLogout()" class="home-btn danger">
         <span class="home-btn-icon">🚪</span>
-        <div class="home-btn-text">${LL("deconnexion")}</div>
+        <div class="home-btn-text"><span data-i18n="nav_deco_txt">Déconnexion</span></div>
       </button>
     </div>
     <div id="nav-guest" style="display:none;">
@@ -305,191 +305,6 @@ async function doLogout(){
   }
 })();
 
-
-
-function renderSettingsPanel(){
-  const dk=document.body.classList.contains("dark");
-  const langs=[["fr","🇫🇷","Français"],["en","🇬🇧","English"],["es","🇪🇸","Español"],["zh","🇨🇳","中文"]];
-  const lang=localStorage.getItem("artio_langue")||"fr";
-  document.getElementById("sp").innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-      <p style="font-size:16px;font-weight:600;">Paramètres</p>
-      <button onclick="closeSettings()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;">×</button>
-    </div>
-    <a href="profil.html" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:10px;text-decoration:none;color:inherit;">
-      <span style="font-size:20px;">🏢</span>
-      <div><p style="font-size:14px;font-weight:500;margin:0;">Mon entreprise</p><p style="font-size:12px;color:#888;margin:0;">Infos, SIRET, taux horaire, clé API</p></div>
-      <span style="margin-left:auto;color:#888;">›</span>
-    </a>
-    <a href="app.html?settings=gmail" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:20px;text-decoration:none;color:inherit;">
-      <span style="font-size:20px;">📧</span>
-      <div><p style="font-size:14px;font-weight:500;margin:0;">Connexion Gmail</p><p style="font-size:12px;color:#888;margin:0;">Connecte Gmail pour répondre automatiquement</p></div>
-      <span style="margin-left:auto;color:#888;">›</span>
-    </a>
-    <p style="font-size:13px;font-weight:600;color:#888;margin-bottom:8px;">LANGUE</p>
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px;">
-      ${langs.map(([code,flag,name])=>`
-        <button onclick="setLang('${code}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;border:0.5px solid ${lang===code?"#534AB7":"#e0deda"};background:${lang===code?"#534AB7":"transparent"};color:${lang===code?"#fff":"inherit"};cursor:pointer;font-size:13px;width:100%;text-align:left;">
-          ${flag} ${name}
-        </button>`).join("")}
-    </div>
-    <p style="font-size:13px;font-weight:600;color:#888;margin-bottom:8px;">THÈME</p>
-    <div style="display:flex;gap:8px;">
-      <button onclick="setTheme(false)" style="flex:1;padding:9px;border-radius:8px;border:0.5px solid ${!dk?"#534AB7":"#e0deda"};background:${!dk?"#534AB7":"transparent"};color:${!dk?"#fff":"inherit"};cursor:pointer;font-size:13px;">☀️ Clair</button>
-      <button onclick="setTheme(true)" style="flex:1;padding:9px;border-radius:8px;border:0.5px solid ${dk?"#534AB7":"#e0deda"};background:${dk?"#534AB7":"transparent"};color:${dk?"#fff":"inherit"};cursor:pointer;font-size:13px;">🌙 Sombre</button>
-    </div>
-  `;
-}
-
-function setTheme(dark){
-  if(dark)document.body.classList.add("dark");
-  else document.body.classList.remove("dark");
-  localStorage.setItem("artio_dark",dark?"1":"0");
-  renderSettingsPanel();
-}
-
-// Ouvrir le panel au clic ⚙
-document.addEventListener("click",e=>{
-  if(e.target.closest("#settings-btn")){openSettings();renderSettingsPanel();}
-});
-
-// ── TRADUCTION + SETTINGS ──
-const LANG_STORE={
-  nav_app:{fr:'📋 Application',en:'📋 App',es:'📋 Aplicación',zh:'📋 应用'},
-  nav_dashboard:{fr:'📊 Tableau de bord',en:'📊 Dashboard',es:'📊 Panel',zh:'📊 仪表板'},
-  nav_calendar:{fr:'📅 Calendrier',en:'📅 Calendar',es:'📅 Calendario',zh:'📅 日历'},
-  nav_clients:{fr:'👥 Clients',en:'👥 Clients',es:'👥 Clientes',zh:'👥 客户'},
-  deconnexion:{fr:'Déconnexion',en:'Logout',es:'Cerrar sesión',zh:'退出登录'},
-  dash_titre:{fr:'📊 Tableau de bord',en:'📊 Dashboard',es:'📊 Panel financiero',zh:'📊 财务仪表板'},
-  dash_ca_mois:{fr:'CA ce mois',en:'Revenue this month',es:'Ingresos este mes',zh:'本月营业额'},
-  dash_ca_total:{fr:'CA facturé total',en:'Total invoiced',es:'Total facturado',zh:'总开票额'},
-  dash_factures:{fr:'facture(s)',en:'invoice(s)',es:'factura(s)',zh:'张发票'},
-  dash_devis:{fr:'Devis en attente',en:'Pending quotes',es:'Presupuestos pendientes',zh:'待审报价'},
-  dash_period_mois:{fr:'Mois en cours',en:'Current month',es:'Mes actual',zh:'本月'},
-  dash_period_annee:{fr:'Année en cours',en:'Current year',es:'Año actual',zh:'本年'},
-  dash_period_custom:{fr:'Personnalisé',en:'Custom',es:'Personalizado',zh:'自定义'},
-  cal_titre:{fr:'📅 Calendrier',en:'📅 Calendar',es:'📅 Calendario',zh:'📅 日历'},
-  cal_semaine:{fr:'Semaine',en:'Week',es:'Semana',zh:'周'},
-  cal_mois:{fr:'Mois',en:'Month',es:'Mes',zh:'月'},
-  cal_auj:{fr:'Aujourd\'hui',en:'Today',es:'Hoy',zh:'今天'},
-  cal_rdv:{fr:'+ RDV',en:'+ Appt',es:'+ Cita',zh:'+ 预约'},
-  cal_add_rdv:{fr:'Ajouter un RDV',en:'Add appointment',es:'Añadir cita',zh:'添加预约'},
-  cal_titre_rdv:{fr:'Titre *',en:'Title *',es:'Título *',zh:'标题 *'},
-  cal_heure:{fr:'Heure',en:'Time',es:'Hora',zh:'时间'},
-  cal_couleur:{fr:'Couleur',en:'Color',es:'Color',zh:'颜色'},
-  cal_dossier:{fr:'Dossier lié (optionnel)',en:'Linked file (opt.)',es:'Expediente (opcional)',zh:'关联档案（可选）'},
-  cal_ajouter:{fr:'+ Ajouter',en:'+ Add',es:'+ Añadir',zh:'+ 添加'},
-  cal_supprimer:{fr:'Supprimer',en:'Delete',es:'Eliminar',zh:'删除'},
-  cal_evenement:{fr:'événement(s)',en:'event(s)',es:'evento(s)',zh:'个活动'},
-  cli_titre:{fr:'👥 Clients',en:'👥 Clients',es:'👥 Clientes',zh:'👥 客户'},
-  cli_nouveau:{fr:'+ Nouveau client',en:'+ New client',es:'+ Nuevo cliente',zh:'+ 新客户'},
-  cli_recherche:{fr:'Rechercher un client...',en:'Search a client...',es:'Buscar cliente...',zh:'搜索客户...'},
-  cli_aucun:{fr:'Aucun client trouvé',en:'No client found',es:'Sin clientes',zh:'未找到客户'},
-  cli_docs:{fr:'doc(s)',en:'doc(s)',es:'doc(s)',zh:'份文档'},
-  cli_historique:{fr:'HISTORIQUE',en:'HISTORY',es:'HISTORIAL',zh:'历史记录'},
-  cli_nouveau_devis:{fr:'📋 Nouveau devis',en:'📋 New quote',es:'📋 Nuevo presupuesto',zh:'📋 新报价'},
-  cli_modifier:{fr:'Modifier',en:'Edit',es:'Editar',zh:'编辑'},
-  cli_supprimer:{fr:'Supprimer ce client',en:'Delete client',es:'Eliminar cliente',zh:'删除客户'},
-  cli_enregistrer:{fr:'Enregistrer',en:'Save',es:'Guardar',zh:'保存'},
-  cli_nom:{fr:'Nom *',en:'Name *',es:'Nombre *',zh:'姓名 *'},
-  cli_email:{fr:'Email',en:'Email',es:'Email',zh:'邮箱'},
-  cli_tel:{fr:'Téléphone',en:'Phone',es:'Teléfono',zh:'电话'},
-  cli_adresse:{fr:'Adresse',en:'Address',es:'Dirección',zh:'地址'},
-  cli_notes:{fr:'Notes',en:'Notes',es:'Notas',zh:'备注'},
-  cli_creer:{fr:'Créer le client',en:'Create client',es:'Crear cliente',zh:'创建客户'},
-  cli_nouveau_titre:{fr:'Nouveau client',en:'New client',es:'Nuevo cliente',zh:'新客户'},
-  opt:{fr:'(optionnel)',en:'(optional)',es:'(opcional)',zh:'(可选)'},
-  devis_badge:{fr:'Devis',en:'Quote',es:'Presupuesto',zh:'报价'},
-  facture_badge:{fr:'Facture',en:'Invoice',es:'Factura',zh:'发票'},
-  home_app_sub:{fr:'Devis, factures, emails, dossiers',en:'Quotes, invoices, emails, files',es:'Presupuestos, facturas, emails, expedientes',zh:'报价、发票、邮件、档案'},
-  home_dash_sub:{fr:'Suivi financier et déclarations',en:'Financial tracking',es:'Seguimiento financiero',zh:'财务跟踪'},
-  home_cal_sub:{fr:'Rendez-vous et planning',en:'Appointments & schedule',es:'Citas y planificación',zh:'预约和日程'},
-  home_cli_sub:{fr:'Carnet client et historique',en:'Client book & history',es:'Cartera de clientes',zh:'客户档案和历史'},
-  home_param:{fr:'Paramètres',en:'Settings',es:'Ajustes',zh:'设置'},
-  home_param_sub:{fr:'Profil, entreprise, clé API',en:'Profile, company, API key',es:'Perfil, empresa, clave API',zh:'个人资料、公司、API密钥'},
-  profil_titre:{fr:'🏢 Mon entreprise',en:'🏢 My Business',es:'🏢 Mi empresa',zh:'🏢 我的企业'},
-  profil_sous:{fr:'Ces informations apparaîtront sur tous tes devis et factures.',en:'This info will appear on all your quotes and invoices.',es:'Esta info aparecerá en todos tus presupuestos y facturas.',zh:'此信息将出现在您的所有报价单和发票上。'},
-  profil_nom:{fr:'Nom de l\'entreprise *',en:'Business name *',es:'Nombre de empresa *',zh:'企业名称 *'},
-  profil_secteur:{fr:'Secteur d\'activité',en:'Industry',es:'Sector',zh:'行业'},
-  profil_adr:{fr:'Adresse',en:'Address',es:'Dirección',zh:'地址'},
-  profil_tel:{fr:'Téléphone',en:'Phone',es:'Teléfono',zh:'电话'},
-  profil_email:{fr:'Email',en:'Email',es:'Email',zh:'邮箱'},
-  profil_siret:{fr:'SIRET *',en:'Company ID *',es:'NIF/CIF *',zh:'公司编号 *'},
-  profil_taux:{fr:'Taux horaire (€ HT) *',en:'Hourly rate (€) *',es:'Tarifa horaria (€) *',zh:'时薪（€）*'},
-  profil_tva_check:{fr:'Je suis assujetti à la TVA',en:'I am VAT registered',es:'Estoy sujeto a IVA',zh:'我已注册增值税'},
-  profil_cond:{fr:'Conditions de paiement',en:'Payment terms',es:'Condiciones de pago',zh:'付款条件'},
-  profil_delai:{fr:'Délai de validité du devis (jours)',en:'Quote validity (days)',es:'Validez del presupuesto (días)',zh:'报价有效期（天）'},
-  profil_api:{fr:'Clé API Anthropic *',en:'Anthropic API Key *',es:'Clave API Anthropic *',zh:'Anthropic API密钥 *'},
-  profil_api_desc:{fr:'Nécessaire pour la dictée vocale et la génération automatique.',en:'Required for voice dictation and automatic generation.',es:'Necesaria para dictado de voz y generación automática.',zh:'语音听写和自动生成所必需。'},
-  profil_save:{fr:'✓ Enregistrer',en:'✓ Save',es:'✓ Guardar',zh:'✓ 保存'},
-  profil_saving:{fr:'Enregistrement...',en:'Saving...',es:'Guardando...',zh:'保存中...'},
-  set_titre:{fr:'Paramètres',en:'Settings',es:'Ajustes',zh:'设置'},
-  set_entreprise:{fr:'Mon entreprise',en:'My Business',es:'Mi empresa',zh:'我的企业'},
-  set_ent_sub:{fr:'Infos, SIRET, taux horaire, clé API',en:'Info, ID, rate, API key',es:'Info, NIF, tarifa, clave API',zh:'信息、编号、费率、API密钥'},
-  set_gmail:{fr:'Connexion Gmail',en:'Gmail Connection',es:'Conexión Gmail',zh:'Gmail连接'},
-  set_gmail_sub:{fr:'Connecte Gmail pour répondre automatiquement',en:'Connect Gmail to reply automatically',es:'Conecta Gmail para responder automáticamente',zh:'连接Gmail自动回复'},
-  set_langue:{fr:'LANGUE',en:'LANGUAGE',es:'IDIOMA',zh:'语言'},
-  set_theme:{fr:'THÈME',en:'THEME',es:'TEMA',zh:'主题'},
-  set_clair:{fr:'☀️ Clair',en:'☀️ Light',es:'☀️ Claro',zh:'☀️ 浅色'},
-  set_sombre:{fr:'🌙 Sombre',en:'🌙 Dark',es:'🌙 Oscuro',zh:'🌙 深色'},
-  mois_0:{fr:'Janvier',en:'January',es:'Enero',zh:'一月'},
-  mois_1:{fr:'Février',en:'February',es:'Febrero',zh:'二月'},
-  mois_2:{fr:'Mars',en:'March',es:'Marzo',zh:'三月'},
-  mois_3:{fr:'Avril',en:'April',es:'Abril',zh:'四月'},
-  mois_4:{fr:'Mai',en:'May',es:'Mayo',zh:'五月'},
-  mois_5:{fr:'Juin',en:'June',es:'Junio',zh:'六月'},
-  mois_6:{fr:'Juillet',en:'July',es:'Julio',zh:'七月'},
-  mois_7:{fr:'Août',en:'August',es:'Agosto',zh:'八月'},
-  mois_8:{fr:'Septembre',en:'September',es:'Septiembre',zh:'九月'},
-  mois_9:{fr:'Octobre',en:'October',es:'Octubre',zh:'十月'},
-  mois_10:{fr:'Novembre',en:'November',es:'Noviembre',zh:'十一月'},
-  mois_11:{fr:'Décembre',en:'December',es:'Diciembre',zh:'十二月'},
-  jours_0:{fr:'Lun',en:'Mon',es:'Lun',zh:'周一'},
-  jours_1:{fr:'Mar',en:'Tue',es:'Mar',zh:'周二'},
-  jours_2:{fr:'Mer',en:'Wed',es:'Mié',zh:'周三'},
-  jours_3:{fr:'Jeu',en:'Thu',es:'Jue',zh:'周四'},
-  jours_4:{fr:'Ven',en:'Fri',es:'Vie',zh:'周五'},
-  jours_5:{fr:'Sam',en:'Sat',es:'Sáb',zh:'周六'},
-  jours_6:{fr:'Dim',en:'Sun',es:'Dom',zh:'周日'},
-};
-function LL(k){const l=localStorage.getItem('artio_langue')||'fr';return(LANG_STORE[k]||{})[l]||(LANG_STORE[k]||{}).fr||k;}
-function MOIS_T(){return Array.from({length:12},(_,i)=>LL('mois_'+i));}
-function JOURS_T(){return Array.from({length:7},(_,i)=>LL('jours_'+i));}
-function setLang(code){localStorage.setItem('artio_langue',code);setTimeout(()=>window.location.reload(),100);}
-function setTheme(dark){if(dark)document.body.classList.add('dark');else document.body.classList.remove('dark');localStorage.setItem('artio_dark',dark?'1':'0');}
-
-function renderSettingsPanel(){
-  const dk=document.body.classList.contains('dark');
-  const lang=localStorage.getItem('artio_langue')||'fr';
-  const langs=[['fr','🇫🇷 Français'],['en','🇬🇧 English'],['es','🇪🇸 Español'],['zh','🇨🇳 中文']];
-  document.getElementById('sp').innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-      <p style="font-size:16px;font-weight:600;">${LL('set_titre')}</p>
-      <button onclick="closeSettings()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;">×</button>
-    </div>
-    <a href="profil.html" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:10px;text-decoration:none;color:inherit;">
-      <span style="font-size:20px;">🏢</span>
-      <div><p style="font-size:14px;font-weight:500;margin:0;">${LL('set_entreprise')}</p><p style="font-size:12px;color:#888;margin:0;">${LL('set_ent_sub')}</p></div>
-      <span style="margin-left:auto;color:#888;">›</span>
-    </a>
-    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:20px;opacity:0.5;" title="Bientôt disponible">
-      <span style="font-size:20px;">📧</span>
-      <div><p style="font-size:14px;font-weight:500;margin:0;">${LL('set_gmail')}</p><p style="font-size:12px;color:#888;margin:0;">${LL('set_gmail_sub')}</p></div>
-    </div>
-    <p style="font-size:13px;font-weight:600;color:#888;margin-bottom:8px;">${LL('set_langue')}</p>
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px;">
-      ${langs.map(([code,label])=>`
-        <button onclick="setLang('${code}')" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;border:0.5px solid ${lang===code?'#534AB7':'#e0deda'};background:${lang===code?'#534AB7':'transparent'};color:${lang===code?'#fff':'inherit'};cursor:pointer;font-size:13px;width:100%;text-align:left;">
-          ${label}
-        </button>`).join('')}
-    </div>
-    <p style="font-size:13px;font-weight:600;color:#888;margin-bottom:8px;">${LL('set_theme')}</p>
-    <div style="display:flex;gap:8px;">
-      <button onclick="setTheme(false)" style="flex:1;padding:9px;border-radius:8px;border:0.5px solid ${!dk?'#534AB7':'#e0deda'};background:${!dk?'#534AB7':'transparent'};color:${!dk?'#fff':'inherit'};cursor:pointer;font-size:13px;">${LL('set_clair')}</button>
-      <button onclick="setTheme(true)" style="flex:1;padding:9px;border-radius:8px;border:0.5px solid ${dk?'#534AB7':'#e0deda'};background:${dk?'#534AB7':'transparent'};color:${dk?'#fff':'inherit'};cursor:pointer;font-size:13px;">${LL('set_sombre')}</button>
-    </div>
-  `;
-}
 let settingsOpen=false;
 function openSettings(){settingsOpen=true;document.getElementById('sp').classList.add('open');document.getElementById('sov').classList.add('open');renderSettingsPanel();}
 function closeSettings(){settingsOpen=false;document.getElementById('sp').classList.remove('open');document.getElementById('sov').classList.remove('open');}
@@ -497,42 +312,5 @@ document.addEventListener('click',e=>{if(e.target.closest('#settings-btn')){open
 
 </script>
 
-<div class="settings-overlay" id="sov" onclick="closeSettings()"></div>
-<div class="settings-panel" id="sp"></div>
-
-
-<script>
-// Appliquer les traductions au DOM statique
-(function(){
-  const lang=localStorage.getItem('artio_langue')||'fr';
-  if(lang==='fr')return; // FR = défaut, pas besoin de changer
-  if(typeof LANG_STORE==='undefined')return;
-  // Mapper les textes FR vers les clés
-  const map={
-    'Devis, factures, emails, dossiers':'home_app_sub',
-    'Suivi financier et déclarations':'home_dash_sub',
-    'Rendez-vous et planning':'home_cal_sub',
-    'Carnet client et historique':'home_cli_sub',
-    'Profil, entreprise, clé API':'home_param_sub',
-    'Paramètres':'home_param',
-    'Déconnexion':'deconnexion',
-    'Application':'nav_app',
-    'Tableau de bord':'nav_dashboard',
-    'Calendrier':'nav_calendar',
-    'Clients':'nav_clients',
-  };
-  document.querySelectorAll('.home-btn-text,.home-btn-sub,.home-btn-icon+.home-btn-text,.btn-small').forEach(el=>{
-    const t=(el.textContent||'').trim();
-    if(map[t])el.textContent=LL(map[t]);
-  });
-  // Forcer tous les textes visibles
-  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-  let node;
-  while(node=walker.nextNode()){
-    const t=(node.textContent||'').trim();
-    if(map[t])node.textContent=LL(map[t]);
-  }
-})();
-</script>
 </body>
 </html>
