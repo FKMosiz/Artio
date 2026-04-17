@@ -230,10 +230,7 @@ async function loadUserData(userId){
         catch(e){docs=[]}
         return{...d,documents:docs};
       });
-      // Peupler DOC_STORE avec tous les documents chargés
-      S.dossiers.forEach(d=>(d.documents||[]).forEach(doc=>{
-        if(doc.docNumber) storeDoc(doc);
-      }));
+      S.dossiers.forEach(d=>(d.documents||[]).forEach(doc=>{if(doc.docNumber)storeDoc(doc);}));
     }
   }catch(e){console.error("loadUserData exception:",e)}
 }
@@ -781,7 +778,6 @@ const nom=civStr+(travStr?" — "+travStr:"");
     const dos={id:uid(),nom,client:f.client_nom,statut:tab==="devis"?"devis_envoye":"facture",createdAt:todayFR(),documents:[doc]};
     await upsertDossier(dos);
     storeDoc(doc);
-
     S.dossiers=[dos,...S.dossiers];
     set({loading:false,generatedDoc:doc,openDossier:dos.id,tab:"historique"});
   }catch(err){set({loading:false});alert("Erreur : "+err.message)}
@@ -854,6 +850,10 @@ convertToFacture=async(dosId,docNum)=>{
   dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,accepte:true}:d).concat([factDoc]);
   storeDoc(factDoc);
   await upsertDossier(dos);set({convertingId:null});
+};
+window.startRename=function(id){
+  const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;
+  set({renamingDossierId:id,renamingDossierVal:dos.nom||''});
 };
 window.renameDossier=async function(id){
   const newNom=S.renamingDossierVal.trim();
@@ -1433,7 +1433,7 @@ function renderHistorique(){
             <input value="${esc(S.renamingDossierVal)}" onclick="event.stopPropagation()" oninput="S.renamingDossierVal=this.value" onkeydown="if(event.key==='Enter')renameDossier('${dos.id}')" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #378ADD;width:150px;" />
             <button class="btn-small btn-blue" onclick="event.stopPropagation();renameDossier('${dos.id}')">OK</button>
             <button class="btn-small" onclick="event.stopPropagation();set({renamingDossierId:null})">✕</button>
-          `:`<button class="btn-small" onclick="event.stopPropagation();set({renamingDossierId:'${dos.id}',renamingDossierVal:dos.nom||''})">✏</button>`}
+          `:`<button class="btn-small" onclick="event.stopPropagation();startRename('${dos.id}')">✏</button>`}
           <button class="btn-small" onclick="event.stopPropagation();set({deleteConfirm:S.deleteConfirm===dos.id?null:dos.id})" style="color:#A32D2D;border-color:#F09595;">🗑</button>
         </div>
       </div>
@@ -1459,8 +1459,8 @@ function renderHistorique(){
               `<button class="btn-small" style="font-size:11px;" onclick="set({previewDocNum:S.previewDocNum==='${doc.docNumber}'?null:'${doc.docNumber}'})">👁 Aperçu</button>`}
           </div>`;
         }).join("")}
-        ${S.deleteConfirm===dos.id?`<div style="padding:8px 0;"><button class="btn-small btn-red" onclick="confirmDeleteDossier('${dos.id}')">Confirmer suppression</button> <button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button></div>`:""}
       </div>`:""}
+    ${S.deleteConfirm===dos.id?`<div style="padding:10px 16px;background:#FCEBEB;border-top:0.5px solid #F09595;"><button class="btn-small btn-red" onclick="confirmDeleteDossier('${dos.id}')">Confirmer suppression</button> <button class="btn-small" onclick="set({deleteConfirm:null})" style="margin-left:8px;">Annuler</button></div>`:""}
     </div>`;
   }).join("");
 }
