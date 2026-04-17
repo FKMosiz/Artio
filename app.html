@@ -230,6 +230,10 @@ async function loadUserData(userId){
         catch(e){docs=[]}
         return{...d,documents:docs};
       });
+      // Peupler DOC_STORE avec tous les documents chargés
+      S.dossiers.forEach(d=>(d.documents||[]).forEach(doc=>{
+        if(doc.docNumber) storeDoc(doc);
+      }));
     }
   }catch(e){console.error("loadUserData exception:",e)}
 }
@@ -776,6 +780,7 @@ const travStr=(f.travaux||"").slice(0,35)+((f.travaux||"").length>35?"...":"");
 const nom=civStr+(travStr?" — "+travStr:"");
     const dos={id:uid(),nom,client:f.client_nom,statut:tab==="devis"?"devis_envoye":"facture",createdAt:todayFR(),documents:[doc]};
     await upsertDossier(dos);
+    storeDoc(doc);
     S.dossiers=[dos,...S.dossiers];
     set({loading:false,generatedDoc:doc,openDossier:dos.id,tab:"historique"});
   }catch(err){set({loading:false});alert("Erreur : "+err.message)}
@@ -846,6 +851,7 @@ convertToFacture=async(dosId,docNum)=>{
   const factDoc={...devis,type:"facture",docNumber:factNum,date:todayFR(),validUntil:null,accepte:false};
   dos.statut="facture";
   dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,accepte:true}:d).concat([factDoc]);
+  storeDoc(factDoc);
   await upsertDossier(dos);set({convertingId:null});
 };
 window.renameDossier=async function(id){
@@ -1440,7 +1446,7 @@ function renderHistorique(){
                 <p style="font-size:12px;color:#888;">${doc.date||""} · ${(doc.ttc||0).toFixed(2)} € TTC</p>
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="btn-small" onclick="genererPDF(${JSON.stringify(doc).replace(/'/g,"&#39;")})">⬇ PDF</button>
+                <button class="btn-small" onclick="downloadPDF('${doc.docNumber}')">⬇ PDF</button>
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small btn-blue" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}
                 ${doc.type==="devis"&&doc.accepte&&!hasF?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:""}
