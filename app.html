@@ -965,7 +965,7 @@ function generatePDF(doc){
   pdf.setFont(undefined,"normal");
   const dl=pdf.splitTextToSize(doc.description,cW);
   pdf.text(dl,m,y);y+=dl.length*4.5+6;
-  const tb=[...(doc.nb_heures&&parseFloat(doc.nb_heures)>0?[["Main d'œuvre ("+doc.nb_heures+"h × "+doc.entreprise.taux_horaire+"€/h)",doc.nb_heures,parseFloat(doc.entreprise.taux_horaire).toFixed(2)+" €",doc.moHT.toFixed(2)+" €"]]:[]),...doc.pieces.map(p=>[p.description,p.quantite,parseFloat(p.prix_unitaire).toFixed(2)+" €",(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)+" €"])];
+  const tb=[["Main d'œuvre ("+doc.nb_heures+"h × "+doc.entreprise.taux_horaire+"€/h)",doc.nb_heures,parseFloat(doc.entreprise.taux_horaire).toFixed(2)+" €",doc.moHT.toFixed(2)+" €"],...doc.pieces.map(p=>[p.description,p.quantite,parseFloat(p.prix_unitaire).toFixed(2)+" €",(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)+" €"])];
   pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tb,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3,overflow:"linebreak",valign:"top"},headStyles:{fillColor:[55,138,221],textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85,overflow:"linebreak"},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});
   y=pdf.lastAutoTable.finalY+6;
   pdf.setFontSize(9).setFont(undefined,"normal");
@@ -1005,6 +1005,97 @@ function generatePDF(doc){
 }
 window.genererPDF=generatePDF;
 
+// ——— PDF PREUVE DE SIGNATURE ———
+window.downloadSignedProof=async function(docNumber){
+  try{
+    // Récupérer la signature depuis Supabase
+    const{data:sig,error}=await sb.from("signatures")
+      .select("*")
+      .eq("doc_number",docNumber)
+      .eq("user_id",S.user.id)
+      .eq("status","signed")
+      .single();
+    if(error||!sig){alert("Preuve introuvable pour ce document.");return;}
+    
+    const doc=sig.doc_data;
+    const e=doc.entreprise||{};
+    const{jsPDF}=window.jspdf;
+    const pdf=new jsPDF({unit:"mm",format:"a4"});
+    const W=210,m=18,cW=W-2*m,rX=W-m;let y=m;
+    
+    // En-tête entreprise
+    pdf.setFontSize(16).setFont(undefined,"bold").text(e.nom||"",m,y);y+=6;
+    pdf.setFontSize(9).setFont(undefined,"normal").text(e.adresse||"",m,y);y+=5;
+    pdf.text("Tél : "+e.tel,m,y);y+=4;
+    pdf.text("Email : "+e.email,m,y);y+=4;
+    if(e.siret)pdf.text("SIRET : "+e.siret,m,y);y+=8;
+    
+    // Titre devis
+    pdf.setFontSize(15).setFont(undefined,"bold").setTextColor(83,74,183);
+    pdf.text("DEVIS N° "+doc.docNumber,W/2,y,{align:"center"});y+=5;
+    pdf.setFontSize(9).setFont(undefined,"normal").setTextColor(0);
+    pdf.text("Date : "+doc.date+"  |  Valable jusqu'au : "+(doc.validUntil||""),W/2,y,{align:"center"});y+=8;
+    
+    // Client
+    pdf.setFillColor(249,248,246);pdf.roundedRect(m,y,cW,18,2,2,"F");
+    pdf.setFontSize(8).setTextColor(120).text("CLIENT",m+4,y+5);
+    pdf.setFontSize(10).setTextColor(0).setFont(undefined,"bold").text(doc.client?.nom||"",m+4,y+11);
+    pdf.setFontSize(8).setFont(undefined,"normal").setTextColor(80);
+    if(doc.client?.adresse)pdf.text(doc.client.adresse,m+4,y+15);
+    y+=22;
+    
+    // Description
+    pdf.setFontSize(9).setTextColor(0);
+    if(doc.description){const dl=pdf.splitTextToSize(doc.description,cW);pdf.text(dl,m,y);y+=dl.length*4.5+4;}
+    
+    // Tableau lignes
+    const tbBody=[];
+    if(doc.nb_heures&&parseFloat(doc.nb_heures)>0)
+      tbBody.push(["Main d'œuvre ("+doc.nb_heures+"h × "+e.taux_horaire+"€/h)",doc.nb_heures,parseFloat(e.taux_horaire).toFixed(2)+" €",doc.moHT.toFixed(2)+" €"]);
+    (doc.pieces||[]).filter(p=>p.description).forEach(p=>
+      tbBody.push([p.description,p.quantite,parseFloat(p.prix_unitaire).toFixed(2)+" €",(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)+" €"]));
+    if(tbBody.length>0){
+      pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tbBody,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[55,138,221],textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});
+      y=pdf.lastAutoTable.finalY+6;
+    }
+    
+    // Totaux
+    pdf.setFontSize(9).text("Total HT :",135,y);pdf.text((doc.totalHT||0).toFixed(2)+" €",rX,y,{align:"right"});y+=5;
+    if(e.assujetti_tva&&doc.tva){pdf.text("TVA ("+doc.tvaRate+"%) :",135,y);pdf.text((doc.tva||0).toFixed(2)+" €",rX,y,{align:"right"});y+=5;}
+    pdf.setFont(undefined,"bold").setFontSize(11).text(e.assujetti_tva?"TOTAL TTC :":"TOTAL :",145,y);
+    pdf.text((doc.ttc||0).toFixed(2)+" €",rX,y,{align:"right"});y+=14;
+    if(!e.assujetti_tva){pdf.setFont(undefined,"italic").setFontSize(8).setTextColor(100).text("TVA non applicable, art. 293 B du CGI",m,y);y+=6;pdf.setTextColor(0);}
+    
+    // ═══ SECTION SIGNATURE ═══
+    pdf.setDrawColor(83,74,183);pdf.setLineWidth(0.5);pdf.line(m,y,W-m,y);y+=6;
+    pdf.setFillColor(240,238,255);pdf.roundedRect(m,y,cW,52,3,3,"F");
+    pdf.setFont(undefined,"bold").setFontSize(10).setTextColor(83,74,183);
+    pdf.text("✓ DEVIS SIGNÉ ÉLECTRONIQUEMENT",W/2,y+8,{align:"center"});
+    pdf.setFont(undefined,"normal").setFontSize(8).setTextColor(60);
+    const signedDate=sig.signed_at?new Date(sig.signed_at).toLocaleString("fr-FR"):"—";
+    pdf.text("Signé par : "+( doc.client?.nom||"Le client")+"  |  Date : "+signedDate,W/2,y+14,{align:"center"});
+    pdf.text("La signature ci-dessous a valeur contractuelle conformément à la loi.",W/2,y+19,{align:"center"});
+    
+    // Image de la signature
+    if(sig.signature_data){
+      try{pdf.addImage(sig.signature_data,"PNG",m+10,y+22,cW-20,22);}catch(e){}
+    }
+    pdf.setDrawColor(180);pdf.setLineWidth(0.3);pdf.rect(m+10,y+22,cW-20,22);
+    
+    y+=55;
+    pdf.setFont(undefined,"italic").setFontSize(7).setTextColor(120);
+    pdf.text("Document généré par Artio — preuve de signature électronique — "+new Date().toLocaleString("fr-FR"),W/2,y,{align:"center"});
+    
+    // Footer logo
+    try{pdf.addImage("data:image/png;base64,"+LOGO_WHITE,"PNG",m,280,22,7);}catch{}
+    pdf.setFontSize(7).setTextColor(150).text(e.nom+" — SIRET : "+e.siret,W/2,287,{align:"center"});
+    
+    pdf.save("PREUVE_SIGNATURE_"+docNumber+".pdf");
+  }catch(err){
+    console.error("downloadSignedProof error:",err);
+    alert("Erreur lors de la génération de la preuve : "+err.message);
+  }
+};
 
 // ——— REALTIME SIGNATURE LISTENER ———
 function setupSignatureListener(userId){
@@ -1308,7 +1399,7 @@ function renderDevisFacture(){
           ?`<select data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;" onchange="S.fields['${id}']=this.value">${heureOpts}</select>`
           :type==="date"
             ?`<input type="date" value="${S.fields[id]||""}" data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;font-family:inherit;" oninput="S.fields['${id}']=this.value"/>`
-            :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'updateTotaux()':''}" />`;
+            :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'render()':''}"/>`;
       return`<div class="field">
       <label class="label">${label}${opt?`<span class="opt">(optionnel)</span>`:""}</label>
       ${input}
@@ -1472,6 +1563,7 @@ function renderHistorique(){
               <div style="display:flex;gap:6px;flex-wrap:wrap;">
                 <button class="btn-small" onclick="downloadPDF('${doc.docNumber}')">⬇ PDF</button>
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small btn-blue" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}
+                ${doc.type==="devis"&&doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;font-size:11px;" onclick="downloadSignedProof('${doc.docNumber}')">📄 Preuve signée</button>`:""}
                 ${doc.type==="devis"&&doc.accepte&&!hasF?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:""}
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#FFF8E1;color:#E65100;border-color:#FFB74D;" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:""}
@@ -1499,7 +1591,7 @@ function renderDocPreview(doc){
     <table class="preview-table">
       <thead><tr><th style="text-align:left;">Description</th><th style="text-align:right;">Qté</th><th style="text-align:right;">Prix unit. HT</th><th style="text-align:right;">Total HT</th></tr></thead>
       <tbody>
-        ${doc.nb_heures&&parseFloat(doc.nb_heures)>0?`<tr><td>Main d'œuvre (${doc.nb_heures}h × ${doc.entreprise.taux_horaire} €/h)</td><td style="text-align:right;">${doc.nb_heures}</td><td style="text-align:right;">${parseFloat(doc.entreprise.taux_horaire).toFixed(2)} €</td><td style="text-align:right;">${doc.moHT.toFixed(2)} €</td></tr>`:""}
+        <tr><td>Main d'œuvre (${doc.nb_heures}h × ${doc.entreprise.taux_horaire} €/h)</td><td style="text-align:right;">${doc.nb_heures}</td><td style="text-align:right;">${parseFloat(doc.entreprise.taux_horaire).toFixed(2)} €</td><td style="text-align:right;">${doc.moHT.toFixed(2)} €</td></tr>
         ${doc.pieces.map(p=>`<tr><td>${esc(p.description)}</td><td style="text-align:right;">${p.quantite}</td><td style="text-align:right;">${parseFloat(p.prix_unitaire).toFixed(2)} €</td><td style="text-align:right;">${(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)} €</td></tr>`).join("")}
       </tbody>
     </table>
