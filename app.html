@@ -216,7 +216,13 @@ async function loadUserData(userId){
         api_key:profil.api_key||"",assujetti_tva:profil.assujetti_tva||false,
         secteur:profil.secteur||"",
         conditions_paiement:profil.conditions_paiement||"",
-        delai_paiement:profil.delai_paiement||"30"
+        delai_paiement:profil.delai_paiement||"30",
+          rc_pro_assureur:profil.rc_pro_assureur||"",
+          rc_pro_police:profil.rc_pro_police||"",
+          decennale_assureur:profil.decennale_assureur||"",
+          decennale_police:profil.decennale_police||"",
+          certifications:profil.certifications||"",
+          nature_operation:profil.nature_operation||""
       };
       S.profilSaved=!!profil.nom;
     }
@@ -859,17 +865,8 @@ window.startRename=function(id){
 async function checkAndConvertPendingSignatures(){
   try{
     const{data:sigs}=await sb.from("signatures").select("dossier_id,doc_number").eq("user_id",S.user.id).eq("status","signed");
-    if(!sigs||!sigs.length)return;
-    let converted=0;
-    for(const sig of sigs){
-      const dos=S.dossiers.find(d=>d.id===sig.dossier_id);
-      if(!dos)continue;
-      if((dos.documents||[]).some(d=>d.type==="facture"))continue;
-      const devis=(dos.documents||[]).find(d=>d.type==="devis"&&d.docNumber===sig.doc_number);
-      if(!devis)continue;
-      if(!devis.accepte){dos.documents=dos.documents.map(d=>d.docNumber===sig.doc_number?{...d,accepte:true}:d);dos.statut="devis_accepte";}
-      await convertToFacture(dos.id,sig.doc_number);converted++;
-    }
+    if(!sigs||!sigs.length)return;let converted=0;
+    for(const sig of sigs){const dos=S.dossiers.find(d=>d.id===sig.dossier_id);if(!dos)continue;if((dos.documents||[]).some(d=>d.type==="facture"))continue;const devis=(dos.documents||[]).find(d=>d.type==="devis"&&d.docNumber===sig.doc_number);if(!devis)continue;if(!devis.accepte){dos.documents=dos.documents.map(d=>d.docNumber===sig.doc_number?{...d,accepte:true}:d);dos.statut="devis_accepte";}await convertToFacture(dos.id,sig.doc_number);converted++;}
     if(converted>0){showArtioToast("✅ "+converted+" devis signé(s) converti(s) en facture !");render();}
   }catch(e){console.error("checkAndConvert:",e);}
 }
@@ -942,7 +939,13 @@ function generatePDF(doc){
   pdf.setFontSize(9).setFont(undefined,"normal").text(doc.entreprise.adresse,m,y);y+=5;
   pdf.text("Tél : "+doc.entreprise.tel,m,y);y+=4;
   pdf.text("Email : "+doc.entreprise.email,m,y);y+=4;
-  pdf.text("SIRET : "+doc.entreprise.siret,m,y);
+  pdf.text("SIRET : "+doc.entreprise.siret,m,y);y+=4;
+  // Infos légales (RC Pro, Décennale, Certifications)
+  const BTP_PDF=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
+  const isBTPdoc=BTP_PDF.includes(doc.entreprise.secteur||"");
+  if(doc.entreprise.rc_pro_assureur){pdf.text("RC Pro : "+doc.entreprise.rc_pro_assureur+(doc.entreprise.rc_pro_police?" — Pol. "+doc.entreprise.rc_pro_police:""),m,y);y+=4;}
+  if(isBTPdoc&&doc.entreprise.decennale_assureur){pdf.text("Décennale : "+doc.entreprise.decennale_assureur+(doc.entreprise.decennale_police?" — Pol. "+doc.entreprise.decennale_police:""),m,y);y+=4;}
+  if(isBTPdoc&&doc.entreprise.certifications){pdf.text("Certif. : "+doc.entreprise.certifications,m,y);y+=4;}
   pdf.setFontSize(20).setFont(undefined,"bold").text(doc.type==="devis"?"DEVIS":"FACTURE",rX,m,{align:"right"});
   pdf.setFontSize(10).setFont(undefined,"normal");
   pdf.text("N° "+doc.docNumber,rX,m+9,{align:"right"});
@@ -1005,97 +1008,6 @@ function generatePDF(doc){
 }
 window.genererPDF=generatePDF;
 
-// ——— PDF PREUVE DE SIGNATURE ———
-window.downloadSignedProof=async function(docNumber){
-  try{
-    // Récupérer la signature depuis Supabase
-    const{data:sig,error}=await sb.from("signatures")
-      .select("*")
-      .eq("doc_number",docNumber)
-      .eq("user_id",S.user.id)
-      .eq("status","signed")
-      .single();
-    if(error||!sig){alert("Preuve introuvable pour ce document.");return;}
-    
-    const doc=sig.doc_data;
-    const e=doc.entreprise||{};
-    const{jsPDF}=window.jspdf;
-    const pdf=new jsPDF({unit:"mm",format:"a4"});
-    const W=210,m=18,cW=W-2*m,rX=W-m;let y=m;
-    
-    // En-tête entreprise
-    pdf.setFontSize(16).setFont(undefined,"bold").text(e.nom||"",m,y);y+=6;
-    pdf.setFontSize(9).setFont(undefined,"normal").text(e.adresse||"",m,y);y+=5;
-    pdf.text("Tél : "+e.tel,m,y);y+=4;
-    pdf.text("Email : "+e.email,m,y);y+=4;
-    if(e.siret)pdf.text("SIRET : "+e.siret,m,y);y+=8;
-    
-    // Titre devis
-    pdf.setFontSize(15).setFont(undefined,"bold").setTextColor(83,74,183);
-    pdf.text("DEVIS N° "+doc.docNumber,W/2,y,{align:"center"});y+=5;
-    pdf.setFontSize(9).setFont(undefined,"normal").setTextColor(0);
-    pdf.text("Date : "+doc.date+"  |  Valable jusqu'au : "+(doc.validUntil||""),W/2,y,{align:"center"});y+=8;
-    
-    // Client
-    pdf.setFillColor(249,248,246);pdf.roundedRect(m,y,cW,18,2,2,"F");
-    pdf.setFontSize(8).setTextColor(120).text("CLIENT",m+4,y+5);
-    pdf.setFontSize(10).setTextColor(0).setFont(undefined,"bold").text(doc.client?.nom||"",m+4,y+11);
-    pdf.setFontSize(8).setFont(undefined,"normal").setTextColor(80);
-    if(doc.client?.adresse)pdf.text(doc.client.adresse,m+4,y+15);
-    y+=22;
-    
-    // Description
-    pdf.setFontSize(9).setTextColor(0);
-    if(doc.description){const dl=pdf.splitTextToSize(doc.description,cW);pdf.text(dl,m,y);y+=dl.length*4.5+4;}
-    
-    // Tableau lignes
-    const tbBody=[];
-    if(doc.nb_heures&&parseFloat(doc.nb_heures)>0)
-      tbBody.push(["Main d'œuvre ("+doc.nb_heures+"h × "+e.taux_horaire+"€/h)",doc.nb_heures,parseFloat(e.taux_horaire).toFixed(2)+" €",doc.moHT.toFixed(2)+" €"]);
-    (doc.pieces||[]).filter(p=>p.description).forEach(p=>
-      tbBody.push([p.description,p.quantite,parseFloat(p.prix_unitaire).toFixed(2)+" €",(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)+" €"]));
-    if(tbBody.length>0){
-      pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tbBody,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[55,138,221],textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});
-      y=pdf.lastAutoTable.finalY+6;
-    }
-    
-    // Totaux
-    pdf.setFontSize(9).text("Total HT :",135,y);pdf.text((doc.totalHT||0).toFixed(2)+" €",rX,y,{align:"right"});y+=5;
-    if(e.assujetti_tva&&doc.tva){pdf.text("TVA ("+doc.tvaRate+"%) :",135,y);pdf.text((doc.tva||0).toFixed(2)+" €",rX,y,{align:"right"});y+=5;}
-    pdf.setFont(undefined,"bold").setFontSize(11).text(e.assujetti_tva?"TOTAL TTC :":"TOTAL :",145,y);
-    pdf.text((doc.ttc||0).toFixed(2)+" €",rX,y,{align:"right"});y+=14;
-    if(!e.assujetti_tva){pdf.setFont(undefined,"italic").setFontSize(8).setTextColor(100).text("TVA non applicable, art. 293 B du CGI",m,y);y+=6;pdf.setTextColor(0);}
-    
-    // ═══ SECTION SIGNATURE ═══
-    pdf.setDrawColor(83,74,183);pdf.setLineWidth(0.5);pdf.line(m,y,W-m,y);y+=6;
-    pdf.setFillColor(240,238,255);pdf.roundedRect(m,y,cW,52,3,3,"F");
-    pdf.setFont(undefined,"bold").setFontSize(10).setTextColor(83,74,183);
-    pdf.text("✓ DEVIS SIGNÉ ÉLECTRONIQUEMENT",W/2,y+8,{align:"center"});
-    pdf.setFont(undefined,"normal").setFontSize(8).setTextColor(60);
-    const signedDate=sig.signed_at?new Date(sig.signed_at).toLocaleString("fr-FR"):"—";
-    pdf.text("Signé par : "+( doc.client?.nom||"Le client")+"  |  Date : "+signedDate,W/2,y+14,{align:"center"});
-    pdf.text("La signature ci-dessous a valeur contractuelle conformément à la loi.",W/2,y+19,{align:"center"});
-    
-    // Image de la signature
-    if(sig.signature_data){
-      try{pdf.addImage(sig.signature_data,"PNG",m+10,y+22,cW-20,22);}catch(e){}
-    }
-    pdf.setDrawColor(180);pdf.setLineWidth(0.3);pdf.rect(m+10,y+22,cW-20,22);
-    
-    y+=55;
-    pdf.setFont(undefined,"italic").setFontSize(7).setTextColor(120);
-    pdf.text("Document généré par Artio — preuve de signature électronique — "+new Date().toLocaleString("fr-FR"),W/2,y,{align:"center"});
-    
-    // Footer logo
-    try{pdf.addImage("data:image/png;base64,"+LOGO_WHITE,"PNG",m,280,22,7);}catch{}
-    pdf.setFontSize(7).setTextColor(150).text(e.nom+" — SIRET : "+e.siret,W/2,287,{align:"center"});
-    
-    pdf.save("PREUVE_SIGNATURE_"+docNumber+".pdf");
-  }catch(err){
-    console.error("downloadSignedProof error:",err);
-    alert("Erreur lors de la génération de la preuve : "+err.message);
-  }
-};
 
 // ——— REALTIME SIGNATURE LISTENER ———
 function setupSignatureListener(userId){
@@ -1258,15 +1170,34 @@ function renderApp(){
 
 function renderProfil(){
   const e=S.entreprise;
-  return`<div class="card">
+  const BTP_SECTORS=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
+    const isBTP=BTP_SECTORS.includes(e.secteur);
+    return`<div class="card">
     <p style="font-size:15px;font-weight:500;margin-bottom:3px;">Profil entreprise</p>
     <p style="font-size:12px;color:#888;margin-bottom:14px;">Sauvegardé en ligne — accessible depuis tous tes appareils</p>
         <div class="field">
       <label class="label">Secteur d'activité</label>
-      <select class="profil-input" data-id="secteur" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;">
-        <option value="">-- Choisir --</option>
-        ${["Artisan / BTP","Plombier","Électricien","Menuisier","Peintre","Maçon","Chauffagiste","Consultant","Coach / Formateur","Photographe","Développeur freelance","Designer","Traducteur","Comptable","Avocat / Juriste","Médecin / Thérapeute","Agent immobilier","Autre"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
-      </select>
+      <select class="profil-input" data-id="secteur" onchange="render()" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;">
+          <option value="">-- Choisir votre secteur --</option>
+          <optgroup label="🔨 BTP / Artisanat">
+            ${["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
+          </optgroup>
+          <optgroup label="💼 Services aux entreprises">
+            ${["Consultant / Conseil","Coach / Formateur","Développeur freelance","Designer / Graphiste","Traducteur / Interprète","Comptable / Expert-comptable","Juriste / Avocat","Agent commercial","Community manager","Rédacteur / Copywriter"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
+          </optgroup>
+          <optgroup label="🧑‍💼 Services aux particuliers">
+            ${["Photographe / Vidéaste","Coiffeur / Esthéticien","Laveur de véhicules","Jardinage / Entretien","Aide à domicile","Garde d\'enfants","Déménagement","Chauffeur VTC / Livraison","Informatique / Dépannage","Traiteur / Événementiel"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
+          </optgroup>
+          <optgroup label="🏥 Santé / Bien-être">
+            ${["Médecin / Généraliste","Kinésithérapeute","Ostéopathe","Infirmier(e)","Diététicien / Nutritionniste","Coach sportif","Psychologue / Thérapeute"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
+          </optgroup>
+          <optgroup label="🏠 Immobilier / Transport">
+            ${["Agent immobilier","Mandataire immobilier","Gestionnaire de biens"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
+          </optgroup>
+          <optgroup label="📦 Autre">
+            <option value="Autre" ${e.secteur==="Autre"?"selected":""}>Autre activité</option>
+          </optgroup>
+        </select>
     </div>
     <div class="field">
       <label class="label">Conditions de paiement</label>
@@ -1379,7 +1310,9 @@ function renderDevisFacture(){
     ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true],
     S.entreprise.assujetti_tva?["tva","TVA (%)","10 (rénovation) ou 20 (neuf)","text",false]:null,
   ];
-  return`<div class="card">
+  const BTP_SECTORS=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
+    const isBTP=BTP_SECTORS.includes(e.secteur);
+    return`<div class="card">
     ${renderVoice("devis")}
     ${fields.filter(f=>f!==null).map(([id,label,ph,type,opt])=>{
       const heureOpts=(()=>{
@@ -1417,7 +1350,9 @@ function renderEmail(){
   const reponseF=[["client_nom","Nom du client","Ex: M. Martin","text",false],["message","Message reçu du client","Colle ici le message...","textarea",false],["contexte","Contexte 🎙","Ex: infos que le client ne connaît pas encore, contexte particulier...","textarea",true,"voice"]];
   const suiviF=[["client_nom","Nom du client",L("ph_client_nom"),"text",false],["adresse_travaux","Adresse du chantier","Ex: 12 rue de la Paix","text",true],["avancement","Où en sont les travaux","Ex: installation terminée, il reste la mise en service demain...","textarea",false],["suite","Prochaine étape","Ex: retour jeudi matin","text",true],["contexte","Contexte","Ex: retard dû à une livraison, attente validation client...","textarea",true]];
   const activeF=m==="reponse"?reponseF:suiviF;
-  return`<div class="card">
+  const BTP_SECTORS=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
+    const isBTP=BTP_SECTORS.includes(e.secteur);
+    return`<div class="card">
     <div class="mode-tabs">
       <button class="mode-btn ${m==="reponse"?"active":""}" onclick="setEmailMode('reponse')">💬 Répondre à un message</button>
       <button class="mode-btn ${m==="suivi"?"active":""}" onclick="setEmailMode('suivi')">🔧 Mise à jour chantier</button>
@@ -1461,7 +1396,9 @@ function renderEmailsGmail(){
       <button class="btn-primary" onclick="set({showSettings:true,settingsPage:'gmail'})">⚙ Configurer Gmail</button>
     </div>`;
   }
-  return`<div class="card">
+  const BTP_SECTORS=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
+    const isBTP=BTP_SECTORS.includes(e.secteur);
+    return`<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <p style="font-weight:500;">Emails non lus</p>
       <div style="display:flex;gap:8px;">
@@ -1563,7 +1500,6 @@ function renderHistorique(){
               <div style="display:flex;gap:6px;flex-wrap:wrap;">
                 <button class="btn-small" onclick="downloadPDF('${doc.docNumber}')">⬇ PDF</button>
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small btn-blue" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}
-                ${doc.type==="devis"&&doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;font-size:11px;" onclick="downloadSignedProof('${doc.docNumber}')">📄 Preuve signée</button>`:""}
                 ${doc.type==="devis"&&doc.accepte&&!hasF?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:""}
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#FFF8E1;color:#E65100;border-color:#FFB74D;" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:""}
@@ -1574,8 +1510,8 @@ function renderHistorique(){
               `<button class="btn-small" style="font-size:11px;" onclick="set({previewDocNum:S.previewDocNum==='${doc.docNumber}'?null:'${doc.docNumber}'})">👁 Aperçu</button>`}
           </div>`;
         }).join("")}
+        ${S.deleteConfirm===dos.id?`<div style="padding:8px 0;"><button class="btn-small btn-red" onclick="deleteDossier('${dos.id}')">Confirmer suppression</button> <button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button></div>`:""}
       </div>`:""}
-    ${S.deleteConfirm===dos.id?`<div style="padding:10px 16px;background:#FCEBEB;border-top:0.5px solid #F09595;border-radius:0 0 12px 12px;display:flex;align-items:center;gap:8px;"><span style="font-size:13px;color:#A32D2D;flex:1;">Supprimer ce dossier définitivement ?</span><button class="btn-small btn-red" onclick="confirmDeleteDossier('${dos.id}')">Supprimer</button><button class="btn-small" onclick="set({deleteConfirm:null})" style="margin-left:8px;">Annuler</button></div>`:""}
     </div>`;
   }).join("");
 }
