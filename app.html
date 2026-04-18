@@ -216,13 +216,7 @@ async function loadUserData(userId){
         api_key:profil.api_key||"",assujetti_tva:profil.assujetti_tva||false,
         secteur:profil.secteur||"",
         conditions_paiement:profil.conditions_paiement||"",
-        delai_paiement:profil.delai_paiement||"30",
-          rc_pro_assureur:profil.rc_pro_assureur||"",
-          rc_pro_police:profil.rc_pro_police||"",
-          decennale_assureur:profil.decennale_assureur||"",
-          decennale_police:profil.decennale_police||"",
-          certifications:profil.certifications||"",
-          nature_operation:profil.nature_operation||""
+        delai_paiement:profil.delai_paiement||"30"
       };
       S.profilSaved=!!profil.nom;
     }
@@ -862,14 +856,7 @@ window.startRename=function(id){
   const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;
   set({renamingDossierId:id,renamingDossierVal:dos.nom||''});
 };
-async function checkAndConvertPendingSignatures(){
-  try{
-    const{data:sigs}=await sb.from("signatures").select("dossier_id,doc_number").eq("user_id",S.user.id).eq("status","signed");
-    if(!sigs||!sigs.length)return;let converted=0;
-    for(const sig of sigs){const dos=S.dossiers.find(d=>d.id===sig.dossier_id);if(!dos)continue;if((dos.documents||[]).some(d=>d.type==="facture"))continue;const devis=(dos.documents||[]).find(d=>d.type==="devis"&&d.docNumber===sig.doc_number);if(!devis)continue;if(!devis.accepte){dos.documents=dos.documents.map(d=>d.docNumber===sig.doc_number?{...d,accepte:true}:d);dos.statut="devis_accepte";}await convertToFacture(dos.id,sig.doc_number);converted++;}
-    if(converted>0){showArtioToast("✅ "+converted+" devis signé(s) converti(s) en facture !");render();}
-  }catch(e){console.error("checkAndConvert:",e);}
-}
+async function checkAndConvertPendingSignatures(){try{const{data:sigs}=await sb.from("signatures").select("dossier_id,doc_number").eq("user_id",S.user.id).eq("status","signed");if(!sigs||!sigs.length)return;let converted=0;for(const sig of sigs){const dos=S.dossiers.find(d=>d.id===sig.dossier_id);if(!dos)continue;if((dos.documents||[]).some(d=>d.type==="facture"))continue;const devis=(dos.documents||[]).find(d=>d.type==="devis"&&d.docNumber===sig.doc_number);if(!devis)continue;if(!devis.accepte){dos.documents=dos.documents.map(d=>d.docNumber===sig.doc_number?{...d,accepte:true}:d);dos.statut="devis_accepte";}await convertToFacture(dos.id,sig.doc_number);converted++;}if(converted>0){showArtioToast("✅ "+converted+" devis signé(s) converti(s) en facture !");render();}}catch(e){console.error("checkAndConvert:",e);}}
 
 window.renameDossier=async function(id){
   const newNom=S.renamingDossierVal.trim();
@@ -939,13 +926,7 @@ function generatePDF(doc){
   pdf.setFontSize(9).setFont(undefined,"normal").text(doc.entreprise.adresse,m,y);y+=5;
   pdf.text("Tél : "+doc.entreprise.tel,m,y);y+=4;
   pdf.text("Email : "+doc.entreprise.email,m,y);y+=4;
-  pdf.text("SIRET : "+doc.entreprise.siret,m,y);y+=4;
-  // Infos légales (RC Pro, Décennale, Certifications)
-  const BTP_PDF=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
-  const isBTPdoc=BTP_PDF.includes(doc.entreprise.secteur||"");
-  if(doc.entreprise.rc_pro_assureur){pdf.text("RC Pro : "+doc.entreprise.rc_pro_assureur+(doc.entreprise.rc_pro_police?" — Pol. "+doc.entreprise.rc_pro_police:""),m,y);y+=4;}
-  if(isBTPdoc&&doc.entreprise.decennale_assureur){pdf.text("Décennale : "+doc.entreprise.decennale_assureur+(doc.entreprise.decennale_police?" — Pol. "+doc.entreprise.decennale_police:""),m,y);y+=4;}
-  if(isBTPdoc&&doc.entreprise.certifications){pdf.text("Certif. : "+doc.entreprise.certifications,m,y);y+=4;}
+  pdf.text("SIRET : "+doc.entreprise.siret,m,y);
   pdf.setFontSize(20).setFont(undefined,"bold").text(doc.type==="devis"?"DEVIS":"FACTURE",rX,m,{align:"right"});
   pdf.setFontSize(10).setFont(undefined,"normal");
   pdf.text("N° "+doc.docNumber,rX,m+9,{align:"right"});
@@ -996,7 +977,10 @@ function generatePDF(doc){
   };
   const condTxt=condMap[doc.entreprise.conditions_paiement||""]||"Paiement à réception de facture.";
   const delai=doc.entreprise.delai_paiement||"30";
-  pdf.text("Conditions : "+condTxt,m,y);y+=4;
+  const isBTPpdf=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"].includes(doc.entreprise?.secteur||"");
+  const fullCondTxt="Conditions : "+condTxt+(doc.entreprise?.delai_paiement?" Devis valable "+doc.entreprise.delai_paiement+" jours.":"")+(isBTPpdf?" Garantie décennale applicable.":"");
+  const condLines=pdf.splitTextToSize(fullCondTxt,cW);
+  pdf.text(condLines,m,y);y+=condLines.length*4+2;
   pdf.text("Devis valable "+delai+" jours.",m,y);y+=12;
   pdf.setTextColor(0).setFontSize(9).text("Bon pour accord — Date et signature :",m,y);y+=14;
   pdf.setDrawColor(180).line(m,y,m+80,y);
@@ -1170,34 +1154,15 @@ function renderApp(){
 
 function renderProfil(){
   const e=S.entreprise;
-  const BTP_SECTORS=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
-    const isBTP=BTP_SECTORS.includes(e.secteur);
-    return`<div class="card">
+  return`<div class="card">
     <p style="font-size:15px;font-weight:500;margin-bottom:3px;">Profil entreprise</p>
     <p style="font-size:12px;color:#888;margin-bottom:14px;">Sauvegardé en ligne — accessible depuis tous tes appareils</p>
         <div class="field">
       <label class="label">Secteur d'activité</label>
-      <select class="profil-input" data-id="secteur" onchange="render()" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;">
-          <option value="">-- Choisir votre secteur --</option>
-          <optgroup label="🔨 BTP / Artisanat">
-            ${["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
-          </optgroup>
-          <optgroup label="💼 Services aux entreprises">
-            ${["Consultant / Conseil","Coach / Formateur","Développeur freelance","Designer / Graphiste","Traducteur / Interprète","Comptable / Expert-comptable","Juriste / Avocat","Agent commercial","Community manager","Rédacteur / Copywriter"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
-          </optgroup>
-          <optgroup label="🧑‍💼 Services aux particuliers">
-            ${["Photographe / Vidéaste","Coiffeur / Esthéticien","Laveur de véhicules","Jardinage / Entretien","Aide à domicile","Garde d\'enfants","Déménagement","Chauffeur VTC / Livraison","Informatique / Dépannage","Traiteur / Événementiel"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
-          </optgroup>
-          <optgroup label="🏥 Santé / Bien-être">
-            ${["Médecin / Généraliste","Kinésithérapeute","Ostéopathe","Infirmier(e)","Diététicien / Nutritionniste","Coach sportif","Psychologue / Thérapeute"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
-          </optgroup>
-          <optgroup label="🏠 Immobilier / Transport">
-            ${["Agent immobilier","Mandataire immobilier","Gestionnaire de biens"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
-          </optgroup>
-          <optgroup label="📦 Autre">
-            <option value="Autre" ${e.secteur==="Autre"?"selected":""}>Autre activité</option>
-          </optgroup>
-        </select>
+      <select class="profil-input" data-id="secteur" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;">
+        <option value="">-- Choisir --</option>
+        ${["Artisan / BTP","Plombier","Électricien","Menuisier","Peintre","Maçon","Chauffagiste","Consultant","Coach / Formateur","Photographe","Développeur freelance","Designer","Traducteur","Comptable","Avocat / Juriste","Médecin / Thérapeute","Agent immobilier","Autre"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
+      </select>
     </div>
     <div class="field">
       <label class="label">Conditions de paiement</label>
@@ -1310,9 +1275,7 @@ function renderDevisFacture(){
     ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true],
     S.entreprise.assujetti_tva?["tva","TVA (%)","10 (rénovation) ou 20 (neuf)","text",false]:null,
   ];
-  const BTP_SECTORS=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
-    const isBTP=BTP_SECTORS.includes(e.secteur);
-    return`<div class="card">
+  return`<div class="card">
     ${renderVoice("devis")}
     ${fields.filter(f=>f!==null).map(([id,label,ph,type,opt])=>{
       const heureOpts=(()=>{
@@ -1350,9 +1313,7 @@ function renderEmail(){
   const reponseF=[["client_nom","Nom du client","Ex: M. Martin","text",false],["message","Message reçu du client","Colle ici le message...","textarea",false],["contexte","Contexte 🎙","Ex: infos que le client ne connaît pas encore, contexte particulier...","textarea",true,"voice"]];
   const suiviF=[["client_nom","Nom du client",L("ph_client_nom"),"text",false],["adresse_travaux","Adresse du chantier","Ex: 12 rue de la Paix","text",true],["avancement","Où en sont les travaux","Ex: installation terminée, il reste la mise en service demain...","textarea",false],["suite","Prochaine étape","Ex: retour jeudi matin","text",true],["contexte","Contexte","Ex: retard dû à une livraison, attente validation client...","textarea",true]];
   const activeF=m==="reponse"?reponseF:suiviF;
-  const BTP_SECTORS=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
-    const isBTP=BTP_SECTORS.includes(e.secteur);
-    return`<div class="card">
+  return`<div class="card">
     <div class="mode-tabs">
       <button class="mode-btn ${m==="reponse"?"active":""}" onclick="setEmailMode('reponse')">💬 Répondre à un message</button>
       <button class="mode-btn ${m==="suivi"?"active":""}" onclick="setEmailMode('suivi')">🔧 Mise à jour chantier</button>
@@ -1396,9 +1357,7 @@ function renderEmailsGmail(){
       <button class="btn-primary" onclick="set({showSettings:true,settingsPage:'gmail'})">⚙ Configurer Gmail</button>
     </div>`;
   }
-  const BTP_SECTORS=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
-    const isBTP=BTP_SECTORS.includes(e.secteur);
-    return`<div class="card">
+  return`<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <p style="font-weight:500;">Emails non lus</p>
       <div style="display:flex;gap:8px;">
@@ -1536,7 +1495,15 @@ function renderDocPreview(doc){
       ${doc.entreprise.assujetti_tva?`<p style="margin:3px 0;color:#888;">TVA (${doc.tvaRate}%) : ${doc.tva.toFixed(2)} €</p>`:`<p style="margin:3px 0;color:#888;font-size:11px;">TVA non applicable — art. 293B du CGI</p>`}
       <p style="margin:6px 0 0;font-weight:500;font-size:15px;">${doc.entreprise.assujetti_tva?"Total TTC":"Total"} : ${doc.ttc.toFixed(2)} €</p>
     </div>
-    ${doc.type==="devis"?`<div style="margin-top:12px;padding:10px;background:#f0eeea;border-radius:8px;font-size:11px;color:#888;">Conditions : 30% d'acompte à la commande, solde à réception. Devis valable 30 jours. Garantie décennale applicable.</div>`:""}
+    ${doc.type==="devis"?(()=>{
+      const BTP_SEC=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
+      const cMap={"30_reception":"Paiement à réception de facture.","30_jours":"Paiement à 30 jours.","45_jours":"Paiement à 45 jours.","60_jours":"Paiement à 60 jours.","acompte_30":"30% d'acompte à la commande, solde à réception.","acompte_50":"50% d'acompte à la commande, solde à réception.","3_versements":"3 versements égaux.","custom":"Voir conditions spécifiques."};
+      const cTxt=cMap[doc.entreprise?.conditions_paiement||""]||"Paiement à réception de facture.";
+      const delai=doc.entreprise?.delai_paiement||"30";
+      const isBTP=BTP_SEC.includes(doc.entreprise?.secteur||"");
+      const extras=(isBTP?" Garantie décennale applicable.":"")+(isBTP&&doc.entreprise?.certifications?" Certif. : "+doc.entreprise.certifications+".":"");
+      return`<div style="margin-top:12px;padding:10px;background:#f0eeea;border-radius:8px;font-size:11px;color:#888;">${cTxt} Devis valable ${delai} jours.${extras}</div>`;
+    })():""}
   </div>`;
 }
 
