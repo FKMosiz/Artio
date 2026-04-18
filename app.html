@@ -1531,7 +1531,7 @@ function renderHistorique(){
             <button class="btn-small btn-blue" onclick="event.stopPropagation();renameDossier('${dos.id}')">OK</button>
             <button class="btn-small" onclick="event.stopPropagation();set({renamingDossierId:null})">✕</button>
           `:`<button class="btn-small" onclick="event.stopPropagation();startRename('${dos.id}')">✏</button>`}
-          <button class="btn-small" onclick="event.stopPropagation();set({deleteConfirm:S.deleteConfirm===dos.id?null:dos.id})" style="color:#A32D2D;border-color:#F09595;">🗑</button>
+          <button class="btn-small" onclick="event.stopPropagation();if(window.confirm('Supprimer ce dossier définitivement ?'))confirmDeleteDossier('${dos.id}')" style="color:#A32D2D;border-color:#F09595;">🗑</button>
         </div>
       </div>
       ${isOpen?`<div class="dossier-docs" style="padding:12px;border-top:0.5px solid #f0eeea;">
@@ -1558,7 +1558,7 @@ function renderHistorique(){
         }).join("")}
         
       </div>`:""}
-    ${S.deleteConfirm===dos.id?`<div style="padding:10px 16px;background:#FCEBEB;border-top:0.5px solid #F09595;border-radius:0 0 12px 12px;display:flex;align-items:center;gap:8px;"><span style="font-size:13px;color:#A32D2D;flex:1;">Supprimer ce dossier définitivement ?</span><button class="btn-small btn-red" onclick="confirmDeleteDossier('${dos.id}')">Supprimer</button><button class="btn-small" onclick="set({deleteConfirm:null})" style="margin-left:8px;">Annuler</button></div>`:""}\n    </div>`;
+    </div>`;
   }).join("");
 }
 function renderDocPreview(doc){
