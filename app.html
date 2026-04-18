@@ -852,44 +852,28 @@ convertToFacture=async(dosId,docNum)=>{
   storeDoc(factDoc);
   await upsertDossier(dos);set({convertingId:null});
 };
-// ── Convertir les devis signés sans facture (app était fermée) ──
+window.startRename=function(id){
+  const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;
+  set({renamingDossierId:id,renamingDossierVal:dos.nom||''});
+};
 async function checkAndConvertPendingSignatures(){
   try{
-    // Interroger signatures : tous les devis signés de cet artisan
-    const{data:sigs}=await sb.from("signatures")
-      .select("dossier_id,doc_number")
-      .eq("user_id",S.user.id)
-      .eq("status","signed");
+    const{data:sigs}=await sb.from("signatures").select("dossier_id,doc_number").eq("user_id",S.user.id).eq("status","signed");
     if(!sigs||!sigs.length)return;
     let converted=0;
     for(const sig of sigs){
       const dos=S.dossiers.find(d=>d.id===sig.dossier_id);
       if(!dos)continue;
-      // Déjà une facture → skip
       if((dos.documents||[]).some(d=>d.type==="facture"))continue;
-      // Trouver le devis correspondant
       const devis=(dos.documents||[]).find(d=>d.type==="devis"&&d.docNumber===sig.doc_number);
       if(!devis)continue;
-      // Marquer le devis comme accepté si pas encore fait
-      if(!devis.accepte){
-        dos.documents=dos.documents.map(d=>d.docNumber===sig.doc_number?{...d,accepte:true}:d);
-        dos.statut="devis_accepte";
-      }
-      // Créer la facture
-      await convertToFacture(dos.id,sig.doc_number);
-      converted++;
+      if(!devis.accepte){dos.documents=dos.documents.map(d=>d.docNumber===sig.doc_number?{...d,accepte:true}:d);dos.statut="devis_accepte";}
+      await convertToFacture(dos.id,sig.doc_number);converted++;
     }
-    if(converted>0){
-      showArtioToast("✅ "+converted+" devis signé(s) converti(s) en facture automatiquement");
-      render();
-    }
-  }catch(e){console.error("checkAndConvert error:",e);}
+    if(converted>0){showArtioToast("✅ "+converted+" devis signé(s) converti(s) en facture !");render();}
+  }catch(e){console.error("checkAndConvert:",e);}
 }
 
-window.startRename=function(id){
-  const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;
-  set({renamingDossierId:id,renamingDossierVal:dos.nom||''});
-};
 window.renameDossier=async function(id){
   const newNom=S.renamingDossierVal.trim();
   if(!newNom)return;
@@ -981,7 +965,7 @@ function generatePDF(doc){
   pdf.setFont(undefined,"normal");
   const dl=pdf.splitTextToSize(doc.description,cW);
   pdf.text(dl,m,y);y+=dl.length*4.5+6;
-  const tb=[["Main d'œuvre ("+doc.nb_heures+"h × "+doc.entreprise.taux_horaire+"€/h)",doc.nb_heures,parseFloat(doc.entreprise.taux_horaire).toFixed(2)+" €",doc.moHT.toFixed(2)+" €"],...doc.pieces.map(p=>[p.description,p.quantite,parseFloat(p.prix_unitaire).toFixed(2)+" €",(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)+" €"])];
+  const tb=[...(doc.nb_heures&&parseFloat(doc.nb_heures)>0?[["Main d'œuvre ("+doc.nb_heures+"h × "+doc.entreprise.taux_horaire+"€/h)",doc.nb_heures,parseFloat(doc.entreprise.taux_horaire).toFixed(2)+" €",doc.moHT.toFixed(2)+" €"]]:[]),...doc.pieces.map(p=>[p.description,p.quantite,parseFloat(p.prix_unitaire).toFixed(2)+" €",(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)+" €"])];
   pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tb,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3,overflow:"linebreak",valign:"top"},headStyles:{fillColor:[55,138,221],textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85,overflow:"linebreak"},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});
   y=pdf.lastAutoTable.finalY+6;
   pdf.setFontSize(9).setFont(undefined,"normal");
@@ -1286,6 +1270,10 @@ function renderTotaux(){
   </div>`;
 }
 
+function updateTotaux(){
+  const el=document.getElementById('totaux-container');
+  if(el)el.innerHTML=renderTotaux();
+}
 function renderDevisFacture(){
   const f=S.fields,tab=S.tab,e=S.entreprise;
   const fields=[
@@ -1320,7 +1308,7 @@ function renderDevisFacture(){
           ?`<select data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;" onchange="S.fields['${id}']=this.value">${heureOpts}</select>`
           :type==="date"
             ?`<input type="date" value="${S.fields[id]||""}" data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;font-family:inherit;" oninput="S.fields['${id}']=this.value"/>`
-            :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'render()':''}"/>`;
+            :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'updateTotaux()':''}" />`;
       return`<div class="field">
       <label class="label">${label}${opt?`<span class="opt">(optionnel)</span>`:""}</label>
       ${input}
@@ -1511,7 +1499,7 @@ function renderDocPreview(doc){
     <table class="preview-table">
       <thead><tr><th style="text-align:left;">Description</th><th style="text-align:right;">Qté</th><th style="text-align:right;">Prix unit. HT</th><th style="text-align:right;">Total HT</th></tr></thead>
       <tbody>
-        <tr><td>Main d'œuvre (${doc.nb_heures}h × ${doc.entreprise.taux_horaire} €/h)</td><td style="text-align:right;">${doc.nb_heures}</td><td style="text-align:right;">${parseFloat(doc.entreprise.taux_horaire).toFixed(2)} €</td><td style="text-align:right;">${doc.moHT.toFixed(2)} €</td></tr>
+        ${doc.nb_heures&&parseFloat(doc.nb_heures)>0?`<tr><td>Main d'œuvre (${doc.nb_heures}h × ${doc.entreprise.taux_horaire} €/h)</td><td style="text-align:right;">${doc.nb_heures}</td><td style="text-align:right;">${parseFloat(doc.entreprise.taux_horaire).toFixed(2)} €</td><td style="text-align:right;">${doc.moHT.toFixed(2)} €</td></tr>`:""}
         ${doc.pieces.map(p=>`<tr><td>${esc(p.description)}</td><td style="text-align:right;">${p.quantite}</td><td style="text-align:right;">${parseFloat(p.prix_unitaire).toFixed(2)} €</td><td style="text-align:right;">${(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)} €</td></tr>`).join("")}
       </tbody>
     </table>
