@@ -178,15 +178,23 @@ function getAllDocs(){
   return docs;
 }
 
+// Parse dates stockées en format DD/MM/YYYY
+function parseDateFR(s){
+  if(!s)return new Date("");
+  const p=s.split("/");
+  if(p.length===3)return new Date(p[2],p[1]-1,p[0]);
+  return new Date(s);
+}
+
 function filterDocs(docs){
   const now=new Date();
   if(filterType==="mois"){
-    return docs.filter(d=>{const dt=new Date(d.date||"");return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear();});
+    return docs.filter(d=>{const dt=parseDateFR(d.date);return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear();});
   }else if(filterType==="annee"){
-    return docs.filter(d=>{const dt=new Date(d.date||"");return dt.getFullYear()===now.getFullYear();});
+    return docs.filter(d=>{const dt=parseDateFR(d.date);return dt.getFullYear()===now.getFullYear();});
   }else if(filterType==="custom"&&filterFrom&&filterTo){
     const from=new Date(filterFrom),to=new Date(filterTo);
-    return docs.filter(d=>{const dt=new Date(d.date||"");return dt>=from&&dt<=to;});
+    return docs.filter(d=>{const dt=parseDateFR(d.date);return dt>=from&&dt<=to;});
   }
   return docs;
 }
@@ -200,12 +208,12 @@ function calcKPIs(){
   const caTotal=factures.reduce((s,d)=>s+(d.ttc||0),0);
   const caHT=factures.reduce((s,d)=>s+(d.totalHT||0),0);
   const tvaColl=factures.reduce((s,d)=>s+(d.tva||0),0);
-  const caMois=filterType==="mois"?caTotal:filterDocs(all.filter(d=>d.type==="facture"&&(()=>{const dt=new Date(d.date||"");return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear();})())).reduce((s,d)=>s+(d.ttc||0),0);
+  const caMois=filterType==="mois"?caTotal:filterDocs(all.filter(d=>d.type==="facture"&&(()=>{const dt=parseDateFR(d.date);return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear();})())).reduce((s,d)=>s+(d.ttc||0),0);
   const devisAtt=devis.filter(d=>!d.accepte);
   const caAttente=devisAtt.reduce((s,d)=>s+(d.ttc||0),0);
   const txConv=devis.length>0?Math.round((devis.filter(d=>d.accepte).length/devis.length)*100):0;
   const caParMois={};
-  all.filter(d=>d.type==="facture").forEach(d=>{const dt=new Date(d.date||"");const k=dt.getFullYear()+"-"+dt.getMonth();caParMois[k]=(caParMois[k]||0)+(d.ttc||0);});
+  all.filter(d=>d.type==="facture").forEach(d=>{const dt=parseDateFR(d.date);const k=dt.getFullYear()+"-"+dt.getMonth();caParMois[k]=(caParMois[k]||0)+(d.ttc||0);});
   const bars=[];
   for(let i=5;i>=0;i--){const dt=new Date(now);dt.setMonth(dt.getMonth()-i);const k=dt.getFullYear()+"-"+dt.getMonth();bars.push({label:MOIS[dt.getMonth()],val:caParMois[k]||0});}
   return{caTotal,caHT,tvaColl,caMois,caAttente,txConv,nbFactures:factures.length,nbDevis:devis.length,nbAttente:devisAtt.length,bars,factures,devis};
