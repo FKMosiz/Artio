@@ -238,17 +238,18 @@ if(localStorage.getItem("artio_dark")==="1")document.body.classList.add("dark");
 
 let user=null,dossiers=[],clients=[],search="",showForm=false;
 
-function toggleApercu(id, idx){
+function toggleApercu(btn){
+  const id=btn.dataset.id;
+  const idx=parseInt(btn.dataset.idx);
   const el=document.getElementById(id);
-  const btn=document.getElementById('btn-'+id);
   if(!el)return;
   if(el.style.display==='none'){
     el.style.display='block';
     el.innerHTML=renderDocApercu(window._clientDocs[idx]);
-    if(btn)btn.textContent='▲ Fermer';
+    btn.textContent='▲ Fermer';
   }else{
     el.style.display='none';
-    if(btn)btn.textContent='👁 Aperçu';
+    btn.textContent='👁 Aperçu';
   }
 }
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
@@ -328,14 +329,72 @@ function render(){
   </div>`;
 }
 
+function buildDossiersHtml(c){
+  window._clientDocs={};
+  var gi=0;
+  var statLabels={"devis_envoye":"Devis envoyé","devis_accepte":"Devis accepté","facture":"Facturé","termine":"Clôturé"};
+  var statBg={"devis_envoye":"#FFF8E1","devis_accepte":"#f0eeff","facture":"#EAF3DE","termine":"#f5f5f3"};
+  var statCol={"devis_envoye":"#E65100","devis_accepte":"#534AB7","facture":"#2E7D32","termine":"#888"};
+  var dossiers=c.docs||[];
+  if(!dossiers.length) return '<p style="font-size:13px;color:#888;">Aucun dossier</p>';
+  return dossiers.map(function(dos){
+    var documents=dos.documents||[];
+    var caTotal=documents.filter(function(d){return d.type==='facture';}).reduce(function(s,d){return s+(d.ttc||0);},0);
+    var bg=statBg[dos.statut]||statBg['devis_envoye'];
+    var col=statCol[dos.statut]||statCol['devis_envoye'];
+    var label=statLabels[dos.statut]||dos.statut||'';
+    var docsHtml=documents.map(function(d){
+      var isDevis=d.type==='devis';
+      var apercuId='apercu_'+gi;
+      var curIdx=gi;
+      window._clientDocs[curIdx]=Object.assign({},d,{entreprise:d.entreprise||{}});
+      gi++;
+      return '<div style="border-top:0.5px solid #f0eeea;padding:8px 12px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">'
+        +'<div>'
+          +'<span style="font-weight:500;font-size:13px;">'+esc(d.docNumber||'—')+'</span>'
+          +'<span style="font-size:11px;color:#888;margin-left:6px;">'+(d.date||'')+'</span>'
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">'
+          +'<span class="badge" style="background:'+(isDevis?'#E6F1FB':'#EAF3DE')+';color:'+(isDevis?'#185FA5':'#2E7D32')+'">'+(isDevis?'Devis':'Facture')+'</span>'
+          +'<span style="font-size:12px;font-weight:600;">'+fmt(d.ttc)+'</span>'
+          +'<button class="btn-small" onclick="generateClientPDF(window._clientDocs['+curIdx+'])" style="font-size:11px;padding:3px 7px;">⬇ PDF</button>'
+          +"<button class=\"btn-small\" id=\"btn-"+apercuId+"\" onclick=\"toggleApercu(this)\" data-id=\""+apercuId+"\" data-idx=\""+curIdx+"\" style=\"font-size:11px;padding:3px 7px;\">👁 Aperçu</button>"
+        +'</div></div>'
+        +'<div id="'+apercuId+'" style="display:none;margin-top:6px;"></div>'
+        +'</div>';
+    }).join('');
+    var nb=documents.length;
+    return '<div style="border:0.5px solid #e0deda;border-radius:10px;margin-bottom:8px;overflow:hidden;">'
+      +"<div onclick=\"toggleDossierClient(this)\" data-dosid=\""+dos.id+"\" style=\"display:flex;justify-content:space-between;align-items:center;padding:10px 12px;cursor:pointer;background:#fafaf8;user-select:none;\">"
+        +'<div style="flex:1;min-width:0;">'
+          +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap;">'
+            +'<span class="badge" style="background:'+bg+';color:'+col+';font-size:11px;">'+label+'</span>'
+            +'<span style="font-weight:500;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(dos.nom||'Dossier')+'</span>'
+          +'</div>'
+          +'<div style="font-size:11px;color:#888;">'+nb+' document'+(nb>1?'s':'')+(caTotal>0?' · CA : '+fmt(caTotal):'')+'</div>'
+        +'</div>'
+        +'<span id="arr-'+dos.id+'" style="font-size:20px;color:#aaa;margin-left:8px;">›</span>'
+      +'</div>'
+      +'<div id="dp-'+dos.id+'" style="display:none;">'+docsHtml+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function toggleDossierClient(el){
+  var dosId=el.dataset.dosid;
+  var dp=document.getElementById('dp-'+dosId);
+  var arrow=document.getElementById('arr-'+dosId);
+  if(!dp)return;
+  var open=dp.style.display!=='none';
+  dp.style.display=open?'none':'block';
+  if(arrow)arrow.textContent=open?'›':'⌄';
+}
+
 function openClient(id){
   const allClients=buildClients();
   const c=allClients.find(x=>x.id===id);
   if(!c)return;
-  const docs=[];
-  (c.docs||[]).forEach(dos=>{(dos.documents||[]).forEach(d=>docs.push({...d,_dosNom:dos.nom}));});
-  docs.sort((a,b)=>new Date(b.date)-new Date(a.date));
-
   document.getElementById("panel").innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;">
       <div>
@@ -347,31 +406,8 @@ function openClient(id){
     </div>
     <a href="app.html?client_nom=${encodeURIComponent(c.nom)}&client_email=${encodeURIComponent(c.email||"")}&client_tel=${encodeURIComponent(c.tel||"")}&client_adresse=${encodeURIComponent(c.adresse||"")}" class="btn-primary" style="display:block;text-align:center;text-decoration:none;margin-bottom:1rem;padding:9px;">📋 Nouveau devis</a>
     ${c._source==="db"?`<button class="btn-small btn-red" onclick="deleteClient('${c.id}')" style="width:100%;margin-bottom:1rem;">Supprimer ce client</button>`:"" }
-    <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:#888;">HISTORIQUE (${docs.length})</div>
-    ${docs.length===0?`<p style="font-size:13px;color:#888;">Aucun document</p>`:""}
-    ${(()=>{
-      window._clientDocs={};
-      return docs.map((d,idx)=>{
-        const isDevis=d.type==="devis";
-        const apercuId="apercu_"+idx;
-        window._clientDocs[idx]=d;
-        return`<div class="history-item" style="display:block;padding:0;">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;flex-wrap:wrap;gap:6px;">
-            <div>
-              <div style="font-weight:500;">${esc(d.docNumber||"—")}</div>
-              <div style="font-size:11px;color:#888;">${d.date||""} · ${d._dosNom?esc(d._dosNom):""}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <span class="badge" style="background:${isDevis?"#E6F1FB":"#EAF3DE"};color:${isDevis?"#185FA5":"#2E7D32"}">${isDevis?"Devis":"Facture"}</span>
-              <span style="font-size:12px;font-weight:600;">${fmt(d.ttc)}</span>
-              <button class="btn-small" onclick="generateClientPDF(window._clientDocs[${idx}])" style="font-size:11px;padding:4px 8px;">⬇ PDF</button>
-              <button class="btn-small" id="btn-${apercuId}" onclick="toggleApercu(\'${apercuId}\',${idx})" style="font-size:11px;padding:4px 8px;">👁 Aperçu</button>
-            </div>
-          </div>
-          <div id="${apercuId}" style="display:none;padding:0 12px 10px;"></div>
-        </div>`;
-      }).join("");
-    })()}
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:#888;">DOSSIERS (${(c.docs||[]).length})</div>
+    ${buildDossiersHtml(c)}
     ${c._source==="db"?`
     <div style="margin-top:1.5rem;border-top:0.5px solid #e0deda;padding-top:1rem;">
       <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Modifier</div>
