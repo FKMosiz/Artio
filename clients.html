@@ -431,7 +431,21 @@ function openClient(id){
       <div class="field"><label class="label">Adresse <span style="font-size:11px;color:#888;font-weight:400;">(optionnel)</span></label><input id="edit-adresse" type="text" value="${esc(c.adresse||"")}"/></div>
       <div class="field"><label class="label">Notes <span style="font-size:11px;color:#888;font-weight:400;">(optionnel)</span></label><textarea id="edit-notes" rows="2">${esc(c.notes||"")}</textarea></div>
       <button class="btn-primary" onclick="saveClient('${c.id}')" style="width:100%;margin-top:4px;">Enregistrer</button>
-    </div>`:""}`;
+    </div>`:`
+    <div style="margin-top:1.5rem;border-top:0.5px solid #e0deda;padding-top:1rem;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:20px;">⚠️</span>
+        <div>
+          <div style="font-size:13px;font-weight:600;">Client non enregistré</div>
+          <div style="font-size:11px;color:#888;">Ce client existe uniquement via ses devis. Enregistre-le pour le conserver même sans documents.</div>
+        </div>
+      </div>
+      <div class="field"><label class="label">Email <span style="font-size:11px;color:#888;font-weight:400;">(optionnel)</span></label><input id="reg-email" type="email" placeholder="Ex: client@email.com"/></div>
+      <div class="field"><label class="label">Téléphone <span style="font-size:11px;color:#888;font-weight:400;">(optionnel)</span></label><input id="reg-tel" type="tel" placeholder="Ex: 06 12 34 56 78"/></div>
+      <div class="field"><label class="label">Adresse <span style="font-size:11px;color:#888;font-weight:400;">(optionnel)</span></label><input id="reg-adresse" type="text" placeholder="Ex: 12 rue de la Paix, Paris"/></div>
+      <div class="field"><label class="label">Notes <span style="font-size:11px;color:#888;font-weight:400;">(optionnel)</span></label><textarea id="reg-notes" rows="2" placeholder="Informations supplémentaires..."></textarea></div>
+      <button class="btn-primary" onclick="registerImplicitClient('${esc(c.nom)}')" style="width:100%;margin-top:4px;background:#534AB7;">💾 Enregistrer ce client</button>
+    </div>`}`;
 
   document.getElementById("panel").classList.add("open");
   document.getElementById("ov").classList.add("open");
@@ -488,6 +502,20 @@ window.createClient=async function(){
 };
 
 
+window.registerImplicitClient=async function(nom){
+  const email=document.getElementById("reg-email")?.value.trim()||"";
+  const tel=document.getElementById("reg-tel")?.value.trim()||"";
+  const adresse=document.getElementById("reg-adresse")?.value.trim()||"";
+  const notes=document.getElementById("reg-notes")?.value.trim()||"";
+  const{data,error}=await sb.from("clients").insert([{user_id:user.id,nom,email,tel,adresse,notes}]).select().single();
+  if(error){alert("Erreur : "+error.message);return}
+  clients.push(data);
+  closePanel();render();
+  let t=document.getElementById("c-toast");
+  if(!t){t=document.createElement("div");t.id="c-toast";t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#534AB7;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;transition:opacity .4s";}
+  t.textContent="✅ Client enregistré !";t.style.opacity="1";
+  setTimeout(()=>{t.style.opacity="0";},3000);
+};
 window.saveClient=async function(id){
   const patch={
     nom:document.getElementById("edit-nom")?.value.trim()||"",

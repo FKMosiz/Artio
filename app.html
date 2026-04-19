@@ -788,6 +788,29 @@ const nom=civStr+(travStr?" — "+travStr:"");
     const dos={id:uid(),nom,client:f.client_nom,statut:tab==="devis"?"devis_envoye":"facture",createdAt:todayFR(),documents:[doc]};
     await upsertDossier(dos);
     storeDoc(doc);
+    // Sauvegarder le client dans la table clients s'il n'existe pas déjà
+    if(f.client_nom&&f.client_nom.trim()){
+      const clientNom=f.client_nom.trim();
+      const clientEmail=(f.client_email||"").trim();
+      const clientTel=(f.client_tel||"").trim();
+      const clientAdresse=(doc.client?.adresse||f.client_adresse||"").trim();
+      // Vérifier si le client existe déjà (par nom ou email)
+      const{data:existing}=await sb.from("clients")
+        .select("id")
+        .eq("user_id",S.user.id)
+        .or(clientEmail?`nom.eq.${clientNom},email.eq.${clientEmail}`:`nom.eq.${clientNom}`)
+        .maybeSingle();
+      if(!existing){
+        await sb.from("clients").insert({
+          user_id:S.user.id,
+          nom:clientNom,
+          email:clientEmail,
+          tel:clientTel,
+          adresse:clientAdresse,
+          notes:""
+        });
+      }
+    }
     S.dossiers=[dos,...S.dossiers];
     set({loading:false,generatedDoc:doc,openDossier:dos.id,tab:"historique"});
   }catch(err){set({loading:false});alert("Erreur : "+err.message)}
