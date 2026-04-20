@@ -170,6 +170,7 @@ let user=null, profil={}, activeTab="profil", syncing=false;
 let gmailClientId=localStorage.getItem("artio_gmail_client_id")||"";
 let gmailToken=sessionStorage.getItem("gmail_token")||null;
 let subscriptionStatus="free", subscriptionEndDate=null, cancelLoading=false, checkoutLoading=false;
+let billingPeriod="monthly"; // "monthly" ou "annual"
 
 const LANGS=[["fr","🇫🇷","Français"],["en","🇬🇧","English"],["es","🇪🇸","Español"],["zh","🇨🇳","中文"]];
 
@@ -326,6 +327,7 @@ function renderAbonnement(){
   const isRestricted = subscriptionStatus === 'restricted';
   const endDate = subscriptionEndDate ? new Date(subscriptionEndDate).toLocaleDateString('fr-FR') : null;
   const dk = document.body.classList.contains('dark');
+  const isAnnual = billingPeriod === 'annual';
 
   const features_free = [
     "Jusqu'à 5 devis par mois",
@@ -352,6 +354,16 @@ function renderAbonnement(){
     </div>
   ` : ''}
 
+  ${!isPro ? `
+    <!-- TOGGLE MENSUEL / ANNUEL -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:1.25rem;">
+      <button onclick="billingPeriod='monthly';render()" style="padding:7px 16px;border-radius:20px;border:0.5px solid ${!isAnnual?'#534AB7':'#d0d0cc'};background:${!isAnnual?'#534AB7':'transparent'};color:${!isAnnual?'#fff':'#666'};font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;">Mensuel</button>
+      <button onclick="billingPeriod='annual';render()" style="padding:7px 16px;border-radius:20px;border:0.5px solid ${isAnnual?'#534AB7':'#d0d0cc'};background:${isAnnual?'#534AB7':'transparent'};color:${isAnnual?'#fff':'#666'};font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;">
+        Annuel <span style="background:${isAnnual?'rgba(255,255,255,0.25)':'#EAF3DE'};color:${isAnnual?'#fff':'#2E7D32'};font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">2 mois offerts</span>
+      </button>
+    </div>
+  ` : ''}
+
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
 
     <!-- CARTE GRATUIT -->
@@ -372,8 +384,16 @@ function renderAbonnement(){
       ${isPro?`<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#534AB7;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;">PLAN ACTUEL</div>`:''}
       <div>
         <p style="font-size:16px;font-weight:700;margin-bottom:4px;">Pro ⚡</p>
-        <p style="font-size:22px;font-weight:800;">—<span style="font-size:13px;font-weight:400;color:#888;"> / mois</span></p>
-        <p style="font-size:10px;color:#888;margin-top:2px;">Prix défini lors de l'installation</p>
+        ${isPro ? `
+          <p style="font-size:22px;font-weight:800;">—<span style="font-size:13px;font-weight:400;color:#888;"> / mois</span></p>
+          <p style="font-size:10px;color:#888;margin-top:2px;">Abonnement actif</p>
+        ` : isAnnual ? `
+          <p style="font-size:22px;font-weight:800;">— €<span style="font-size:13px;font-weight:400;color:#888;"> / an</span></p>
+          <p style="font-size:10px;color:#2E7D32;font-weight:600;margin-top:2px;">✓ 2 mois offerts par rapport au mensuel</p>
+        ` : `
+          <p style="font-size:22px;font-weight:800;">— €<span style="font-size:13px;font-weight:400;color:#888;"> / mois</span></p>
+          <p style="font-size:10px;color:#888;margin-top:2px;">Prix défini lors de l'installation</p>
+        `}
       </div>
       <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:7px;flex:1;">
         ${features_pro.map(f=>`<li style="font-size:12px;display:flex;align-items:flex-start;gap:7px;"><span style="color:#534AB7;flex-shrink:0;margin-top:1px;">✓</span><span style="color:#555;">${f}</span></li>`).join('')}
@@ -384,7 +404,7 @@ function renderAbonnement(){
         </button>
       ` : `
         <button class="btn-primary" ${checkoutLoading?"disabled":""} onclick="startCheckout()" style="margin-top:4px;">
-          ${checkoutLoading?'Redirection...':'Passer au Pro'}
+          ${checkoutLoading?'Redirection...':`Passer au Pro ${isAnnual?'(annuel)':'(mensuel)'}`}
         </button>
       `}
     </div>
@@ -400,7 +420,8 @@ async function startCheckout(){
     const{data:{session}}=await sb.auth.getSession();
     const res=await fetch(`${FUNCTIONS_URL}/create-checkout`,{
       method:'POST',
-      headers:{'Authorization':`Bearer ${session.access_token}`,'Content-Type':'application/json'}
+      headers:{'Authorization':`Bearer ${session.access_token}`,'Content-Type':'application/json'},
+      body:JSON.stringify({plan:billingPeriod})
     });
     const data=await res.json();
     if(data.url){window.location.href=data.url;}
