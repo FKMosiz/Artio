@@ -420,10 +420,17 @@ async function startCheckout(){
     const{data,error}=await sb.functions.invoke('clever-task',{
       body:{plan:billingPeriod}
     });
-    if(error)throw new Error(error.message);
+    if(error){
+      // Afficher le détail complet de l'erreur
+      const detail = error.context ? await error.context.json().catch(()=>null) : null;
+      const msg = detail?.error || error.message || JSON.stringify(error);
+      alert("Erreur fonction : "+msg);
+      checkoutLoading=false;render();
+      return;
+    }
     if(data?.url){window.location.href=data.url;}
-    else{alert("Erreur : réponse inattendue de Stripe.");}
-  }catch(e){alert("Erreur : "+e.message);}
+    else{alert("Erreur : réponse inattendue — "+JSON.stringify(data));}
+  }catch(e){alert("Erreur catch : "+e.message);}
   checkoutLoading=false;render();
 }
 
