@@ -419,14 +419,15 @@ async function startCheckout(){
   try{
     const{data:{session}}=await sb.auth.getSession();
     if(!session){alert("Non connecté");checkoutLoading=false;render();return;}
+    const ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bWV4a29lcWV5dWVxZ2Rra25pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDEzMzcsImV4cCI6MjA5MDk3NzMzN30.380jxCN_CpWqmnwraob5crwUeBpTQxrXsTe2YDF-Rk8';
     const res=await fetch('https://mwmexkoeqeyueqgdkkni.supabase.co/functions/v1/clever-task',{
       method:'POST',
       headers:{
-        'Authorization':'Bearer '+session.access_token,
-        'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bWV4a29lcWV5dWVxZ2Rra25pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDEzMzcsImV4cCI6MjA5MDk3NzMzN30.380jxCN_CpWqmnwraob5crwUeBpTQxrXsTe2YDF-Rk8',
+        'Authorization':'Bearer '+ANON,
+        'apikey':ANON,
         'Content-Type':'application/json'
       },
-      body:JSON.stringify({plan:billingPeriod})
+      body:JSON.stringify({plan:billingPeriod,user_id:session.user.id})
     });
     const text=await res.text();
     if(!res.ok){alert("Erreur "+res.status+" : "+text);checkoutLoading=false;render();return;}
