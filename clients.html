@@ -345,7 +345,7 @@ function render(){
 
 window.downloadSignedProof=async function(docNumber){
   try{
-    const{data:sig,error}=await sb.from("signatures").select("*").eq("doc_number",docNumber).eq("user_id",S.user.id).eq("status","signed").single();
+    const{data:sig,error}=await sb.from("signatures").select("*").eq("doc_number",docNumber).eq("user_id",user.id).eq("status","signed").single();
     if(error||!sig){alert("Preuve introuvable.");return;}
     const doc=sig.doc_data;const e=doc.entreprise||{};
     const{jsPDF}=window.jspdf;const pdf=new jsPDF({unit:"mm",format:"a4"});
