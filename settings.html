@@ -417,19 +417,12 @@ function renderAbonnement(){
 async function startCheckout(){
   checkoutLoading=true;render();
   try{
-    const{data:{session}}=await sb.auth.getSession();
-    const res=await fetch(`${FUNCTIONS_URL}/create-checkout`,{
-      method:'POST',
-      headers:{
-        'Authorization':`Bearer ${session.access_token}`,
-        'apikey': SB_KEY,
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({plan:billingPeriod})
+    const{data,error}=await sb.functions.invoke('create-checkout',{
+      body:{plan:billingPeriod}
     });
-    const data=await res.json();
-    if(data.url){window.location.href=data.url;}
-    else{alert("Erreur lors de la création du paiement : "+(data.error||'inconnu'));}
+    if(error)throw new Error(error.message);
+    if(data?.url){window.location.href=data.url;}
+    else{alert("Erreur : réponse inattendue de Stripe.");}
   }catch(e){alert("Erreur : "+e.message);}
   checkoutLoading=false;render();
 }
@@ -438,20 +431,14 @@ async function requestCancellation(){
   if(!confirm("Confirmer la demande d'annulation ? Vous conserverez l'accès jusqu'à la fin du mois payé."))return;
   cancelLoading=true;render();
   try{
-    const{data:{session}}=await sb.auth.getSession();
-    const res=await fetch(`${FUNCTIONS_URL}/request-cancellation`,{
-      method:'POST',
-      headers:{
-        'Authorization':`Bearer ${session.access_token}`,
-        'apikey': SB_KEY,
-        'Content-Type':'application/json'
-      }
+    const{data,error}=await sb.functions.invoke('request-cancellation',{
+      body:{}
     });
-    const data=await res.json();
-    if(data.success){
+    if(error)throw new Error(error.message);
+    if(data?.success){
       toast("✅ Demande envoyée. Nous traiterons votre annulation rapidement.");
     }else{
-      alert("Erreur : "+(data.error||'inconnu'));
+      alert("Erreur : "+(data?.error||'inconnu'));
     }
   }catch(e){alert("Erreur : "+e.message);}
   cancelLoading=false;render();
