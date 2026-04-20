@@ -343,6 +343,52 @@ function render(){
   </div>`;
 }
 
+window.downloadSignedProof=async function(docNumber){
+  try{
+    const{data:sig,error}=await sb.from("signatures").select("*").eq("doc_number",docNumber).eq("user_id",S.user.id).eq("status","signed").single();
+    if(error||!sig){alert("Preuve introuvable.");return;}
+    const doc=sig.doc_data;const e=doc.entreprise||{};
+    const{jsPDF}=window.jspdf;const pdf=new jsPDF({unit:"mm",format:"a4"});
+    const W=210,m=18,cW=W-2*m,rX=W-m;let y=m;
+    pdf.setFontSize(16).setFont(undefined,"bold").text(e.nom||"",m,y);y+=6;
+    pdf.setFontSize(9).setFont(undefined,"normal").text(e.adresse||"",m,y);y+=5;
+    pdf.text("Tél : "+(e.tel||""),m,y);y+=4;pdf.text("Email : "+(e.email||""),m,y);y+=4;
+    if(e.siret)pdf.text("SIRET : "+e.siret,m,y);y+=8;
+    pdf.setFontSize(15).setFont(undefined,"bold").setTextColor(83,74,183);
+    pdf.text("DEVIS N° "+doc.docNumber,W/2,y,{align:"center"});y+=5;
+    pdf.setFontSize(9).setFont(undefined,"normal").setTextColor(0);
+    pdf.text("Date : "+doc.date,W/2,y,{align:"center"});y+=8;
+    pdf.setFillColor(249,248,246);pdf.roundedRect(m,y,cW,18,2,2,"F");
+    pdf.setFontSize(8).setTextColor(120).text("CLIENT",m+4,y+5);
+    pdf.setFontSize(10).setTextColor(0).setFont(undefined,"bold").text(doc.client?.nom||"",m+4,y+11);
+    if(doc.client?.adresse){pdf.setFontSize(8).setFont(undefined,"normal").setTextColor(80).text(doc.client.adresse,m+4,y+15);}
+    y+=22;pdf.setFontSize(9).setTextColor(0);
+    if(doc.description){const dl=pdf.splitTextToSize(doc.description,cW);pdf.text(dl,m,y);y+=dl.length*4.5+4;}
+    const tbB=[];
+    if(doc.nb_heures&&parseFloat(doc.nb_heures)>0)tbB.push(["Main d'\u0153uvre ("+doc.nb_heures+"h \u00d7 "+e.taux_horaire+"\u20ac/h)",doc.nb_heures,parseFloat(e.taux_horaire||0).toFixed(2)+" \u20ac",(doc.moHT||0).toFixed(2)+" \u20ac"]);
+    (doc.pieces||[]).filter(p=>p.description).forEach(p=>tbB.push([p.description,p.quantite,parseFloat(p.prix_unitaire||0).toFixed(2)+" \u20ac",(parseFloat(p.quantite||0)*parseFloat(p.prix_unitaire||0)).toFixed(2)+" \u20ac"]));
+    if(tbB.length>0){pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tbB,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[55,138,221],textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});y=pdf.lastAutoTable.finalY+6;}
+    pdf.setFontSize(9).text("Total HT :",135,y);pdf.text((doc.totalHT||0).toFixed(2)+" \u20ac",rX,y,{align:"right"});y+=5;
+    if(e.assujetti_tva&&doc.tva){pdf.text("TVA ("+doc.tvaRate+"%) :",135,y);pdf.text((doc.tva||0).toFixed(2)+" \u20ac",rX,y,{align:"right"});y+=5;}
+    pdf.setFont(undefined,"bold").setFontSize(11).text(e.assujetti_tva?"TOTAL TTC :":"TOTAL :",145,y);pdf.text((doc.ttc||0).toFixed(2)+" \u20ac",rX,y,{align:"right"});y+=14;
+    pdf.setDrawColor(83,74,183);pdf.setLineWidth(0.5);pdf.line(m,y,W-m,y);y+=6;
+    pdf.setFillColor(240,238,255);pdf.roundedRect(m,y,cW,52,3,3,"F");
+    pdf.setFont(undefined,"bold").setFontSize(10).setTextColor(83,74,183);
+    pdf.text("\u2713 DEVIS SIGNÉ ÉLECTRONIQUEMENT",W/2,y+8,{align:"center"});
+    pdf.setFont(undefined,"normal").setFontSize(8).setTextColor(60);
+    const sd=sig.signed_at?new Date(sig.signed_at).toLocaleString("fr-FR"):"\u2014";
+    pdf.text("Signé par : "+(doc.client?.nom||"Le client")+"  |  Date : "+sd,W/2,y+14,{align:"center"});
+    pdf.text("La signature ci-dessous a valeur contractuelle.",W/2,y+19,{align:"center"});
+    if(sig.signature_data){try{pdf.addImage(sig.signature_data,"PNG",m+10,y+22,cW-20,22);}catch(er){}}
+    pdf.setDrawColor(180);pdf.setLineWidth(0.3);pdf.rect(m+10,y+22,cW-20,22);y+=55;
+    pdf.setFont(undefined,"italic").setFontSize(7).setTextColor(120);
+    pdf.text("Preuve de signature électronique — Artio — "+new Date().toLocaleString("fr-FR"),W/2,y,{align:"center"});
+    try{pdf.addImage("data:image/png;base64,"+LOGO_WHITE,"PNG",m,280,22,7);}catch{}
+    pdf.setFontSize(7).setTextColor(150).text((e.nom||"")+" — SIRET : "+(e.siret||""),W/2,287,{align:"center"});
+    pdf.save("PREUVE_SIGNATURE_"+docNumber+".pdf");
+  }catch(err){alert("Erreur : "+err.message);}
+};
+
 function buildDossiersHtml(c){
   window._clientDocs={};
   var gi=0;
@@ -374,6 +420,7 @@ function buildDossiersHtml(c){
           +"<span style=\"font-size:12px;font-weight:600;\">"+fmt(d.ttc)+"</span>"
           +"<button class=\"btn-small\" onclick=\"generateClientPDF(window._clientDocs["+curIdx+"])\" style=\"font-size:11px;padding:3px 7px;\">⬇ PDF</button>"
           +"<button class=\"btn-small\" id=\"btn-"+apercuId+"\" onclick=\"toggleApercu(this)\" data-id=\""+apercuId+"\" data-idx=\""+curIdx+"\" style=\"font-size:11px;padding:3px 7px;\">👁 Aperçu</button>"
+          +(d.accepte?"<button class=\"btn-small\" onclick=\"downloadSignedProof('"+d.docNumber+"')\" style=\"font-size:11px;padding:3px 7px;background:#f0eeff;color:#534AB7;border-color:#7F77DD;\">📄 Preuve signée</button>":"")
         +"</div></div>"
         +"<div id=\""+apercuId+"\" style=\"display:none;margin-top:6px;\"></div>"
         +"</div>";
