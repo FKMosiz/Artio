@@ -325,68 +325,73 @@ function renderAbonnement(){
   const isPro = subscriptionStatus === 'pro';
   const isRestricted = subscriptionStatus === 'restricted';
   const endDate = subscriptionEndDate ? new Date(subscriptionEndDate).toLocaleDateString('fr-FR') : null;
+  const dk = document.body.classList.contains('dark');
 
-  return`<div class="card">
-    <p class="section-title">VOTRE PLAN</p>
-    ${isPro ? `
-      <div style="background:#EAF3DE;border-radius:10px;padding:14px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px;">✅</span>
-        <div>
-          <p style="font-size:15px;font-weight:700;color:#2E7D32;">Plan Pro — Actif</p>
-          <p style="font-size:12px;color:#388E3C;margin-top:2px;">Accès complet à l'IA, la dictée vocale et la connexion Gmail</p>
-        </div>
-      </div>
-    ` : isRestricted ? `
-      <div style="background:#FFF3E0;border-radius:10px;padding:14px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px;">⚠️</span>
-        <div>
-          <p style="font-size:15px;font-weight:700;color:#E65100;">Accès restreint</p>
-          <p style="font-size:12px;color:#BF360C;margin-top:2px;">Paiement en attente${endDate?` — régularisation avant le ${endDate}`:''}</p>
-        </div>
-      </div>
-    ` : `
-      <div style="background:#F3F0FF;border-radius:10px;padding:14px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px;">🆓</span>
-        <div>
-          <p style="font-size:15px;font-weight:700;color:#534AB7;">Plan Gratuit</p>
-          <p style="font-size:12px;color:#7B72D4;margin-top:2px;">Fonctionnalités de base sans IA</p>
-        </div>
-      </div>
-    `}
+  const features_free = [
+    "Jusqu'à 5 devis par mois",
+    "Jusqu'à 5 factures par mois",
+    "Gestion des dossiers clients",
+    "Génération de PDF",
+  ];
+  const features_pro = [
+    "Devis & factures illimités",
+    "IA & Dictée vocale",
+    "Connexion Gmail",
+    "Génération automatique",
+    "Support prioritaire",
+  ];
 
-    <div style="border:0.5px solid #e0deda;border-radius:10px;overflow:hidden;margin-bottom:1rem;">
-      <div style="display:flex;justify-content:space-between;padding:10px 14px;background:#f9f9f8;">
-        <span style="font-size:13px;color:#555;">Devis & factures</span>
-        <span style="font-size:13px;">✅ Limité (5/mois)</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:10px 14px;border-top:0.5px solid #f0eeea;">
-        <span style="font-size:13px;color:#555;">IA & Dictée vocale</span>
-        <span style="font-size:13px;">${isPro?'✅ Inclus':'❌ Pro uniquement'}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:10px 14px;border-top:0.5px solid #f0eeea;">
-        <span style="font-size:13px;color:#555;">Connexion Gmail</span>
-        <span style="font-size:13px;">${isPro?'✅ Inclus':'❌ Pro uniquement'}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:10px 14px;border-top:0.5px solid #f0eeea;">
-        <span style="font-size:13px;color:#555;">Documents illimités</span>
-        <span style="font-size:13px;">${isPro?'✅ Inclus':'❌ Pro uniquement'}</span>
+  return`
+  ${isRestricted ? `
+    <div style="background:#FFF3E0;border-radius:10px;padding:14px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;border:0.5px solid #FFB74D;">
+      <span style="font-size:20px;">⚠️</span>
+      <div>
+        <p style="font-size:14px;font-weight:700;color:#E65100;">Accès restreint — paiement en attente</p>
+        <p style="font-size:12px;color:#BF360C;margin-top:2px;">${endDate?`Merci de régulariser avant le ${endDate} pour éviter la suspension.`:'Merci de régulariser votre paiement.'}</p>
       </div>
     </div>
+  ` : ''}
 
-    ${!isPro ? `
-      <button class="btn-primary" ${checkoutLoading?"disabled":""} onclick="startCheckout()">
-        ${checkoutLoading?'Redirection...':`⚡ Passer au plan Pro`}
-      </button>
-      <p style="font-size:11px;color:#888;text-align:center;margin-top:8px;">Paiement sécurisé par Stripe</p>
-    ` : `
-      <div style="margin-top:0.5rem;padding-top:1rem;border-top:0.5px solid #f0eeea;">
-        <p style="font-size:12px;color:#888;margin-bottom:10px;">Pour annuler votre abonnement, cliquez ci-dessous. Vous conserverez l'accès jusqu'à la fin de la période payée.</p>
-        <button onclick="requestCancellation()" ${cancelLoading?"disabled":""} style="width:100%;padding:10px;border-radius:8px;border:0.5px solid #E24B4A;background:transparent;color:#E24B4A;font-size:13px;font-weight:500;cursor:pointer;">
-          ${cancelLoading?'Envoi en cours...':'Demander l\'annulation'}
-        </button>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
+
+    <!-- CARTE GRATUIT -->
+    <div style="border:${!isPro&&!isRestricted?'2px solid #534AB7':'0.5px solid #e0deda'};border-radius:14px;padding:1.25rem;display:flex;flex-direction:column;gap:12px;position:relative;${dk?'background:#1e1a2e':'background:#fff'}">
+      ${!isPro&&!isRestricted?`<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#534AB7;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;">PLAN ACTUEL</div>`:''}
+      <div>
+        <p style="font-size:16px;font-weight:700;margin-bottom:4px;">Gratuit</p>
+        <p style="font-size:22px;font-weight:800;">0 €<span style="font-size:13px;font-weight:400;color:#888;"> / mois</span></p>
       </div>
-    `}
-  </div>`;
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:7px;flex:1;">
+        ${features_free.map(f=>`<li style="font-size:12px;display:flex;align-items:flex-start;gap:7px;"><span style="color:#534AB7;flex-shrink:0;margin-top:1px;">✓</span><span style="color:#555;">${f}</span></li>`).join('')}
+      </ul>
+      <div style="margin-top:4px;padding:8px 12px;border-radius:8px;background:${dk?'#2a2440':'#f5f5f3'};text-align:center;font-size:12px;color:#888;">Plan actif</div>
+    </div>
+
+    <!-- CARTE PRO -->
+    <div style="border:${isPro?'2px solid #534AB7':'0.5px solid #e0deda'};border-radius:14px;padding:1.25rem;display:flex;flex-direction:column;gap:12px;position:relative;background:${isPro?(dk?'#261e3a':'#f3f0ff'):(dk?'#1e1a2e':'#fff')}">
+      ${isPro?`<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#534AB7;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;">PLAN ACTUEL</div>`:''}
+      <div>
+        <p style="font-size:16px;font-weight:700;margin-bottom:4px;">Pro ⚡</p>
+        <p style="font-size:22px;font-weight:800;">—<span style="font-size:13px;font-weight:400;color:#888;"> / mois</span></p>
+        <p style="font-size:10px;color:#888;margin-top:2px;">Prix défini lors de l'installation</p>
+      </div>
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:7px;flex:1;">
+        ${features_pro.map(f=>`<li style="font-size:12px;display:flex;align-items:flex-start;gap:7px;"><span style="color:#534AB7;flex-shrink:0;margin-top:1px;">✓</span><span style="color:#555;">${f}</span></li>`).join('')}
+      </ul>
+      ${isPro ? `
+        <button onclick="requestCancellation()" ${cancelLoading?"disabled":""} style="margin-top:4px;width:100%;padding:9px;border-radius:8px;border:0.5px solid #E24B4A;background:transparent;color:#E24B4A;font-size:12px;font-weight:500;cursor:pointer;">
+          ${cancelLoading?"Envoi...":'Demander l\'annulation'}
+        </button>
+      ` : `
+        <button class="btn-primary" ${checkoutLoading?"disabled":""} onclick="startCheckout()" style="margin-top:4px;">
+          ${checkoutLoading?'Redirection...':'Passer au Pro'}
+        </button>
+      `}
+    </div>
+  </div>
+  <p style="font-size:11px;color:#aaa;text-align:center;">Paiement sécurisé par Stripe · Sans engagement · Annulation à tout moment</p>
+  ${isPro?`<p style="font-size:11px;color:#888;text-align:center;margin-top:6px;">En cas d'annulation, votre accès Pro reste actif jusqu'à la fin de la période payée.</p>`:''}
+  `;
 }
 
 async function startCheckout(){
