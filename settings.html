@@ -170,7 +170,7 @@ let user=null, profil={}, activeTab="profil", syncing=false;
 let gmailClientId=localStorage.getItem("artio_gmail_client_id")||"";
 let gmailToken=sessionStorage.getItem("gmail_token")||null;
 let subscriptionStatus="free", subscriptionEndDate=null, cancelLoading=false, checkoutLoading=false;
-let billingPeriod="monthly", cancellationRequested=false, cancellationDate=null;
+let billingPeriod="monthly", cancellationRequested=false;
 
 const LANGS=[["fr","🇫🇷","Français"],["en","🇬🇧","English"],["es","🇪🇸","Español"],["zh","🇨🇳","中文"]];
 
@@ -465,12 +465,9 @@ async function requestCancellation(){
     if(!res.ok){alert("Erreur "+res.status+" : "+text);cancelLoading=false;render();return;}
     const data=JSON.parse(text);
     if(data?.success){
-      const now = new Date().toISOString();
       cancellationRequested=true;
-      cancellationDate=now;
       await sb.from('profils').update({
-        cancellation_requested:true,
-        cancellation_date:now
+        cancellation_requested:true
       }).eq('user_id',session.user.id);
       toast("✅ Demande envoyée. Votre accès Pro reste actif jusqu'à la fin de la période payée.");
     }else{
@@ -533,7 +530,6 @@ async function saveProfil(){
     subscriptionStatus=p.subscription_status||"free";
     subscriptionEndDate=p.subscription_end_date||null;
     cancellationRequested=p.cancellation_requested||false;
-    cancellationDate=p.cancellation_date||null;
   }
   // Gérer le retour depuis Stripe
   const urlParams=new URLSearchParams(location.search);
