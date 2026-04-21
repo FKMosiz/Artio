@@ -170,7 +170,7 @@ let user=null, profil={}, activeTab="profil", syncing=false;
 let gmailClientId=localStorage.getItem("artio_gmail_client_id")||"";
 let gmailToken=sessionStorage.getItem("gmail_token")||null;
 let subscriptionStatus="free", subscriptionEndDate=null, cancelLoading=false, checkoutLoading=false;
-let billingPeriod="monthly"; // "monthly" ou "annual"
+let billingPeriod="monthly", cancellationRequested=false, cancellationDate=null;
 
 const LANGS=[["fr","🇫🇷","Français"],["en","🇬🇧","English"],["es","🇪🇸","Español"],["zh","🇨🇳","中文"]];
 
@@ -399,9 +399,16 @@ function renderAbonnement(){
         ${features_pro.map(f=>`<li style="font-size:12px;display:flex;align-items:flex-start;gap:7px;"><span style="color:#534AB7;flex-shrink:0;margin-top:1px;">✓</span><span style="color:#555;">${f}</span></li>`).join('')}
       </ul>
       ${isPro ? `
-        <button onclick="requestCancellation()" ${cancelLoading?"disabled":""} style="margin-top:4px;width:100%;padding:9px;border-radius:8px;border:0.5px solid #E24B4A;background:transparent;color:#E24B4A;font-size:12px;font-weight:500;cursor:pointer;">
-          ${cancelLoading?"Envoi...":'Demander l\'annulation'}
-        </button>
+        ${cancellationRequested ? `
+          <div style="margin-top:4px;padding:10px 12px;border-radius:8px;background:#FFF3E0;border:0.5px solid #FFB74D;">
+            <p style="margin:0;font-size:12px;font-weight:600;color:#E65100;">⏳ Résiliation en cours</p>
+            <p style="margin:4px 0 0;font-size:11px;color:#BF360C;">Votre demande a bien été prise en compte. Votre accès Pro reste actif jusqu'au <strong>${subscriptionEndDate ? new Date(subscriptionEndDate).toLocaleDateString('fr-FR') : 'fin de la période payée'}</strong>.</p>
+          </div>
+        ` : `
+          <button onclick="requestCancellation()" ${cancelLoading?"disabled":""} style="margin-top:4px;width:100%;padding:9px;border-radius:8px;border:0.5px solid #E24B4A;background:transparent;color:#E24B4A;font-size:12px;font-weight:500;cursor:pointer;">
+            ${cancelLoading?"Envoi...":'Demander l\'annulation'}
+          </button>
+        `}
       ` : `
         <button class="btn-primary" ${checkoutLoading?"disabled":""} onclick="startCheckout()" style="margin-top:4px;">
           ${checkoutLoading?'Redirection...':`Passer au Pro ${isAnnual?'(annuel)':'(mensuel)'}`}
@@ -458,7 +465,14 @@ async function requestCancellation(){
     if(!res.ok){alert("Erreur "+res.status+" : "+text);cancelLoading=false;render();return;}
     const data=JSON.parse(text);
     if(data?.success){
-      toast("✅ Demande envoyée. Nous traiterons votre annulation rapidement.");
+      const now = new Date().toISOString();
+      cancellationRequested=true;
+      cancellationDate=now;
+      await sb.from('profils').update({
+        cancellation_requested:true,
+        cancellation_date:now
+      }).eq('user_id',session.user.id);
+      toast("✅ Demande envoyée. Votre accès Pro reste actif jusqu'à la fin de la période payée.");
     }else{
       alert("Erreur : "+(data?.error||'inconnu'));
     }
@@ -518,6 +532,8 @@ async function saveProfil(){
     profil={nom:p.nom||"",adresse:p.adresse||"",tel:p.tel||"",email:p.email||"",siret:p.siret||"",taux_horaire:p.taux_horaire||"",api_key:p.api_key||"",assujetti_tva:p.assujetti_tva||false,secteur:p.secteur||"",conditions_paiement:p.conditions_paiement||"",delai_paiement:p.delai_paiement||"30"};
     subscriptionStatus=p.subscription_status||"free";
     subscriptionEndDate=p.subscription_end_date||null;
+    cancellationRequested=p.cancellation_requested||false;
+    cancellationDate=p.cancellation_date||null;
   }
   // Gérer le retour depuis Stripe
   const urlParams=new URLSearchParams(location.search);
