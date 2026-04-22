@@ -194,6 +194,7 @@ let S={
   previewDocNum:null,
   deleteConfirm:null,
   convertingId:null,
+  emettreId:null,
   copied:false,
   entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:"",assujetti_tva:false,secteur:"",conditions_paiement:"",delai_paiement:"30"},
   dossiers:[],
@@ -873,6 +874,67 @@ sendForSignature=async(dosId,docNum)=>{
   alert("✅ Lien de signature créé !\n\n"+link+"\n\n(Copié dans le presse-papier)\n\nEnvoie ce lien à ton client par SMS ou email.");
 };
 window.sendForSignature=sendForSignature;
+// ─── FACTURATION ÉLECTRONIQUE FACTPULSE ─────────────────────────────────────
+window.emettreFacture=async function(dosId,docNum){
+  const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
+  const doc=dos.documents.find(d=>d.docNumber===docNum);if(!doc)return;
+  const token=S.entreprise?.factpulse_token;
+  if(!token){alert("⚡ Token FactPulse manquant.\n\nVa dans Paramètres → Mon entreprise → Token FactPulse.");return;}
+  if(!doc.entreprise?.siret){alert("SIRET manquant dans ton profil. Va dans Paramètres → Mon entreprise.");return;}
+  let clientSiret=(doc.client?.siret||"").replace(/\s/g,"");
+  if(!clientSiret){
+    const raw=prompt("SIRET du client (B2B obligatoire) :\nEx: 35600000000048\n\nAnnule si client particulier (B2C non concerné).");
+    if(!raw)return;
+    clientSiret=raw.replace(/\s/g,"");
+  }
+  const vatRate=parseFloat(doc.tvaRate)||0;
+  const lines=[];
+  if(doc.nb_heures&&S.entreprise?.taux_horaire){
+    lines.push({description:"Main d'œuvre",quantity:parseFloat(doc.nb_heures),unitPrice:parseFloat(S.entreprise.taux_horaire),vatRate});
+  }
+  (doc.pieces||[]).filter(p=>p.description&&p.prix_unitaire).forEach(p=>{
+    lines.push({description:p.description,quantity:parseFloat(p.quantite)||1,unitPrice:parseFloat(p.prix_unitaire),vatRate});
+  });
+  if(!lines.length){
+    lines.push({description:doc.description||"Prestation",quantity:1,unitPrice:parseFloat(doc.totalHT)||parseFloat(doc.ttc)||0,vatRate});
+  }
+  const parseFR=d=>{if(!d)return new Date().toISOString().slice(0,10);const[j,m,ay]=d.split("/");return`${ay}-${m}-${j}`;};
+  const payload={
+    invoiceData:{
+      number:doc.docNumber,
+      invoiceDate:parseFR(doc.date),
+      paymentDueDate:doc.validUntil?parseFR(doc.validUntil):parseFR(doc.date),
+      supplier:{siret:doc.entreprise.siret.replace(/\s/g,""),iban:(S.entreprise?.iban||"").replace(/\s/g,"")||undefined,routingAddress:doc.entreprise.siret.replace(/\s/g,"")},
+      recipient:{siret:clientSiret,routingAddress:clientSiret},
+      lines,
+      notes:[
+        {subjectCode:"PMT",content:"Indemnité forfaitaire pour frais de recouvrement : 40 €"},
+        {subjectCode:"PMD",content:"Pénalités de retard : taux légal en vigueur"},
+        {subjectCode:"AAB",content:"Pas d'escompte pour paiement anticipé"}
+      ]
+    },
+    profile:"EN16931",
+    destination:{type:"afnor"}
+  };
+  set({emettreId:docNum});
+  try{
+    const resp=await fetch("https://factpulse.fr/api/facturation/processing/invoices/submit-complete-async/",{
+      method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+      body:JSON.stringify(payload)
+    });
+    const result=await resp.json();
+    if(!resp.ok){
+      const msg=result?.detail||result?.error||result?.message||JSON.stringify(result);
+      alert("❌ Erreur FactPulse :\n"+msg);set({emettreId:null});return;
+    }
+    const flowId=result?.afnorResult?.flowId||result?.flowId||result?.id||"émis";
+    dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,factpulse_id:flowId,factpulse_date:new Date().toISOString()}:d);
+    await upsertDossier(dos);
+    set({emettreId:null,dossiers:[...S.dossiers]});
+    alert("✅ Facture émise électroniquement !\nFlow ID : "+flowId);
+  }catch(e){alert("❌ Erreur réseau : "+e.message);set({emettreId:null});}
+};
+// ────────────────────────────────────────────────────────────────────────────
 convertToFacture=async(dosId,docNum)=>{
   set({convertingId:docNum});
   const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
@@ -1572,6 +1634,7 @@ function renderHistorique(){
                 ${doc.type==="devis"&&doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;font-size:11px;" onclick="downloadSignedProof('${doc.docNumber}')">📄 Preuve signée</button>`:""}\n                ${doc.type==="devis"&&doc.accepte&&!hasF?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:""}
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#FFF8E1;color:#E65100;border-color:#FFB74D;" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:""}
+                ${doc.type==="facture"?`<button class="btn-small" style="background:${doc.factpulse_id?'#f0fff4':'#f0eeff'};color:${doc.factpulse_id?'#276749':'#534AB7'};border-color:${doc.factpulse_id?'#68D391':'#7F77DD'};" onclick="emettreFacture('${dos.id}','${doc.docNumber}')">${S.emettreId===doc.docNumber?'⏳ Envoi...':(doc.factpulse_id?'✅ Émise':'⚡ Émettre')}</button>`:""}
                 ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button>`:`<button class="btn-small" style="color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
               </div>
             </div>

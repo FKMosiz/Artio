@@ -233,6 +233,8 @@ function renderProfil(){
       <input class="pi" data-k="email" type="email" value="${esc(e.email||"")}" placeholder="contact@email.com"/></div>
     <div class="field"><label class="label">${LL("profil_siret")}</label>
       <input class="pi" data-k="siret" type="text" value="${esc(e.siret||"")}" placeholder="123 456 789 00012"/></div>
+    <div class="field"><label class="label">IBAN (pour facturation électronique)</label>
+      <input class="pi" data-k="iban" type="text" value="${esc(e.iban||"")}" placeholder="FR76 3000 6000 0112 3456 7890 189"/></div>
     <div class="field"><label class="label">${LL("profil_taux")}</label>
       <input class="pi" data-k="taux_horaire" type="number" value="${esc(e.taux_horaire||"")}" placeholder="50"/></div>
   </div>
@@ -256,6 +258,13 @@ function renderProfil(){
     <p style="font-size:12px;color:#888;margin-bottom:12px;">${LL("profil_api_desc")} <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#534AB7;">Obtenir une clé →</a></p>
     <div class="field">
       <input class="pi" data-k="api_key" type="password" value="${esc(e.api_key||"")}" placeholder="sk-ant-..."/></div>
+  </div>
+  <div class="card">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:4px;">⚡ Facturation électronique — FactPulse</h3>
+    <p style="font-size:12px;color:#888;margin-bottom:12px;">Token d'accès pour émettre et recevoir des factures électroniques conformes (Plateforme Agréée DGFiP). <a href="https://factpulse.fr/accounts/login/" target="_blank" style="color:#534AB7;">Obtenir sur FactPulse →</a></p>
+    <div class="field">
+      <input class="pi" data-k="factpulse_token" type="password" value="${esc(e.factpulse_token||"")}" placeholder="eyJ..."/></div>
+    ${e.factpulse_token?'<p style="font-size:11px;color:#3B6D11;margin-top:4px;">✅ Token configuré — Émission électronique active</p>':'<p style="font-size:11px;color:#A05800;margin-top:4px;">⚠️ Sans token, l\'émission électronique est désactivée</p>'}
   </div>
   <button class="btn-primary" ${syncing?"disabled":""} onclick="saveProfil()">
     ${syncing?LL("profil_saving"):LL("profil_save")}
