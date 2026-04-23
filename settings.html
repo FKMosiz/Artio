@@ -535,7 +535,7 @@ async function saveProfil(){
   user=session.user;
   const{data:p}=await sb.from("profils").select("*").eq("user_id",user.id).single();
   if(p){
-    profil={nom:p.nom||"",adresse:p.adresse||"",tel:p.tel||"",email:p.email||"",siret:p.siret||"",taux_horaire:p.taux_horaire||"",api_key:p.api_key||"",assujetti_tva:p.assujetti_tva||false,secteur:p.secteur||"",conditions_paiement:p.conditions_paiement||"",delai_paiement:p.delai_paiement||"30"};
+    profil={nom:p.nom||"",adresse:p.adresse||"",tel:p.tel||"",email:p.email||"",siret:p.siret||"",taux_horaire:p.taux_horaire||"",api_key:p.api_key||"",assujetti_tva:p.assujetti_tva||false,secteur:p.secteur||"",conditions_paiement:p.conditions_paiement||"",delai_paiement:p.delai_paiement||"30",iban:p.iban||"",factpulse_token:p.factpulse_token||""};
     subscriptionStatus=p.subscription_status||"free";
     subscriptionEndDate=p.subscription_end_date||null;
     cancellationRequested=p.cancellation_requested||false;
