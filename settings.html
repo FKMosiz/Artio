@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Artio — Paramètres</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh}
@@ -167,6 +168,7 @@ function JOURS_T(){return Array.from({length:7},(_,i)=>LL('jours_'+i));}
 function setTheme(dark){if(dark)document.body.classList.add('dark');else document.body.classList.remove('dark');localStorage.setItem('artio_dark',dark?'1':'0');}
 
 let user=null, profil={}, activeTab="profil", syncing=false;
+let factures=[];
 let gmailClientId=localStorage.getItem("artio_gmail_client_id")||"";
 let gmailToken=sessionStorage.getItem("gmail_token")||null;
 let subscriptionStatus="free", subscriptionEndDate=null, cancelLoading=false, checkoutLoading=false;
@@ -427,6 +429,41 @@ function renderAbonnement(){
   </div>
   <p style="font-size:11px;color:#aaa;text-align:center;">Paiement sécurisé par Stripe · Sans engagement · Annulation à tout moment</p>
   ${isPro?`<p style="font-size:11px;color:#888;text-align:center;margin-top:6px;">En cas d'annulation, votre accès Pro reste actif jusqu'à la fin de la période payée.</p>`:''}
+
+  <!-- HISTORIQUE FACTURES -->
+  <div class="card" style="margin-top:1.25rem;">
+    <p class="section-title">🧾 Mes factures</p>
+    ${factures.length===0?`
+      <p style="font-size:13px;color:#888;text-align:center;padding:16px 0;">Aucune facture pour le moment.<br><span style="font-size:11px;">Elles apparaîtront ici après chaque paiement.</span></p>
+    `:`
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:1px solid #e0deda;">
+              <th style="text-align:left;padding:8px 6px;font-size:11px;font-weight:600;color:#888;">N°</th>
+              <th style="text-align:left;padding:8px 6px;font-size:11px;font-weight:600;color:#888;">Date</th>
+              <th style="text-align:left;padding:8px 6px;font-size:11px;font-weight:600;color:#888;">Plan</th>
+              <th style="text-align:right;padding:8px 6px;font-size:11px;font-weight:600;color:#888;">Montant</th>
+              <th style="text-align:center;padding:8px 6px;font-size:11px;font-weight:600;color:#888;">PDF</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${factures.map((f,i)=>`
+              <tr style="border-bottom:0.5px solid #f0eeea;">
+                <td style="padding:10px 6px;font-weight:600;color:#534AB7;">${esc(f.numero_facture)}</td>
+                <td style="padding:10px 6px;color:#555;">${new Date(f.date_emission).toLocaleDateString('fr-FR')}</td>
+                <td style="padding:10px 6px;color:#555;">Pro — ${f.frequence==='annuel'?'Annuel':'Mensuel'}</td>
+                <td style="padding:10px 6px;text-align:right;font-weight:600;">${Number(f.montant).toFixed(2).replace('.',',')} €</td>
+                <td style="padding:10px 6px;text-align:center;">
+                  <button onclick="downloadFacture(${i})" style="background:transparent;border:0.5px solid #534AB7;color:#534AB7;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:500;cursor:pointer;">⬇ PDF</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `}
+  </div>
   `;
 }
 
@@ -510,6 +547,87 @@ function setLang(code){
   toast("✅ "+({"fr":"Français","en":"English","es":"Español","zh":"中文"}[code]||code));
 }
 
+function downloadFacture(index){
+  const f=factures[index];
+  if(!f)return;
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+
+  const montant=Number(f.montant).toFixed(2).replace('.',',');
+  const dateEmission=new Date(f.date_emission).toLocaleDateString('fr-FR');
+  const dateDebut=new Date(f.periode_debut).toLocaleDateString('fr-FR');
+  const dateFin=new Date(f.periode_fin).toLocaleDateString('fr-FR');
+  const frequence=f.frequence==='annuel'?'Annuel':'Mensuel';
+
+  // Header
+  doc.setFillColor(15,23,42);
+  doc.rect(0,0,210,42,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(22);doc.setFont('helvetica','bold');
+  doc.text('Artio',14,20);
+  doc.setFontSize(11);doc.setFont('helvetica','normal');
+  doc.setTextColor(148,163,184);
+  doc.text('monartio.fr',14,30);
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('FACTURE',196,20,{align:'right'});
+  doc.setFontSize(11);doc.setFont('helvetica','normal');
+  doc.setTextColor(148,163,184);
+  doc.text(f.numero_facture,196,30,{align:'right'});
+
+  // Infos facture
+  doc.setTextColor(30,30,30);
+  let y=58;
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(100,100,100);
+  doc.text('DATE D\'ÉMISSION',14,y);doc.text('PÉRIODE',105,y);
+  doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);doc.setFontSize(11);
+  doc.text(dateEmission,14,y+7);doc.text(`${dateDebut} → ${dateFin}`,105,y+7);
+
+  // Séparateur
+  y+=22;
+  doc.setDrawColor(220,220,220);doc.line(14,y,196,y);
+
+  // Détails
+  y+=14;
+  doc.setFillColor(248,250,252);doc.roundedRect(14,y-6,182,36,3,3,'F');
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(100,100,100);
+  doc.text('DESCRIPTION',20,y+2);doc.text('MONTANT',190,y+2,{align:'right'});
+  doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);doc.setFontSize(11);
+  doc.text(`Abonnement Artio Pro — ${frequence}`,20,y+12);
+  doc.setFont('helvetica','bold');doc.setFontSize(13);
+  doc.text(`${montant} €`,190,y+12,{align:'right'});
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(130,130,130);
+  doc.text(`Période : ${dateDebut} → ${dateFin}`,20,y+20);
+
+  // Total
+  y+=50;
+  doc.setDrawColor(83,74,183);doc.setLineWidth(0.5);doc.line(105,y,196,y);
+  doc.setTextColor(30,30,30);doc.setFontSize(11);doc.setFont('helvetica','bold');
+  doc.text('TOTAL PAYÉ',105,y+10);
+  doc.setFontSize(16);doc.setTextColor(83,74,183);
+  doc.text(`${montant} €`,190,y+10,{align:'right'});
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(130,130,130);
+  doc.text(`TVA non applicable, art. 293 B du CGI`,105,y+18);
+
+  // Client info (si profil disponible)
+  if(profil.nom){
+    y+=36;
+    doc.setTextColor(100,100,100);doc.setFontSize(9);doc.setFont('helvetica','bold');
+    doc.text('FACTURÉ À',14,y);
+    doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);doc.setFontSize(10);
+    doc.text(profil.nom,14,y+7);
+    if(profil.siret)doc.text(`SIRET : ${profil.siret}`,14,y+14);
+    if(profil.adresse)doc.text(profil.adresse,14,y+21);
+  }
+
+  // Footer
+  doc.setFillColor(248,250,252);doc.rect(0,278,210,20,'F');
+  doc.setTextColor(150,150,150);doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text('Artio — monartio.fr · Paiement traité par Stripe',105,287,{align:'center'});
+
+  doc.save(`${f.numero_facture}.pdf`);
+}
+
 async function saveProfil(){
   document.querySelectorAll(".pi").forEach(el=>{
     if(el.type==="checkbox")profil[el.dataset.k]=el.checked;
@@ -540,6 +658,9 @@ async function saveProfil(){
     subscriptionEndDate=p.subscription_end_date||null;
     cancellationRequested=p.cancellation_requested||false;
   }
+  // Charger les factures
+  const{data:fdata}=await sb.from("factures").select("*").eq("user_id",user.id).order("date_emission",{ascending:false});
+  if(fdata)factures=fdata;
   // Gérer le retour depuis Stripe
   const urlParams=new URLSearchParams(location.search);
   const subParam=urlParams.get("subscription");
