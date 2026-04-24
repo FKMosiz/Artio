@@ -10,257 +10,89 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
   <style>
-
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh}
-    .app{max-width:720px;margin:0 auto;padding:1.5rem 1rem 4rem}
-    input,textarea{width:100%;font-family:inherit;font-size:14px;padding:9px 11px;border-radius:8px;border:0.5px solid #d0d0cc;background:#f0eeea;color:#1a1a18;outline:none;transition:border-color .15s}
-    input:focus,textarea:focus{border-color:#378ADD}
-    textarea{resize:vertical}
-    button{font-family:inherit;cursor:pointer}
-    .card{background:#fff;border:0.5px solid #e0deda;border-radius:12px;padding:1.25rem;margin-bottom:16px}
-    .label{display:block;font-size:12px;font-weight:500;color:#666;margin-bottom:4px}
-    .opt{font-weight:400;font-size:11px;margin-left:6px;color:#999}
-    .field{margin-bottom:12px}
-    .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
-    .tab-btn{padding:8px 14px;border-radius:8px;font-size:13px;border:0.5px solid #d0d0cc;background:#fff;color:#1a1a18;transition:all .15s}
-    .tab-btn.active{border:2px solid #378ADD;background:#E6F1FB;color:#185FA5;font-weight:500}
-    .btn-primary{width:100%;padding:11px;border-radius:8px;border:none;background:#378ADD;color:#fff;font-size:14px;font-weight:500;margin-top:4px}
-    .btn-primary:disabled{background:#B5D4F4;cursor:not-allowed}
-    .btn-small{font-size:12px;padding:5px 10px;border-radius:8px;font-weight:500;border:0.5px solid}
-    .btn-green{background:#EAF3DE;color:#3B6D11;border-color:#3B6D11}
-    .btn-blue{background:#E6F1FB;color:#185FA5;border-color:#185FA5}
-    .btn-red{background:#FCEBEB;color:#A32D2D;border-color:#A32D2D}
-    .btn-teal{background:#E1F5EE;color:#085041;border-color:#085041}
-    .btn-gray{background:transparent;color:#888;border-color:#ccc}
-    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
-    .badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:6px;font-weight:500}
-    .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
-    .mode-btn{padding:10px;border-radius:8px;font-size:13px;border:0.5px solid #d0d0cc;background:#f0eeea;color:#888}
-    .mode-btn.active{border:2px solid #378ADD;background:#E6F1FB;color:#185FA5;font-weight:500}
-    .voice-box{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:10px;border:0.5px solid #d0d0cc;background:#f0eeea;cursor:pointer;margin-bottom:20px;transition:all .2s}
-    .voice-box.recording{background:#FCEBEB;border-color:#F09595}
-    .voice-box.processing{background:#E1F5EE;border-color:#5DCAA5}
-    .voice-btn{width:48px;height:48px;border-radius:50%;border:none;color:#fff;font-size:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-    .pieces-grid{display:grid;grid-template-columns:1fr 64px 88px 32px;gap:6px}
-    .remove-btn{height:38px;border-radius:8px;border:0.5px solid #d0d0cc;background:transparent;color:#888;font-size:18px;display:flex;align-items:center;justify-content:center;width:100%}
-    .totaux{background:#f0eeea;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px}
-    .totaux-row{display:flex;justify-content:space-between;color:#666;margin-bottom:3px}
-    .totaux-total{display:flex;justify-content:space-between;font-weight:500;color:#1a1a18;border-top:0.5px solid #d0d0cc;padding-top:6px;margin-top:4px}
-    .dossier-card{background:#fff;border:0.5px solid #e0deda;border-radius:12px;margin-bottom:10px}
-    .dossier-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;cursor:pointer;border-radius:12px 12px 0 0;overflow:hidden}
-    .dossier-body{border-top:0.5px solid #e0deda;padding:12px 16px;background:#f5f5f3}
-    .doc-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
-    .doc-row+.doc-row{border-top:0.5px solid #e0deda}
-    .btn-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-    .result-box{background:#f0eeea;border-radius:8px;padding:1rem;margin-top:16px}
-    .result-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-    pre{white-space:pre-wrap;font-size:13px;line-height:1.7;font-family:inherit}
-    .preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px}
-    .preview-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
-    .preview-table th{padding:7px 8px;background:#E6F1FB;color:#185FA5;font-weight:500}
-    .preview-table td{padding:6px 8px;border-bottom:0.5px solid #e0deda}
-    .divider{border-top:0.5px solid #e0deda;padding-top:10px;margin-bottom:10px}
-    .auth-box{max-width:400px;margin:4rem auto;padding:0 1rem}
-    .auth-logo{text-align:center;margin-bottom:2rem}
-    .auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
-    .auth-tab{padding:10px;border-radius:8px;font-size:14px;border:0.5px solid #d0d0cc;background:#f0eeea;color:#888}
-    .auth-tab.active{border:2px solid #378ADD;background:#E6F1FB;color:#185FA5;font-weight:500}
-    .error-msg{background:#FCEBEB;color:#A32D2D;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:12px}
-    .success-msg{background:#EAF3DE;color:#3B6D11;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:12px}
-    .user-bar{display:flex;align-items:center;gap:8px}
-    .user-email{font-size:12px;color:#888}
-    body.dark{background:#12101a!important;color:#e8e4f0!important}
-    body.dark .card{background:#1e1a2e!important;border-color:#3d3560!important}
-    body.dark input,body.dark textarea{background:#2a2440!important;border-color:#4a3f70!important;color:#e8e4f0!important}
-    body.dark .tab-btn{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
-    body.dark .tab-btn.active{background:#534AB7!important;border-color:#7F77DD!important;color:#fff!important}
-    body.dark .dossier-card{background:#1e1a2e!important;border-color:#3d3560!important}
-    body.dark .dossier-header{background:#1e1a2e!important;color:#e8e4f0!important}
-    body.dark .dossier-body{background:#16122a!important}
-    body.dark .totaux{background:#2a2440!important;color:#e8e4f0!important}
-    body.dark .result-box{background:#1e1a2e!important}
-    body.dark .mode-btn{background:#1e1a2e!important;border-color:#3d3560!important;color:#a090c0!important}
-    body.dark .mode-btn.active{background:#534AB7!important;color:#fff!important;border-color:#7F77DD!important}
-    body.dark .btn-primary{background:#534AB7!important;color:#fff!important}
-    body.dark .btn-primary:hover{background:#7F77DD!important}
-    body.dark .btn-blue{background:#2e2858!important;color:#AFA9EC!important;border-color:#534AB7!important}
-    body.dark .btn-teal{background:#1a4a3a!important;color:#5DD9A7!important}
-    body.dark .btn-gray{background:#2a2440!important;color:#a090c0!important;border-color:#3d3560!important}
-    body.dark .voice-btn{background:#534AB7!important}
-    body.dark .voice-box{background:#2a2440!important;border-color:#3d3560!important}
-    body.dark .voice-box.recording .voice-btn{background:#E24B4A!important}
-    body.dark .voice-box.processing .voice-btn{background:#1D9E75!important}
-    body.dark .auth-box .card{background:#1e1a2e!important;border-color:#3d3560!important}
-    body.dark .auth-tab{background:#2a2440!important;border-color:#3d3560!important;color:#a090c0!important}
-    body.dark .auth-tab.active{background:#534AB7!important;border-color:#7F77DD!important;color:#fff!important}
-    body.dark label,body.dark .label,body.dark p,body.dark span,body.dark h1,body.dark h2,body.dark h3{color:#e8e4f0!important}
-    body.dark .opt{color:#a090c0!important}
-    body.dark .dossier-header span,body.dark .dossier-header div,body.dark .dossier-header p{color:#e8e4f0!important}
-    .settings-panel{position:fixed;top:0;right:0;bottom:0;width:320px;transition:width 0.2s;background:#fff;border-left:0.5px solid #e0deda;padding:1.5rem;z-index:1000;box-shadow:-4px 0 20px rgba(0,0,0,0.1);overflow-y:auto}
-    body.dark .settings-panel{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
-    body.dark .settings-panel *{color:#e8e4f0!important}
-    body.dark .tva-box{background:#2a2440!important}
-    body.dark .tva-box span,body.dark .tva-box p,body.dark .tva-box label{color:#AFA9EC!important}
-    body.dark .settings-panel input[type="checkbox"]{accent-color:#534AB7}
-    body.dark .settings-panel button{color:#e8e4f0!important}
-    body.dark .settings-panel p,body.dark .settings-panel label,body.dark .settings-panel span{color:#e8e4f0!important}
-    .artio-logo{transition:filter 0.2s}
-    body.dark .artio-logo{filter:brightness(0) invert(1) drop-shadow(0 0 3px rgba(255,255,255,0.6))}
-    .settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:999}
-    body.dark .doc-preview-wrapper{background:#fff!important;color:#1a1a18!important;border-radius:8px;padding:1rem}
-    body.dark .doc-preview-wrapper *{color:#1a1a18!important}
-    body.dark .doc-preview-wrapper .preview-table th{background:#E6F1FB!important;color:#185FA5!important}
-    body.dark .doc-preview-wrapper .preview-table td{border-color:#e0deda!important;color:#1a1a18!important}
-    body.dark .dossier-body .doc-preview-wrapper{background:#fff!important}
-    @media(max-width:580px){.preview-grid{grid-template-columns:1fr}.btn-actions{gap:4px}.btn-small{font-size:11px;padding:4px 8px}}
-  
-  
-    .artio-field{background:#fff;color:#1a1a18;}
-    body.dark .dossier-card{background:#1e1a2e!important;border-color:#3d3560!important;color:#e8e4f0!important}
-    body.dark .dossier-header{color:#e8e4f0!important}
-    body.dark .dossier-header span{color:#e8e4f0!important}
-    body.dark .dossier-docs{background:#16122a!important}
-    body.dark .btn-small{background:#2a2440!important;border-color:#4a3f70!important;color:#e8e4f0!important}
-    body.dark .btn-small.btn-teal{background:#0a3030!important;color:#4DB6AC!important;border-color:#4DB6AC!important}
-    body.dark .btn-small.btn-blue{background:#1a2a40!important;color:#7FB8F0!important;border-color:#378ADD!important}
-    body.dark .btn-small.btn-red{background:#3a1a1a!important;color:#FF8A80!important;border-color:#EF5350!important}
-    body.dark .dossier-docs>div{background:#261e3a!important}
-    body.dark .artio-field{background:#2a2440!important;border-color:#4a3f70!important;color:#e8e4f0!important}
-    body.dark input[type="date"]{color-scheme:dark;background:#2a2440!important;color:#e8e4f0!important}
-    body.dark select{background:#2a2440!important;color:#e8e4f0!important;border-color:#4a3f70!important}
-    body.dark select option{background:#2a2440!important;color:#e8e4f0!important}
-
-    /* ── ARTIO DESIGN OVERRIDES ── */
-    :root {
-      --bg:        #080b14;
-      --surface:   #0e1220;
-      --surface-2: #141829;
-      --border:    rgba(255,255,255,0.07);
-      --border-hi: rgba(255,255,255,0.13);
-      --text:      #e2e5f1;
-      --muted:     #6b7494;
-      --amber:     #f5a742;
-      --amber-dim: rgba(245,167,66,0.13);
-      --amber-glow:rgba(245,167,66,0.28);
-      --teal:      #3ecfcf;
-      --teal-dim:  rgba(62,207,207,0.11);
-      --fh: 'Space Grotesk', sans-serif;
-      --fb: 'Plus Jakarta Sans', sans-serif;
-    }
-    body { font-family: var(--fb) !important; background: var(--bg) !important; color: var(--text) !important; }
-    .app { max-width: 760px; }
-
-    /* Nav */
-    .artio-topbar {
-      position: sticky; top: 0; z-index: 200;
-      height: 60px; padding: 0 20px;
-      display: flex; align-items: center; gap: 16px;
-      background: rgba(8,11,20,0.88); backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 20px;
-    }
-    .artio-logo-txt { font-family: var(--fh); font-size: 18px; font-weight: 700; color: var(--amber); letter-spacing:-0.02em; text-decoration:none; flex-shrink:0; }
-    .artio-nav-links { display: flex; gap: 3px; flex: 1; justify-content: center; overflow-x: auto; }
-    .artio-nav-link { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; color: var(--muted); text-decoration: none; white-space: nowrap; border: none; background: transparent; cursor: pointer; font-family: var(--fb); transition: color .2s, background .2s; }
-    .artio-nav-link:hover { color: var(--text); background: var(--surface); }
-    .artio-nav-link.active { color: var(--amber); background: var(--amber-dim); font-weight: 600; }
-    .artio-nav-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .artio-btn-settings { padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; font-family: var(--fb); transition: all .2s; }
-    .artio-btn-settings:hover { border-color: var(--border-hi); color: var(--text); }
-    .artio-btn-logout { padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; font-family: var(--fb); transition: all .2s; }
-    .artio-btn-logout:hover { border-color: var(--border-hi); color: var(--text); }
-
-    /* Cards */
-    .card { background: var(--surface) !important; border: 1px solid var(--border-hi) !important; border-radius: 16px !important; }
-    .dossier-card { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: 14px !important; }
-    .dossier-header { background: var(--surface-2) !important; color: var(--text) !important; border-radius: 14px 14px 0 0 !important; }
-    .dossier-body { background: rgba(8,11,20,.5) !important; }
-
-    /* Inputs */
-    input, textarea, select { background: var(--surface-2) !important; border: 1px solid var(--border) !important; color: var(--text) !important; font-family: var(--fb) !important; border-radius: 10px !important; }
-    input:focus, textarea:focus, select:focus { border-color: var(--amber) !important; box-shadow: 0 0 0 3px var(--amber-dim) !important; }
-    input::placeholder, textarea::placeholder { color: var(--muted) !important; }
-    .artio-field { background: var(--surface-2) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: 10px !important; }
-
-    /* Labels */
-    .label { color: var(--muted) !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: .05em !important; text-transform: uppercase !important; }
-    .opt { color: #4a5568 !important; }
-
-    /* Tabs */
-    .tabs { gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 20px; flex-wrap: nowrap; overflow-x: auto; }
-    .tab-btn { border-radius: 9px !important; background: transparent !important; border: none !important; color: var(--muted) !important; font-family: var(--fb) !important; font-weight: 600 !important; font-size: 12px !important; transition: all .2s !important; }
-    .tab-btn.active { background: var(--surface-2) !important; color: var(--amber) !important; border: none !important; }
-    .tab-btn:hover:not(.active) { color: var(--text) !important; }
-    .mode-tabs { gap: 8px; }
-    .mode-btn { background: var(--surface-2) !important; border: 1px solid var(--border) !important; color: var(--muted) !important; border-radius: 10px !important; font-family: var(--fb) !important; }
-    .mode-btn.active { background: var(--amber-dim) !important; border-color: rgba(245,167,66,.35) !important; color: var(--amber) !important; }
-
-    /* Buttons */
-    .btn-primary { background: var(--amber) !important; color: #080b14 !important; border-radius: 12px !important; font-family: var(--fh) !important; font-weight: 700 !important; box-shadow: 0 0 24px var(--amber-glow) !important; border: none !important; }
-    .btn-primary:disabled { opacity: .5 !important; }
-    .btn-primary:hover:not(:disabled) { box-shadow: 0 6px 36px var(--amber-glow) !important; transform: translateY(-1px) !important; }
-    .btn-small { border-radius: 7px !important; font-family: var(--fb) !important; }
-    .btn-green { background: var(--teal-dim) !important; color: var(--teal) !important; border-color: rgba(62,207,207,.3) !important; }
-    .btn-blue  { background: var(--amber-dim) !important; color: var(--amber) !important; border-color: rgba(245,167,66,.3) !important; }
-    .btn-red   { background: rgba(248,113,113,.1) !important; color: #f87171 !important; border-color: rgba(248,113,113,.25) !important; }
-    .btn-gray  { background: var(--surface-2) !important; color: var(--muted) !important; border-color: var(--border) !important; }
-    .btn-teal  { background: var(--teal-dim) !important; color: var(--teal) !important; border-color: rgba(62,207,66,.3) !important; }
-    .remove-btn { background: var(--surface-2) !important; border-color: var(--border) !important; color: var(--muted) !important; border-radius: 9px !important; }
-
-    /* Voice box */
-    .voice-box { background: var(--surface-2) !important; border: 1px solid var(--border) !important; border-radius: 14px !important; }
-    .voice-box.recording { background: rgba(248,113,113,.08) !important; border-color: rgba(248,113,113,.3) !important; }
-    .voice-box.processing { background: var(--teal-dim) !important; border-color: rgba(62,207,207,.3) !important; }
-    .voice-btn { border-radius: 50% !important; }
-
-    /* Totaux */
-    .totaux { background: var(--surface-2) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; }
-    .totaux-row { color: var(--muted) !important; }
-    .totaux-total { color: var(--text) !important; border-top-color: var(--border) !important; }
-
-    /* Result box */
-    .result-box { background: var(--surface-2) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }
-
-    /* Preview table */
-    .preview-table th { background: var(--amber-dim) !important; color: var(--amber) !important; }
-    .preview-table td { border-color: var(--border) !important; color: var(--text) !important; }
-
-    /* Pieces grid */
-    .pieces-grid input { font-size: 13px !important; }
-
-    /* Settings panel */
-    .settings-panel { background: var(--surface) !important; border-color: var(--border-hi) !important; }
-    .settings-overlay { background: rgba(0,0,0,.6) !important; backdrop-filter: blur(4px) !important; }
-
-    /* Badge */
-    .badge { border-radius: 100px !important; font-size: 10px !important; font-weight: 700 !important; }
-
-    /* TVA box */
-    .tva-box { background: var(--amber-dim) !important; border: 1px solid rgba(245,167,66,.2) !important; border-radius: 10px !important; }
-
-    /* Warning bar */
-    .artio-warn { background: rgba(248,113,113,.1) !important; border: 1px solid rgba(248,113,113,.25) !important; color: #f87171 !important; border-radius: 10px !important; }
-
-    /* Pre */
-    pre { color: var(--text) !important; font-family: var(--fb) !important; }
-
-    /* Doc actions */
-    .btn-actions { gap: 6px; }
-
-    /* header/user-bar */
-    .header { margin-bottom: 0 !important; padding: 0 !important; }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
-
-    @media(max-width:580px) {
-      .artio-nav-links { display: none; }
-    }
-
-  </style>
+:root{--bg:#080b14;--surface:#0e1220;--surface-2:#141829;--surface-3:#1a2035;--border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.13);--text:#e2e5f1;--muted:#6b7494;--amber:#f5a742;--amber-dim:rgba(245,167,66,0.12);--amber-glow:rgba(245,167,66,0.28);--teal:#3ecfcf;--teal-dim:rgba(62,207,207,0.11);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--green:#4ade80;--fh:'Space Grotesk',sans-serif;--fb:'Plus Jakarta Sans',sans-serif}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+button{font-family:var(--fb);cursor:pointer}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:3px}
+.artio-nav{position:sticky;top:0;z-index:200;height:60px;padding:0 20px;display:flex;align-items:center;gap:16px;background:rgba(8,11,20,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:var(--fh);font-size:18px;font-weight:700;color:var(--amber);letter-spacing:-0.02em;text-decoration:none;flex-shrink:0}
+.nav-links{display:flex;gap:3px;flex:1;justify-content:center;overflow-x:auto}
+.nav-link{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;border:none;background:transparent;cursor:pointer;font-family:var(--fb);transition:color .2s,background .2s}
+.nav-link:hover{color:var(--text);background:var(--surface)}
+.nav-link.active{color:var(--amber);background:var(--amber-dim);font-weight:600}
+.nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.nav-btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:var(--fb);transition:all .2s}
+.nav-btn:hover{border-color:var(--border-hi);color:var(--text)}
+.app{max-width:760px;margin:0 auto;padding:20px 20px 60px}
+.warn-bar{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.22);border-radius:10px;margin-bottom:16px;font-size:13px;color:var(--red);cursor:pointer;transition:background .2s}
+.warn-bar:hover{background:rgba(248,113,113,0.13)}
+.tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:20px;overflow-x:auto}
+.tab-btn{padding:9px 14px;border-radius:9px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--muted);cursor:pointer;font-family:var(--fb);transition:all .2s;white-space:nowrap}
+.tab-btn.active{background:var(--surface-2);color:var(--amber)}
+.tab-btn:hover:not(.active){color:var(--text)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px;margin-bottom:14px}
+.field{margin-bottom:14px}
+.label{display:block;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px}
+.opt{font-size:11px;font-weight:400;color:var(--muted);margin-left:4px;text-transform:none;letter-spacing:0}
+input,textarea,select{width:100%;padding:10px 13px;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-dim)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+select option{background:var(--surface-2);color:var(--text)}
+textarea{resize:vertical}
+input[type="date"]{color-scheme:dark}
+.btn-primary{width:100%;padding:12px;border-radius:12px;border:none;background:var(--amber);color:#080b14;font-size:15px;font-weight:700;font-family:var(--fh);cursor:pointer;margin-top:6px;box-shadow:0 0 24px var(--amber-glow);transition:transform .15s,box-shadow .15s,opacity .2s}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 36px var(--amber-glow)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-small{font-size:12px;padding:5px 12px;border-radius:8px;font-weight:500;border:1px solid;transition:all .2s;cursor:pointer}
+.btn-green{background:var(--teal-dim);color:var(--teal);border-color:rgba(62,207,207,.3)}
+.btn-green:hover{background:rgba(62,207,207,.2)}
+.btn-blue{background:var(--amber-dim);color:var(--amber);border-color:rgba(245,167,66,.3)}
+.btn-blue:hover{background:rgba(245,167,66,.2)}
+.btn-red{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,.25)}
+.btn-red:hover{background:rgba(248,113,113,.18)}
+.btn-teal{background:var(--teal-dim);color:var(--teal);border-color:rgba(62,207,207,.25)}
+.btn-gray{background:var(--surface-2);color:var(--muted);border-color:var(--border)}
+.btn-gray:hover{border-color:var(--border-hi);color:var(--text)}
+.mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+.mode-btn{padding:11px;border-radius:10px;font-size:13px;font-weight:500;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);cursor:pointer;font-family:var(--fb);transition:all .2s}
+.mode-btn.active{background:var(--amber-dim);border-color:rgba(245,167,66,.35);color:var(--amber)}
+.voice-box{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:14px;border:1px solid var(--border);background:var(--surface-2);cursor:pointer;margin-bottom:18px;transition:all .2s}
+.voice-box.recording{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.3)}
+.voice-box.processing{background:var(--teal-dim);border-color:rgba(62,207,207,.3)}
+.voice-btn{width:52px;height:52px;border-radius:50%;border:none;color:#080b14;font-size:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.voice-btn:hover{transform:scale(1.05)}
+.pieces-grid{display:grid;grid-template-columns:1fr 64px 88px 32px;gap:6px}
+.remove-btn{height:38px;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;width:100%;cursor:pointer;transition:all .2s}
+.remove-btn:hover{border-color:var(--red);color:var(--red)}
+.totaux{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:13px}
+.totaux-row{display:flex;justify-content:space-between;color:var(--muted);margin-bottom:4px}
+.totaux-total{display:flex;justify-content:space-between;font-weight:700;color:var(--amber);border-top:1px solid var(--border);padding-top:8px;margin-top:6px}
+.result-box{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:14px}
+.result-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);color:var(--text)}
+.dossier-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.dossier-card:hover{border-color:var(--border-hi)}
+.dossier-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;cursor:pointer;background:var(--surface-2);transition:background .15s}
+.dossier-header:hover{background:var(--surface-3)}
+.dossier-body{border-top:1px solid var(--border);padding:14px 16px;background:rgba(8,11,20,.4)}
+.doc-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.doc-row+.doc-row{border-top:1px solid var(--border)}
+.btn-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.badge{display:inline-flex;align-items:center;font-size:10px;padding:3px 9px;border-radius:100px;font-weight:700;letter-spacing:.04em}
+.preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.preview-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
+.preview-table th{padding:7px 10px;background:var(--amber-dim);color:var(--amber);font-size:10px;font-weight:700;text-align:left;text-transform:uppercase;letter-spacing:.04em}
+.preview-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.divider{border-top:1px solid var(--border);padding-top:10px;margin-bottom:10px}
+.tva-box{background:var(--amber-dim);border:1px solid rgba(245,167,66,.2);border-radius:10px;padding:13px 16px;margin-bottom:10px}
+.settings-panel{position:fixed;top:0;right:0;bottom:0;background:var(--surface);border-left:1px solid var(--border-hi);z-index:1000;box-shadow:-12px 0 40px rgba(0,0,0,.5);overflow-y:auto}
+.settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:999}
+.artio-field{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text)}
+@media(max-width:580px){.preview-grid{grid-template-columns:1fr}.btn-actions{gap:4px}.btn-small{font-size:11px;padding:4px 8px}.nav-links{display:none}.app{padding:14px 12px 40px}}
+</style>
 </head>
 <body>
 <div id="root">Chargement...</div>
@@ -285,10 +117,10 @@ window.downloadPDF=function(key){
 function getStatuts(){
   const dk=S.darkMode;
   return {
-    devis_envoye:{label:"Devis envoyé",  bg:dk?"#2a2440":  "#F1EFE8", color:dk?"#AFA9EC":"#5F5E5A"},
-    devis_accepte:{label:"Devis accepté",bg:dk?"#1e1a3a":  "#E6F1FB", color:dk?"#7F77DD":"#185FA5"},
-    facture:      {label:"Facturé",      bg:dk?"#1a3a20":  "#EAF3DE", color:dk?"#5DD9A7":"#3B6D11"},
-    termine:      {label:"Terminé",      bg:dk?"#16302a":  "#E1F5EE", color:dk?"#3DB58A":"#085041"},
+    devis_envoye:{label:"Devis envoyé",  bg:"rgba(251,146,60,.13)",  color:"#fb923c"},
+    devis_accepte:{label:"Devis accepté",bg:"rgba(96,165,250,.13)",  color:"#60a5fa"},
+    facture:      {label:"Facturé",      bg:"rgba(62,207,207,.13)",  color:"#3ecfcf"},
+    termine:      {label:"Terminé",      bg:"rgba(107,116,148,.15)", color:"#6b7494"},
   };
 }
 
@@ -509,9 +341,7 @@ function applyLangue(){
 }
 // Restaurer préférences au chargement
 (()=>{
-  // Always dark by default for Artio
-S.darkMode=true;document.body.classList.add("dark");
-if(localStorage.getItem("artio_dark")==="0"){S.darkMode=false;document.body.classList.remove("dark");}
+  S.darkMode=true; if(localStorage.getItem("artio_dark")==="0"){S.darkMode=false;}
   if(localStorage.getItem("artio_langue")) S.langue=localStorage.getItem("artio_langue");
 })();
 
@@ -1342,45 +1172,46 @@ function render(){
 function renderApp(){
   const e=S.entreprise,apiOk=!!e.api_key;
   document.getElementById("root").innerHTML=`
-  <div class="app">
-    <div class="artio-topbar">
-      <a href="home.html" style="display:flex;align-items:center;text-decoration:none;flex-shrink:0;">
-  <span class="artio-logo-txt">Artio</span>
-      </a>
-      <nav class="artio-nav-links">
-        <a href="app.html" class="artio-nav-link active">Application</a>
-        <a href="dashboard.html" class="artio-nav-link">Tableau de bord</a>
-        <a href="calendar.html" class="artio-nav-link">Calendrier</a>
-        <a href="clients.html" class="artio-nav-link">Clients</a>
-      </nav>
-      <div class="artio-nav-right">
-        <button class="artio-btn-settings" onclick="location.href='settings.html'">Paramètres</button>
-        <button class="artio-btn-logout" onclick="handleLogout()">Déconnexion</button>
-      </div>
+  <nav class="artio-nav">
+    <a class="nav-logo" href="home.html">Artio</a>
+    <div class="nav-links">
+      <a class="nav-link active" href="app.html">Application</a>
+      <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+      <a class="nav-link" href="calendar.html">Calendrier</a>
+      <a class="nav-link" href="clients.html">Clients</a>
     </div>
-        ${!apiOk?`<div class="artio-warn" style="padding:10px 14px;margin-bottom:16px;font-size:13px;cursor:pointer;" onclick="set({showSettings:true,settingsPage:'profil'})">⚠️ Configure ton entreprise et ta clé API — Appuie ici</div>`:""}
-    <div class="tabs">
+    <div class="nav-right">
+      <button class="nav-btn" onclick="location.href='settings.html'">Paramètres</button>
+      <button class="nav-btn" onclick="handleLogout()">Déconnexion</button>
+    </div>
+  <div class="app">
+    </div>
+  </div>
+  </nav>
+  <div class="app">
+    ${!apiOk?'<div class="warn-bar" onclick="set({showSettings:true,settingsPage:\'profil\'})">⚠️ Configure ton entreprise et ta clé API</div>':""}    <div class="tabs">
       ${[["devis",L("devis")],["facture",L("facture")],["email",L("email")],["historique",L("historique")+(S.dossiers.length?" ("+S.dossiers.length+")":"")],["emails_gmail",S.gmailToken?"📧 Emails"+(S.emails.length?" ("+S.emails.length+")":""):"📧 Gmail"]].map(([id,label])=>`<button class="tab-btn ${S.tab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}
     </div>
     ${S.tab==="emails_gmail"?renderEmailsGmail():S.tab==="historique"?renderHistorique():S.tab==="email"?renderEmail():renderDevisFacture()}
   </div>
   ${S.showSettings?`
   <div class="settings-overlay" onclick="set({showSettings:false})"></div>
-  <div class="settings-panel" style="width:${S.settingsPage==="profil"?"460px":"320px"};overflow-y:auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        ${S.settingsPage!=="main"?`<button onclick="set({settingsPage:'main'})" style="background:none;border:none;cursor:pointer;font-size:18px;color:#888;">←</button>`:""}
-        <p style="font-size:16px;font-weight:500;">${S.settingsPage==="profil"?L("mon_entreprise"):S.settingsPage==="gmail"?"📧 Gmail":L("settings")}</p>
+  <div class="settings-panel" style="width:${S.settingsPage==="profil"?"480px":"340px"};overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 20px 16px;border-bottom:1px solid var(--border);margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        ${S.settingsPage!=="main"?`<button onclick="set({settingsPage:'main'})" style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;color:var(--muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;">←</button>`:""}
+        <span style="font-family:var(--fh);font-size:15px;font-weight:700;">${S.settingsPage==="profil"?L("mon_entreprise"):S.settingsPage==="gmail"?"Gmail":L("settings")}</span>
       </div>
-      <button onclick="set({showSettings:false})" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;">×</button>
+      <button onclick="set({showSettings:false})" style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:16px;cursor:pointer;color:var(--muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
+    <div style="padding:0 20px 20px">
 
     ${S.settingsPage==="profil"?`
       <div style="text-align:center;padding:2rem 1rem;">
         <p style="font-size:32px;margin-bottom:12px;">🏢</p>
         <p style="font-size:15px;font-weight:600;margin-bottom:8px;">Mon entreprise</p>
         <p style="font-size:13px;color:#888;margin-bottom:1.5rem;">Configure tes informations, SIRET, taux horaire et clé API.</p>
-        <a href="profil.html" style="display:block;padding:12px;background:#534AB7;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;">Ouvrir les paramètres →</a>
+        <a href="profil.html" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;font-family:var(--fh);text-align:center;box-shadow:0 0 24px var(--amber-glow)">Ouvrir les paramètres →</a>
       </div>
     `:S.settingsPage==="gmail"?`
       <div>
@@ -1392,9 +1223,7 @@ function renderApp(){
         </div>
         <p style="font-size:11px;color:#888;margin-bottom:12px;">⚠️ Dans Google Cloud Console → Credentials → OAuth 2.0, ajoute ${window.location.origin+window.location.pathname} comme URI de redirection autorisée.</p>
         ${S.gmailToken?`
-          <div style="background:#E8F5E9;border-radius:8px;padding:10px;margin-bottom:12px;">
-            <p style="font-size:13px;color:#2E7D32;">✓ Gmail connecté</p>
-          </div>
+          <div style="background:var(--teal-dim);border:1px solid rgba(62,207,207,.2);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--teal)">✓ Gmail connecté</div>
           <button class="btn-primary" onclick="gmailFetchEmails();set({showSettings:false,tab:'emails_gmail'})">Voir les emails</button>
           <button class="btn-small btn-gray" style="margin-top:8px;width:100%;" onclick="gmailDisconnect()">Déconnecter</button>
         `:`
@@ -1402,19 +1231,17 @@ function renderApp(){
         `}
       </div>
     `:`
-    <button onclick="set({settingsPage:'profil'})" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:10px;">
+    <button onclick="set({settingsPage:'profil'})" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);cursor:pointer;margin-bottom:8px;transition:border-color .2s">
       <span style="font-size:20px;">🏢</span>
       <div>
-        <p style="font-size:14px;font-weight:500;margin:0;">${L("mon_entreprise")}</p>
-        <p style="font-size:12px;color:#888;margin:0;">${L("mon_entreprise_desc")}</p>
+        <span style="font-family:var(--fh);font-size:13px;font-weight:600;color:var(--text)">${L("mon_entreprise")}</span><br><span style="font-size:11px;color:var(--muted)">${L("mon_entreprise_desc")}</span>
       </div>
-      <span style="margin-left:auto;color:#888;">›</span>
+      <span style="margin-left:auto;color:var(--muted);">›</span>
     </button>
-    <button onclick="set({settingsPage:'gmail'})" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:10px;border:0.5px solid #d0d0cc;background:transparent;cursor:pointer;margin-bottom:10px;">
+    <button onclick="set({settingsPage:'gmail'})" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);cursor:pointer;margin-bottom:8px;transition:border-color .2s">
       <span style="font-size:20px;">📧</span>
       <div>
-        <p style="font-size:14px;font-weight:500;margin:0;">Connexion Gmail ${S.gmailToken?"✓":""}</p>
-        <p style="font-size:12px;color:#888;margin:0;">${S.gmailToken?"Gmail connecté — réponses automatiques actives":"Connecte Gmail pour répondre automatiquement"}</p>
+        <span style="font-family:var(--fh);font-size:13px;font-weight:600;color:var(--text)">Gmail ${S.gmailToken?"✓":""}</span><br><span style="font-size:11px;color:var(--muted)">${S.gmailToken?"Gmail connecté":"Connecte Gmail pour répondre"}</span>
       </div>
       <span style="margin-left:auto;color:#888;">›</span>
     </button>
@@ -1422,417 +1249,16 @@ function renderApp(){
     <div style="margin-bottom:1.5rem;">
       <label class="label" style="margin-bottom:10px;">${L("langue_lbl")}</label>
       ${[["fr","🇫🇷 Français"],["en","🇬🇧 English"],["es","🇪🇸 Español"],["zh","🇨🇳 中文"]].map(([code,label])=>`
-        <button onclick="S.langue='${code}';applyLangue();render()" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:6px;border-radius:8px;border:1.5px solid ${S.langue===code?"#378ADD":"#d0d0cc"};background:${S.langue===code?"#2e2858":"transparent"};color:${S.langue===code?"#AFA9EC":"#666"};cursor:pointer;font-size:14px;">
+        <button onclick="S.langue='${code}';applyLangue();render()" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:6px;border-radius:8px;border:1px solid ${S.langue===code?"var(--amber)":"var(--border)"};background:${S.langue===code?"var(--amber-dim)":"var(--surface-2)"};color:${S.langue===code?"var(--amber)":"var(--muted)"};cursor:pointer;font-size:14px;">
           ${label}
         </button>`).join("")}
     </div>
     <div>
       <label class="label" style="margin-bottom:10px;">${L("theme_lbl")}</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button onclick="S.darkMode=false;applyDarkMode();render()" style="padding:12px;border-radius:8px;border:1.5px solid ${!S.darkMode?"#534AB7":"#d0d0cc"};background:${!S.darkMode?"#E6F1FB":"transparent"};color:${!S.darkMode?"#534AB7":"#666"};cursor:pointer;font-size:13px;">☀️ ${L("clair")}</button>
-        <button onclick="S.darkMode=true;applyDarkMode();render()" style="padding:12px;border-radius:8px;border:1.5px solid ${S.darkMode?"#534AB7":"#d0d0cc"};background:${S.darkMode?"#2a2440":"transparent"};color:${S.darkMode?"#AFA9EC":"#666"};cursor:pointer;font-size:13px;">🌙 ${L("sombre")}</button>
+        <button onclick="S.darkMode=false;applyDarkMode();render()" style="padding:12px;border-radius:8px;border:1px solid ${!S.darkMode?"var(--amber)":"var(--border)"};background:${!S.darkMode?"var(--amber-dim)":"var(--surface-2)"};color:${!S.darkMode?"var(--amber)":"var(--muted)"};cursor:pointer;font-size:13px;">☀️ ${L("clair")}</button>
+        <button onclick="S.darkMode=true;applyDarkMode();render()" style="padding:12px;border-radius:8px;border:1px solid ${S.darkMode?"var(--amber)":"var(--border)"};background:${S.darkMode?"var(--amber-dim)":"var(--surface-2)"};color:${S.darkMode?"var(--amber)":"var(--muted)"};cursor:pointer;font-size:13px;">🌙 ${L("sombre")}</button>
       </div>
     </div>
     `}
-  </div>`:""}
-  `;
-}
-
-function renderProfil(){
-  const e=S.entreprise;
-  const BTP_SECTORS=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros \u0153uvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
-  const isBTP=BTP_SECTORS.includes(e.secteur||"");
-  return`<div class="card">
-    <p style="font-size:15px;font-weight:500;margin-bottom:3px;">Profil entreprise</p>
-    <p style="font-size:12px;color:#888;margin-bottom:14px;">Sauvegardé en ligne — accessible depuis tous tes appareils</p>
-        <div class="field">
-      <label class="label">Secteur d'activité</label>
-      <select class="profil-input" data-id="secteur" onchange="render()" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;">
-          <option value="">-- Choisir votre secteur --</option>
-          <optgroup label="🔨 BTP / Artisanat">
-            ${["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
-          </optgroup>
-          <optgroup label="💼 Services aux entreprises">
-            ${["Consultant / Conseil","Coach / Formateur","Développeur freelance","Designer / Graphiste","Traducteur / Interprète","Comptable / Expert-comptable","Juriste / Avocat","Agent commercial","Community manager","Rédacteur / Copywriter"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
-          </optgroup>
-          <optgroup label="🧑‍💼 Services aux particuliers">
-            ${["Photographe / Vidéaste","Coiffeur / Esthéticien","Laveur de véhicules","Jardinage / Entretien","Aide à domicile","Garde d\'enfants","Déménagement","Chauffeur VTC / Livraison","Informatique / Dépannage","Traiteur / Événementiel"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
-          </optgroup>
-          <optgroup label="🏥 Santé / Bien-être">
-            ${["Médecin / Généraliste","Kinésithérapeute","Ostéopathe","Infirmier(e)","Diététicien / Nutritionniste","Coach sportif","Psychologue / Thérapeute"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
-          </optgroup>
-          <optgroup label="🏠 Immobilier / Transport">
-            ${["Agent immobilier","Mandataire immobilier","Gestionnaire de biens"].map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}
-          </optgroup>
-          <optgroup label="📦 Autre">
-            <option value="Autre" ${e.secteur==="Autre"?"selected":""}>Autre activité</option>
-          </optgroup>
-        </select>
-    </div>
-    <div class="field">
-      <label class="label">Conditions de paiement</label>
-      <select class="profil-input" data-id="conditions_paiement" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;">
-        <option value="">-- Choisir --</option>
-        ${[
-          ["30_reception","Solde à réception de facture"],
-          ["30_jours","Paiement à 30 jours"],
-          ["45_jours","Paiement à 45 jours"],
-          ["60_jours","Paiement à 60 jours"],
-          ["acompte_30","30% d'acompte, solde à réception"],
-          ["acompte_50","50% d'acompte, solde à réception"],
-          ["3_versements","3 versements égaux"],
-          ["custom","Personnalisé (voir notes)"]
-        ].map(([v,l])=>`<option value="${v}" ${e.conditions_paiement===v?"selected":""}>${l}</option>`).join("")}
-      </select>
-    </div>
-    <div class="field">
-      <label class="label">Validité du devis (jours)</label>
-      <input type="number" class="profil-input" data-id="delai_paiement" value="${esc(e.delai_paiement||"30")}" placeholder="30" min="1" max="365" />
-    </div>
-    ${[["nom","Nom de l'entreprise *","Ex: Dupont Consulting","text"],["adresse","Adresse","Ex: 12 rue des Artisans, 69001 Lyon","text"],["tel","Téléphone","Ex: 06 12 34 56 78","text"],["email","Email","Ex: contact@dupont.fr","text"],["siret","SIRET *","Ex: 123 456 789 00012","text"],["taux_horaire","Taux horaire HT (€/h) *","Ex: 50","number"]].map(([id,label,ph,type])=>`
-    <div class="field">
-      <label class="label">${label}</label>
-      <input type="${type}" class="profil-input" data-id="${id}" value="${esc(e[id]||"")}" placeholder="${ph}" />
-    </div>`).join("")}
-    <div class="field">
-      <label class="label">Clé API Anthropic * <span class="opt">console.anthropic.com → API Keys</span></label>
-      <input type="password" class="profil-input" data-id="api_key" value="${esc(e.api_key||"")}" placeholder="sk-ant-..." />
-    </div>
-    <div style="background:#E6F1FB;border-radius:8px;padding:12px;margin-bottom:10px;" class="tva-box">
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-        <input type="checkbox" class="profil-input" data-id="assujetti_tva" ${e.assujetti_tva?"checked":""} style="width:18px;height:18px;cursor:pointer;flex-shrink:0;" />
-        <span style="font-size:14px;font-weight:500;">Assujetti à la TVA</span>
-      </label>
-      <p style="font-size:12px;color:#666;margin-top:6px;margin-left:28px;">Coche si tu factures la TVA. En micro-entreprise sous le seuil, laisse décoché.</p>
-    </div>
-      <div style="margin-top:14px;padding-top:14px;border-top:0.5px solid #f0eeea;">
-        <p style="font-size:12px;font-weight:600;color:#534AB7;margin-bottom:10px;">INFORMATIONS LÉGALES</p>
-        <div class="field"><label class="label">Assureur RC Pro</label><input type="text" class="profil-input" data-id="rc_pro_assureur" value="${esc(e.rc_pro_assureur||'')}" placeholder="Ex: AXA, Allianz..." style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;" /></div>
-        <div class="field"><label class="label">N° de police RC Pro</label><input type="text" class="profil-input" data-id="rc_pro_police" value="${esc(e.rc_pro_police||'')}" placeholder="Ex: RC-2024-123456" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;" /></div>
-        ${isBTP?`<div class="field"><label class="label">Assureur décennale</label><input type="text" class="profil-input" data-id="decennale_assureur" value="${esc(e.decennale_assureur||'')}"/></div><div class="field"><label class="label">N° police décennale</label><input type="text" class="profil-input" data-id="decennale_police" value="${esc(e.decennale_police||'')}"/></div><div class="field"><label class="label">Certifications</label><input type="text" class="profil-input" data-id="certifications" value="${esc(e.certifications||'')}"/></div>`:""}
-        <div class="field"><label class="label">Nature des prestations</label><select class="profil-input" data-id="nature_operation" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;background:#fff;"><option value="">-- Choisir --</option><option value="services" ${e.nature_operation==="services"?"selected":""}>Prestations de services</option><option value="biens" ${e.nature_operation==="biens"?"selected":""}>Livraisons de biens</option><option value="mixte" ${e.nature_operation==="mixte"?"selected":""}>Mixte (services + biens)</option></select></div>
-      </div>
-    <div style="display:flex;gap:8px;margin-top:10px;">
-      <button class="btn-small btn-blue" style="padding:9px 18px;font-size:13px;" onclick="saveProfil()">${S.syncing?"Sauvegarde...":"Sauvegarder"}</button>
-      <button class="btn-small btn-gray" style="padding:9px 14px;font-size:13px;" onclick="set({showProfil:false})">Annuler</button>
-    </div>
-  </div>`;
-}
-
-function renderVoice(mode){
-  const vs=S.voiceState;
-  const bg=vs==="recording"?"recording":vs==="processing"?"processing":"";
-  const btnBg=vs==="recording"?"#E24B4A":vs==="processing"?"#1D9E75":"#378ADD";
-  const icon=vs==="recording"?"⏹":vs==="processing"?"⏳":"🎙";
-  const fn=mode==="suivi"?"startVoiceSuivi()":"startVoice()";
-  let txt="";
-  if(vs==="idle"&&!S.voiceTranscript)txt=`<p style="font-size:14px;font-weight:500;margin-bottom:2px;">${mode==="suivi"?"Dicter le suivi":"Dicter le document"}</p><p style="font-size:12px;color:#888;">Parle naturellement — appuie sur ⏹ pour analyser</p>`;
-  else if(vs==="recording")txt=`<p style="font-size:14px;font-weight:500;color:#A32D2D;">Enregistrement en cours...</p><p style="font-size:12px;color:#A32D2D;">Appuie sur ⏹ quand tu as fini</p>`;
-  else if(vs==="processing")txt=`<p style="font-size:14px;font-weight:500;color:#085041;">Analyse en cours...</p>${S.voiceTranscript?`<p style="font-size:12px;color:#085041;font-style:italic;">"${S.voiceTranscript}"</p>`:""}`;
-  else txt=`<p style="font-size:12px;color:#888;font-style:italic;">✓ "${S.voiceTranscript}"</p>`;
-  return`<div class="voice-box ${bg}" onclick="${vs==="idle"?fn:""}">
-    <button class="voice-btn" style="background:${btnBg};" onclick="event.stopPropagation();${vs==="recording"?"stopVoice()":fn};">${icon}</button>
-    <div style="flex:1;">${txt}</div>
-  </div>`;
-}
-
-function renderPieces(){
-  const p=S.pieces;
-  return`<div style="margin-bottom:14px;">
-    <label class="label" style="margin-bottom:8px;">Prestations / Articles</label>
-    <div class="pieces-grid" style="margin-bottom:4px;">
-      ${["Description","Qté","Prix HT €",""].map(h=>`<span style="font-size:11px;color:#888;">${h}</span>`).join("")}
-    </div>
-    ${p.map((x,i)=>`<div class="pieces-grid" style="margin-bottom:6px;">
-      <input value="${esc(x.description)}" placeholder="${L('ph_fourniture')}" data-pid="${i}_description" oninput="S.pieces[${i}]={...S.pieces[${i}],description:this.value};renderTotauxOnly()" />
-      <input type="number" value="${esc(x.quantite)}" min="1" data-pid="${i}_quantite" oninput="S.pieces[${i}]={...S.pieces[${i}],quantite:this.value};renderTotauxOnly()" />
-      <input type="number" value="${esc(x.prix_unitaire)}" placeholder="0.00" data-pid="${i}_prix_unitaire" oninput="S.pieces[${i}]={...S.pieces[${i}],prix_unitaire:this.value};renderTotauxOnly()" />
-      <button class="remove-btn" onclick="S.pieces.splice(${i},1);render()">×</button>
-    </div>`).join("")}
-    <button class="btn-small btn-gray" style="font-size:12px;padding:6px 12px;" onclick="S.pieces.push({description:'',quantite:'1',prix_unitaire:''});render()">+ Ajouter une pièce</button>
-  </div>`;
-}
-
-window.renderTotauxOnly=function(){
-  const el=document.getElementById("totaux-container");
-  if(el) el.innerHTML=renderTotaux();
-}
-function renderTotaux(){
-  const f=S.fields,e=S.entreprise,p=S.pieces;
-  if(!f.nb_heures||!e.taux_horaire)return"";
-  const t=calcTotaux(f.nb_heures,e.taux_horaire,p,f.tva);
-  return`<div class="totaux">
-    <div class="totaux-row"><span>Main d'œuvre (${f.nb_heures}h × ${e.taux_horaire}€)</span><span>${t.moHT.toFixed(2)} € HT</span></div>
-    <div class="totaux-row"><span>Fournitures</span><span>${t.piecesHT.toFixed(2)} € HT</span></div>
-    <div class="totaux-total"><span>Total HT</span><span>${t.totalHT.toFixed(2)} €</span></div>
-    ${parseFloat(f.tva)>0?`<div class="totaux-total"><span>Total TTC (${f.tva}%)</span><span>${t.ttc.toFixed(2)} €</span></div>`:""}
-  </div>`;
-}
-
-function updateTotaux(){
-  const el=document.getElementById('totaux-container');
-  if(el)el.innerHTML=renderTotaux();
-}
-function renderDevisFacture(){
-  const f=S.fields,tab=S.tab,e=S.entreprise;
-  const fields=[
-    ["client_nom","Nom du client",L("ph_client_nom"),"text",false],
-    ["client_adresse","Adresse du client",L("ph_client_adresse"),"text",true],
-    ["client_tel","Téléphone client",L("ph_client_tel"),"text",true],
-    ["client_email","Email client",L("ph_client_email"),"text",true],
-    ["date_prestation",tab==="devis"?"Date prévue de la prestation":"Date de la prestation","","date",true],
-    ["heure_prestation",tab==="devis"?"Heure prévue":"Heure de la prestation","","select_heure",true],
-    ["heure_fin_prestation",tab==="devis"?"Heure de fin estimée":"Heure de fin","","select_heure",true],
-    ["travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false],
-    ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true],
-    S.entreprise.assujetti_tva?["tva","TVA (%)","10 (rénovation) ou 20 (neuf)","text",false]:null,
-  ];
-  return`<div class="card">
-    ${renderVoice("devis")}
-    ${fields.filter(f=>f!==null).map(([id,label,ph,type,opt])=>{
-      const heureOpts=(()=>{
-        let opts='<option value="">-- Optionnel --</option>';
-        for(let h=6;h<=21;h++){
-          for(let m=0;m<60;m+=15){
-            const hh=String(h).padStart(2,"0"),mm=String(m).padStart(2,"0");
-            const val=hh+":"+mm,sel=(S.fields[id]||"")==val?"selected":"";
-            opts+=`<option value="${val}" ${sel}>${h}h${m>0?m:""}</option>`;
-          }
-        }
-        return opts;
-      })();
-      const input=type==="textarea"
-        ?`<textarea placeholder="${ph}" data-fid="${id}">${esc(S.fields[id]||"")}</textarea>`
-        :type==="select_heure"
-          ?`<select data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;" onchange="S.fields['${id}']=this.value">${heureOpts}</select>`
-          :type==="date"
-            ?`<input type="date" value="${S.fields[id]||""}" data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;font-family:inherit;" oninput="S.fields['${id}']=this.value"/>`
-            :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'updateTotaux()':''}"/>`;
-      return`<div class="field">
-      <label class="label">${label}${opt?`<span class="opt">(optionnel)</span>`:""}</label>
-      ${input}
-    </div>`;
-    }).join("")}
-    ${renderPieces()}
-    <div id="totaux-container">${renderTotaux()}</div>
-    <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":"Générer"}</button>
-  </div>
-  ${S.generatedDoc?`<div class="card">${renderDocPreview(S.generatedDoc)}</div>`:""}`;
-}
-
-function renderEmail(){
-  const f=S.fields,m=S.emailMode;
-  const reponseF=[["client_nom","Nom du client","Ex: M. Martin","text",false],["message","Message reçu du client","Colle ici le message...","textarea",false],["contexte","Contexte 🎙","Ex: infos que le client ne connaît pas encore, contexte particulier...","textarea",true,"voice"]];
-  const suiviF=[["client_nom","Nom du client",L("ph_client_nom"),"text",false],["adresse_travaux","Adresse du chantier","Ex: 12 rue de la Paix","text",true],["avancement","Où en sont les travaux","Ex: installation terminée, il reste la mise en service demain...","textarea",false],["suite","Prochaine étape","Ex: retour jeudi matin","text",true],["contexte","Contexte","Ex: retard dû à une livraison, attente validation client...","textarea",true]];
-  const activeF=m==="reponse"?reponseF:suiviF;
-  return`<div class="card">
-    <div class="mode-tabs">
-      <button class="mode-btn ${m==="reponse"?"active":""}" onclick="setEmailMode('reponse')">💬 Répondre à un message</button>
-      <button class="mode-btn ${m==="suivi"?"active":""}" onclick="setEmailMode('suivi')">🔧 Mise à jour chantier</button>
-    </div>
-    <div style="margin-bottom:16px;">
-      <label class="label" style="margin-bottom:8px;">Ton de la réponse <span style="font-weight:400;font-size:11px;color:#999;">(plusieurs choix possibles)</span></label>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        ${["vouvoiement","tutoiement","amical","institutionnel","ferme"].map(ton=>{
-          const active=(S.emailTons||[]).includes(ton);
-          return`<button onclick="toggleTon('${ton}')" style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${active?"#378ADD":"#d0d0cc"};background:${active?"#E6F1FB":"transparent"};color:${active?"#185FA5":"#666"};font-weight:${active?"500":"400"};">
-            ${active?"✓ ":""}${ton.charAt(0).toUpperCase()+ton.slice(1)}
-          </button>`;
-        }).join("")}
-      </div>
-    </div>
-    ${m==="suivi"?renderVoice("suivi"):""}
-    ${activeF.map(([id,label,ph,type,opt,extra])=>`<div class="field">
-      <label class="label" style="display:flex;align-items:center;gap:6px;">
-        ${label}${opt?`<span class="opt">(optionnel)</span>`:""}
-        ${extra==="voice"?`<button onclick="startVoiceContexte('${id}')" style="background:${S.voiceContextField===id?"#E24B4A":"#378ADD"};border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Dicter le contexte">${S.voiceContextField===id?"⏹":"🎙"}</button>`:""}
-      </label>
-      ${type==="textarea"?`<textarea placeholder="${ph}" data-fid="${id}">${esc(f[id]||"")}</textarea>`:`<input type="${type}" value="${esc(f[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value" />`}
-    </div>`).join("")}
-    <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":"Générer l'email"}</button>
-    ${S.generatedText?`<div class="result-box">
-      <div class="result-header">
-        <span style="font-size:13px;font-weight:500;color:#666;">Email généré — copie et envoie depuis ta messagerie</span>
-        <button class="btn-small ${S.copied?"btn-green":"btn-gray"}" onclick="copyText(${JSON.stringify(S.generatedText)})">${S.copied?"Copié ✓":"Copier"}</button>
-      </div>
-      <pre>${esc(S.generatedText)}</pre>
-    </div>`:""}
-  </div>`;
-}
-
-function renderEmailsGmail(){
-  if(!S.gmailToken){
-    return`<div class="card" style="text-align:center;padding:2rem;">
-      <p style="font-size:20px;margin-bottom:12px;">📧</p>
-      <p style="font-weight:500;margin-bottom:8px;">Connexion Gmail</p>
-      <p style="font-size:13px;color:#888;margin-bottom:20px;">Lis et réponds à tes emails directement depuis Artio. Configure ton Google Client ID dans les paramètres.</p>
-      <button class="btn-primary" onclick="set({showSettings:true,settingsPage:'gmail'})">⚙ Configurer Gmail</button>
-    </div>`;
-  }
-  return`<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <p style="font-weight:500;">Emails non lus</p>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-small btn-blue" onclick="gmailFetchEmails()">${S.emailsLoading?"⏳ Chargement...":"🔄 Actualiser"}</button>
-        <button class="btn-small btn-gray" onclick="gmailDisconnect()">Déconnecter</button>
-      </div>
-    </div>
-    ${S.emailsError?`<div style="color:#E24B4A;font-size:13px;margin-bottom:12px;">${esc(S.emailsError)}</div>`:""}
-    ${S.emails.length===0&&!S.emailsLoading?`<div style="text-align:center;padding:2rem;color:#888;">
-      <p>Aucun email non lu</p>
-      <button class="btn-primary" style="margin-top:12px;" onclick="gmailFetchEmails()">Charger les emails</button>
-    </div>`:""}
-    ${S.emails.map(m=>`
-    <div class="dossier-card" style="margin-bottom:12px;">
-      <div style="padding:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-          <p style="font-weight:500;font-size:14px;flex:1;">${esc(m.subject||"(sans objet)")}</p>
-          <span style="font-size:11px;color:#888;margin-left:8px;white-space:nowrap;">${esc((m.date||"").slice(0,16))}</span>
-        </div>
-        <p style="font-size:12px;color:#888;margin-bottom:8px;">${esc(m.from)}</p>
-        <p style="font-size:12px;color:#666;font-style:italic;margin-bottom:12px;">${esc(m.snippet||"")}</p>
-        <button class="btn-small btn-blue" onclick="generateEmailReply('${m.id}','${esc(m.from).replace(/'/g,"\'")}','${esc(m.subject||"").replace(/'/g,"\'")}',${JSON.stringify(m.body||"").replace(/'/g,"\'")})">
-          🤖 Générer une réponse
-        </button>
-      </div>
-    </div>`).join("")}
-  </div>`;
-}
-
-function renderHistorique(){
-  const now=new Date();
-  const devisEnAttente=S.dossiers.filter(d=>d.statut==="devis_envoye").length;
-  const caMois=S.dossiers.reduce((s,d)=>(d.documents||[]).filter(doc=>{
-    if(doc.type!=="facture")return false;
-    const parts=(doc.date||"").split("/");
-    if(parts.length<3)return false;
-    const dt=new Date(parts[2],parts[1]-1,parts[0]);
-    return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear();
-  }).reduce((ss,doc)=>ss+(doc.ttc||0),s),0);
-  const relancesNecessaires=S.dossiers.filter(d=>{
-    if(d.statut!=="devis_envoye")return false;
-    const devis=(d.documents||[]).find(doc=>doc.type==="devis"&&!doc.accepte);
-    if(!devis||!devis.date)return false;
-    const parts=devis.date.split("/");
-    if(parts.length<3)return false;
-    const jours=Math.floor((Date.now()-new Date(parts[2],parts[1]-1,parts[0]))/86400000);
-    return jours>=14;
-  }).length;
-  const statsBar=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem;">
-    <div class="card" style="padding:12px;text-align:center;">
-      <div style="font-size:11px;color:#888;margin-bottom:4px;">CA ce mois</div>
-      <div style="font-size:18px;font-weight:700;color:#534AB7;">${caMois.toLocaleString("fr-FR",{minimumFractionDigits:0})} €</div>
-    </div>
-    <div class="card" style="padding:12px;text-align:center;">
-      <div style="font-size:11px;color:#888;margin-bottom:4px;">Devis en attente</div>
-      <div style="font-size:18px;font-weight:700;color:#E65100;">${devisEnAttente}</div>
-    </div>
-    <div class="card" style="padding:12px;text-align:center;${relancesNecessaires>0?"background:#FFF8E1;border-color:#FFB74D;":""}">
-      <div style="font-size:11px;color:#888;margin-bottom:4px;">À relancer</div>
-      <div style="font-size:18px;font-weight:700;color:${relancesNecessaires>0?"#E65100":"#2E7D32"};">${relancesNecessaires}</div>
-    </div>
-  </div>`;
-  if(!S.dossiers.length)return statsBar+`<div class="card" style="text-align:center;padding:2rem;"><p style="color:#888;font-size:13px;">Aucun dossier pour l'instant.</p></div>`;
-  return statsBar+S.dossiers.map(dos=>{
-    const st=(getStatuts()[dos.statut]||getStatuts().devis_envoye);
-    const isOpen=S.openDossier===dos.id;
-    const hasFacture=(dos.documents||[]).some(d=>d.type==="facture");
-    const jrsDepuis=dos.createdAt?Math.floor((Date.now()-new Date(dos.createdAt))/86400000):0;
-    const needsRelance=dos.statut==="devis_envoye"&&jrsDepuis>=14;
-    return`<div class="dossier-card"${needsRelance?' style="border-left:3px solid #FFB74D;"':''}>
-      <div class="dossier-header" onclick="toggleDossier('${dos.id}')">
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
-            <span class="badge" style="background:${st.bg};color:${st.color};">${st.label}</span>
-            ${needsRelance?'<span style="font-size:10px;background:#FFF3E0;color:#E65100;padding:2px 6px;border-radius:4px;">📩 À relancer</span>':''}
-            <span style="font-size:13px;font-weight:500;">${esc(dos.nom)}</span>
-          </div>
-          <p style="font-size:12px;color:#888;">${(dos.documents||[]).length} document${(dos.documents||[]).length>1?"s":""} · ${dos.createdAt||""}</p>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-left:12px;">
-          ${dos.statut!=="termine"?`<button class="btn-small btn-teal" onclick="event.stopPropagation();markTermine('${dos.id}')">✓ Clôturer</button>`:""}
-          ${S.renamingDossierId===dos.id?`
-            <input value="${esc(S.renamingDossierVal)}" onclick="event.stopPropagation()" oninput="S.renamingDossierVal=this.value" onkeydown="if(event.key==='Enter')renameDossier('${dos.id}')" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #378ADD;width:150px;" />
-            <button class="btn-small btn-blue" onclick="event.stopPropagation();renameDossier('${dos.id}')">OK</button>
-            <button class="btn-small" onclick="event.stopPropagation();set({renamingDossierId:null})">✕</button>
-          `:`<button class="btn-small" onclick="event.stopPropagation();startRename('${dos.id}')">✏</button>`}
-          <button class="btn-small" onclick="event.stopPropagation();if(window.confirm('Supprimer ce dossier définitivement ?'))confirmDeleteDossier('${dos.id}')" style="color:#A32D2D;border-color:#F09595;">🗑</button>
-        </div>
-      </div>
-      ${isOpen?`<div class="dossier-docs" style="padding:12px;border-top:0.5px solid #f0eeea;">
-        ${(dos.documents||[]).map(doc=>{
-          const hasF=(dos.documents||[]).some(d=>d.type==="facture");
-          return`<div style="background:#f9f8f6;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
-              <div>
-                <p style="font-size:13px;font-weight:500;">${doc.docNumber||""}</p>
-                <p style="font-size:12px;color:#888;">${doc.date||""} · ${(doc.ttc||0).toFixed(2)} € TTC</p>
-              </div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="btn-small" onclick="downloadPDF('${doc.docNumber}')">⬇ PDF</button>
-                ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small btn-blue" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}
-                ${doc.type==="devis"&&doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;font-size:11px;" onclick="downloadSignedProof('${doc.docNumber}')">📄 Preuve signée</button>`:""}\n                ${doc.type==="devis"&&doc.accepte&&!hasF?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
-                ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:""}
-                ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#FFF8E1;color:#E65100;border-color:#FFB74D;" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:""}
-                ${doc.type==="facture"?`<button class="btn-small" style="background:${doc.factpulse_id?'#f0fff4':'#f0eeff'};color:${doc.factpulse_id?'#276749':'#534AB7'};border-color:${doc.factpulse_id?'#68D391':'#7F77DD'};" onclick="emettreFacture('${dos.id}','${doc.docNumber}')">${S.emettreId===doc.docNumber?'⏳ Envoi...':(doc.factpulse_id?'✅ Émise':'⚡ Émettre')}</button>`:""}
-                ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button>`:`<button class="btn-small" style="color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
-              </div>
-            </div>
-            ${S.previewDocNum===doc.docNumber?`<div style="background:#fff;border-radius:8px;padding:1rem;border:0.5px solid #e0deda;">${renderDocPreview(doc)}</div>`:
-              `<button class="btn-small" style="font-size:11px;" onclick="set({previewDocNum:S.previewDocNum==='${doc.docNumber}'?null:'${doc.docNumber}'})">👁 Aperçu</button>`}
-          </div>`;
-        }).join("")}
-        
-      </div>`:""}
-    </div>`;
-  }).join("");
-}
-function renderDocPreview(doc){
-  return`<div class="doc-preview-wrapper" style="font-size:13px;line-height:1.7;">
-    <div class="preview-grid">
-      <div><p style="font-weight:500;margin-bottom:2px;">${esc(doc.entreprise.nom)}</p><p style="color:#888;font-size:12px;">${esc(doc.entreprise.adresse)}<br/>${esc(doc.entreprise.tel)} — ${esc(doc.entreprise.email)}<br/>SIRET : ${esc(doc.entreprise.siret)}</p></div>
-      <div style="text-align:right;"><p style="font-weight:500;font-size:16px;margin-bottom:2px;">${doc.type==="devis"?"DEVIS":"FACTURE"}</p><p style="color:#888;font-size:12px;">N° ${doc.docNumber}<br/>Date : ${doc.date}${doc.validUntil?"<br/>Valable jusqu'au : "+doc.validUntil:""}${doc.date_prestation?"<br/>"+(doc.type==="devis"?"Prestation prévue":"Prestation réalisée")+" : "+new Date(doc.date_prestation).toLocaleDateString("fr-FR")+(doc.heure_prestation?" à "+doc.heure_prestation+(doc.heure_fin_prestation?" → "+doc.heure_fin_prestation:""):""):""}</p></div>
-    </div>
-    <div class="divider"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">CLIENT</p><p>${esc(doc.client.nom)}<br/>${esc(doc.client.adresse)}${doc.client.tel?"<br/>Tél : "+esc(doc.client.tel):""}</p></div>
-    ${doc.adresse_travaux?`<div style="margin-bottom:10px;"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">ADRESSE DES TRAVAUX</p><p>${esc(doc.adresse_travaux)}</p></div>`:""}
-    <div style="margin-bottom:12px;"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">DESCRIPTION</p><p>${esc(doc.description)}</p></div>
-    <table class="preview-table">
-      <thead><tr><th style="text-align:left;">Description</th><th style="text-align:right;">Qté</th><th style="text-align:right;">Prix unit. HT</th><th style="text-align:right;">Total HT</th></tr></thead>
-      <tbody>
-        <tr><td>Main d'œuvre (${doc.nb_heures}h × ${doc.entreprise.taux_horaire} €/h)</td><td style="text-align:right;">${doc.nb_heures}</td><td style="text-align:right;">${parseFloat(doc.entreprise.taux_horaire).toFixed(2)} €</td><td style="text-align:right;">${doc.moHT.toFixed(2)} €</td></tr>
-        ${doc.pieces.map(p=>`<tr><td>${esc(p.description)}</td><td style="text-align:right;">${p.quantite}</td><td style="text-align:right;">${parseFloat(p.prix_unitaire).toFixed(2)} €</td><td style="text-align:right;">${(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)} €</td></tr>`).join("")}
-      </tbody>
-    </table>
-    <div style="text-align:right;font-size:13px;">
-      <p style="margin:3px 0;color:#888;">Total HT : ${doc.totalHT.toFixed(2)} €</p>
-      ${doc.entreprise.assujetti_tva?`<p style="margin:3px 0;color:#888;">TVA (${doc.tvaRate}%) : ${doc.tva.toFixed(2)} €</p>`:`<p style="margin:3px 0;color:#888;font-size:11px;">TVA non applicable — art. 293B du CGI</p>`}
-      <p style="margin:6px 0 0;font-weight:500;font-size:15px;">${doc.entreprise.assujetti_tva?"Total TTC":"Total"} : ${doc.ttc.toFixed(2)} €</p>
-    </div>
-    ${doc.type==="devis"?(()=>{
-      const BTP_SEC=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
-      const cMap={"30_reception":"Paiement à réception de facture.","30_jours":"Paiement à 30 jours.","45_jours":"Paiement à 45 jours.","60_jours":"Paiement à 60 jours.","acompte_30":"30% d'acompte à la commande, solde à réception.","acompte_50":"50% d'acompte à la commande, solde à réception.","3_versements":"3 versements égaux.","custom":"Voir conditions spécifiques."};
-      const cTxt=cMap[doc.entreprise?.conditions_paiement||""]||"Paiement à réception de facture.";
-      const delai=doc.entreprise?.delai_paiement||"30";
-      const isBTP=BTP_SEC.includes(doc.entreprise?.secteur||"");
-      const extras=(isBTP?" Garantie décennale applicable.":"")+(isBTP&&doc.entreprise?.certifications?" Certif. : "+doc.entreprise.certifications+".":"");
-      return`<div style="margin-top:12px;padding:10px;background:#f0eeea;border-radius:8px;font-size:11px;color:#888;">${cTxt} Devis valable ${delai} jours.${extras}</div>`;
-    })():""}
-  </div>`;
-}
-
-// ——— INIT ———
-async function initDB(){
-  try {
-    await initAuth();
-    // Auto-ouvrir les paramètres si appelé depuis une autre page
-    if(new URLSearchParams(location.search).get('settings')==='1'){
-      set({showSettings:true,settingsPage:'main'});
-    }
-  }
-  catch(e){ document.getElementById("root").innerHTML="<p style='padding:2rem;color:red;'>Erreur : "+e.message+"</p>"; }
-}
-initDB();
-
-</script>
-</body>
-</html>
+  </div></div>`:""}
