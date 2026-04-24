@@ -1243,13 +1243,6 @@ function renderApp(){
       <span style="margin-left:auto;color:#888;">›</span>
     </button>
 
-    <div style="margin-bottom:1.5rem;">
-      <label class="label" style="margin-bottom:10px;">${L("langue_lbl")}</label>
-      ${[["fr","🇫🇷 Français"],["en","🇬🇧 English"],["es","🇪🇸 Español"],["zh","🇨🇳 中文"]].map(([code,label])=>`
-        <button onclick="S.langue='${code}';applyLangue();render()" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:6px;border-radius:8px;border:1px solid ${S.langue===code?"var(--amber)":"var(--border)"};background:${S.langue===code?"var(--amber-dim)":"var(--surface-2)"};color:${S.langue===code?"var(--amber)":"var(--muted)"};cursor:pointer;font-size:14px;">
-          ${label}
-        </button>`).join("")}
-    </div>
     <div>
       <label class="label" style="margin-bottom:10px;">${L("theme_lbl")}</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
