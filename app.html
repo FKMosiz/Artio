@@ -2,6 +2,8 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Artio — Application</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -128,7 +130,137 @@
     body.dark input[type="date"]{color-scheme:dark;background:#2a2440!important;color:#e8e4f0!important}
     body.dark select{background:#2a2440!important;color:#e8e4f0!important;border-color:#4a3f70!important}
     body.dark select option{background:#2a2440!important;color:#e8e4f0!important}
-</style>
+
+    /* ── ARTIO DESIGN OVERRIDES ── */
+    :root {
+      --bg:        #080b14;
+      --surface:   #0e1220;
+      --surface-2: #141829;
+      --border:    rgba(255,255,255,0.07);
+      --border-hi: rgba(255,255,255,0.13);
+      --text:      #e2e5f1;
+      --muted:     #6b7494;
+      --amber:     #f5a742;
+      --amber-dim: rgba(245,167,66,0.13);
+      --amber-glow:rgba(245,167,66,0.28);
+      --teal:      #3ecfcf;
+      --teal-dim:  rgba(62,207,207,0.11);
+      --fh: 'Space Grotesk', sans-serif;
+      --fb: 'Plus Jakarta Sans', sans-serif;
+    }
+    body { font-family: var(--fb) !important; background: var(--bg) !important; color: var(--text) !important; }
+    .app { max-width: 760px; }
+
+    /* Nav */
+    .artio-topbar {
+      position: sticky; top: 0; z-index: 200;
+      height: 60px; padding: 0 20px;
+      display: flex; align-items: center; gap: 16px;
+      background: rgba(8,11,20,0.88); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .artio-logo-txt { font-family: var(--fh); font-size: 18px; font-weight: 700; color: var(--amber); letter-spacing:-0.02em; text-decoration:none; flex-shrink:0; }
+    .artio-nav-links { display: flex; gap: 3px; flex: 1; justify-content: center; overflow-x: auto; }
+    .artio-nav-link { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; color: var(--muted); text-decoration: none; white-space: nowrap; border: none; background: transparent; cursor: pointer; font-family: var(--fb); transition: color .2s, background .2s; }
+    .artio-nav-link:hover { color: var(--text); background: var(--surface); }
+    .artio-nav-link.active { color: var(--amber); background: var(--amber-dim); font-weight: 600; }
+    .artio-nav-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .artio-btn-settings { padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; font-family: var(--fb); transition: all .2s; }
+    .artio-btn-settings:hover { border-color: var(--border-hi); color: var(--text); }
+    .artio-btn-logout { padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; font-family: var(--fb); transition: all .2s; }
+    .artio-btn-logout:hover { border-color: var(--border-hi); color: var(--text); }
+
+    /* Cards */
+    .card { background: var(--surface) !important; border: 1px solid var(--border-hi) !important; border-radius: 16px !important; }
+    .dossier-card { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: 14px !important; }
+    .dossier-header { background: var(--surface-2) !important; color: var(--text) !important; border-radius: 14px 14px 0 0 !important; }
+    .dossier-body { background: rgba(8,11,20,.5) !important; }
+
+    /* Inputs */
+    input, textarea, select { background: var(--surface-2) !important; border: 1px solid var(--border) !important; color: var(--text) !important; font-family: var(--fb) !important; border-radius: 10px !important; }
+    input:focus, textarea:focus, select:focus { border-color: var(--amber) !important; box-shadow: 0 0 0 3px var(--amber-dim) !important; }
+    input::placeholder, textarea::placeholder { color: var(--muted) !important; }
+    .artio-field { background: var(--surface-2) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: 10px !important; }
+
+    /* Labels */
+    .label { color: var(--muted) !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: .05em !important; text-transform: uppercase !important; }
+    .opt { color: #4a5568 !important; }
+
+    /* Tabs */
+    .tabs { gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 20px; flex-wrap: nowrap; overflow-x: auto; }
+    .tab-btn { border-radius: 9px !important; background: transparent !important; border: none !important; color: var(--muted) !important; font-family: var(--fb) !important; font-weight: 600 !important; font-size: 12px !important; transition: all .2s !important; }
+    .tab-btn.active { background: var(--surface-2) !important; color: var(--amber) !important; border: none !important; }
+    .tab-btn:hover:not(.active) { color: var(--text) !important; }
+    .mode-tabs { gap: 8px; }
+    .mode-btn { background: var(--surface-2) !important; border: 1px solid var(--border) !important; color: var(--muted) !important; border-radius: 10px !important; font-family: var(--fb) !important; }
+    .mode-btn.active { background: var(--amber-dim) !important; border-color: rgba(245,167,66,.35) !important; color: var(--amber) !important; }
+
+    /* Buttons */
+    .btn-primary { background: var(--amber) !important; color: #080b14 !important; border-radius: 12px !important; font-family: var(--fh) !important; font-weight: 700 !important; box-shadow: 0 0 24px var(--amber-glow) !important; border: none !important; }
+    .btn-primary:disabled { opacity: .5 !important; }
+    .btn-primary:hover:not(:disabled) { box-shadow: 0 6px 36px var(--amber-glow) !important; transform: translateY(-1px) !important; }
+    .btn-small { border-radius: 7px !important; font-family: var(--fb) !important; }
+    .btn-green { background: var(--teal-dim) !important; color: var(--teal) !important; border-color: rgba(62,207,207,.3) !important; }
+    .btn-blue  { background: var(--amber-dim) !important; color: var(--amber) !important; border-color: rgba(245,167,66,.3) !important; }
+    .btn-red   { background: rgba(248,113,113,.1) !important; color: #f87171 !important; border-color: rgba(248,113,113,.25) !important; }
+    .btn-gray  { background: var(--surface-2) !important; color: var(--muted) !important; border-color: var(--border) !important; }
+    .btn-teal  { background: var(--teal-dim) !important; color: var(--teal) !important; border-color: rgba(62,207,66,.3) !important; }
+    .remove-btn { background: var(--surface-2) !important; border-color: var(--border) !important; color: var(--muted) !important; border-radius: 9px !important; }
+
+    /* Voice box */
+    .voice-box { background: var(--surface-2) !important; border: 1px solid var(--border) !important; border-radius: 14px !important; }
+    .voice-box.recording { background: rgba(248,113,113,.08) !important; border-color: rgba(248,113,113,.3) !important; }
+    .voice-box.processing { background: var(--teal-dim) !important; border-color: rgba(62,207,207,.3) !important; }
+    .voice-btn { border-radius: 50% !important; }
+
+    /* Totaux */
+    .totaux { background: var(--surface-2) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; }
+    .totaux-row { color: var(--muted) !important; }
+    .totaux-total { color: var(--text) !important; border-top-color: var(--border) !important; }
+
+    /* Result box */
+    .result-box { background: var(--surface-2) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }
+
+    /* Preview table */
+    .preview-table th { background: var(--amber-dim) !important; color: var(--amber) !important; }
+    .preview-table td { border-color: var(--border) !important; color: var(--text) !important; }
+
+    /* Pieces grid */
+    .pieces-grid input { font-size: 13px !important; }
+
+    /* Settings panel */
+    .settings-panel { background: var(--surface) !important; border-color: var(--border-hi) !important; }
+    .settings-overlay { background: rgba(0,0,0,.6) !important; backdrop-filter: blur(4px) !important; }
+
+    /* Badge */
+    .badge { border-radius: 100px !important; font-size: 10px !important; font-weight: 700 !important; }
+
+    /* TVA box */
+    .tva-box { background: var(--amber-dim) !important; border: 1px solid rgba(245,167,66,.2) !important; border-radius: 10px !important; }
+
+    /* Warning bar */
+    .artio-warn { background: rgba(248,113,113,.1) !important; border: 1px solid rgba(248,113,113,.25) !important; color: #f87171 !important; border-radius: 10px !important; }
+
+    /* Pre */
+    pre { color: var(--text) !important; font-family: var(--fb) !important; }
+
+    /* Doc actions */
+    .btn-actions { gap: 6px; }
+
+    /* header/user-bar */
+    .header { margin-bottom: 0 !important; padding: 0 !important; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
+
+    @media(max-width:580px) {
+      .artio-nav-links { display: none; }
+    }
+
+  </style>
 </head>
 <body>
 <div id="root">Chargement...</div>
@@ -377,7 +509,9 @@ function applyLangue(){
 }
 // Restaurer préférences au chargement
 (()=>{
-  if(localStorage.getItem("artio_dark")==="1"){S.darkMode=true;document.body.classList.add("dark")}
+  // Always dark by default for Artio
+S.darkMode=true;document.body.classList.add("dark");
+if(localStorage.getItem("artio_dark")==="0"){S.darkMode=false;document.body.classList.remove("dark");}
   if(localStorage.getItem("artio_langue")) S.langue=localStorage.getItem("artio_langue");
 })();
 
@@ -945,6 +1079,11 @@ convertToFacture=async(dosId,docNum)=>{
   dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,accepte:true}:d).concat([factDoc]);
   storeDoc(factDoc);
   await upsertDossier(dos);set({convertingId:null});
+  // Émission électronique automatique si token configuré
+  if(S.entreprise?.factpulse_token&&S.entreprise?.siret){
+    try{await window.emettreFacture(dosId,factNum);}
+    catch(e){console.warn("Auto-émission FactPulse échouée:",e.message);}
+  }
 };
 window.startRename=function(id){
   const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;
@@ -1021,6 +1160,7 @@ function generatePDF(doc){
   pdf.text("Tél : "+doc.entreprise.tel,m,y);y+=4;
   pdf.text("Email : "+doc.entreprise.email,m,y);y+=4;
   pdf.text("SIRET : "+doc.entreprise.siret,m,y);y+=4;
+  if(doc.entreprise?.iban){pdf.text("IBAN : "+doc.entreprise.iban,m,y);y+=4;}
   const BTP_PDF_L=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
   const isBTPdoc=BTP_PDF_L.includes(doc.entreprise?.secteur||"");
   if(doc.entreprise?.rc_pro_assureur){pdf.text("RC Pro : "+doc.entreprise.rc_pro_assureur+(doc.entreprise.rc_pro_police?" — Pol. "+doc.entreprise.rc_pro_police:""),m,y);y+=4;}
@@ -1187,7 +1327,7 @@ function showToast(msg){
   if(!t){
     t=document.createElement("div");
     t.id="artio-toast";
-    t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#534AB7;color:#fff;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:500;z-index:9999;box-shadow:0 4px 20px rgba(83,74,183,.4);transition:opacity .4s;";
+    t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0e1220;border:1px solid rgba(255,255,255,0.13);color:#e2e5f1;padding:12px 24px;border-radius:12px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.5);transition:opacity .4s;";
     document.body.appendChild(t);
   }
   t.textContent=msg;t.style.opacity="1";
@@ -1203,22 +1343,22 @@ function renderApp(){
   const e=S.entreprise,apiOk=!!e.api_key;
   document.getElementById("root").innerHTML=`
   <div class="app">
-    <div class="header" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;">
+    <div class="artio-topbar">
       <a href="home.html" style="display:flex;align-items:center;text-decoration:none;flex-shrink:0;">
-        <img src="data:image/png;base64,${LOGO_DARK}" style="height:32px;width:auto;" class="artio-logo"/>
+  <span class="artio-logo-txt">Artio</span>
       </a>
-      <div style="display:flex;gap:3px;overflow-x:auto;justify-content:center;">
-        <a href="app.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:600;color:#185FA5;background:#E6F1FB;text-decoration:none;white-space:nowrap;">📋 Application</a>
-        <a href="dashboard.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">📊 Tableau de bord</a>
-        <a href="calendar.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">📅 Calendrier</a>
-        <a href="clients.html" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:500;color:#666;text-decoration:none;white-space:nowrap;">👥 Clients</a>
-      </div>
-      <div class="user-bar" style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-        <button class="btn-small btn-gray" title="Paramètres" onclick="location.href='settings.html'" style="font-size:16px;padding:5px 8px;">⚙</button>
-        <button class="btn-small btn-gray" onclick="handleLogout()" style="font-size:11px;">Déconnexion</button>
+      <nav class="artio-nav-links">
+        <a href="app.html" class="artio-nav-link active">Application</a>
+        <a href="dashboard.html" class="artio-nav-link">Tableau de bord</a>
+        <a href="calendar.html" class="artio-nav-link">Calendrier</a>
+        <a href="clients.html" class="artio-nav-link">Clients</a>
+      </nav>
+      <div class="artio-nav-right">
+        <button class="artio-btn-settings" onclick="location.href='settings.html'">Paramètres</button>
+        <button class="artio-btn-logout" onclick="handleLogout()">Déconnexion</button>
       </div>
     </div>
-        ${!apiOk?`<div style="background:#FCEBEB;border:0.5px solid #F09595;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#A32D2D;" onclick="set({showSettings:true,settingsPage:'profil'})">⚠️ Configure ton entreprise et ta clé API — Appuie ici</div>`:""}
+        ${!apiOk?`<div class="artio-warn" style="padding:10px 14px;margin-bottom:16px;font-size:13px;cursor:pointer;" onclick="set({showSettings:true,settingsPage:'profil'})">⚠️ Configure ton entreprise et ta clé API — Appuie ici</div>`:""}
     <div class="tabs">
       ${[["devis",L("devis")],["facture",L("facture")],["email",L("email")],["historique",L("historique")+(S.dossiers.length?" ("+S.dossiers.length+")":"")],["emails_gmail",S.gmailToken?"📧 Emails"+(S.emails.length?" ("+S.emails.length+")":""):"📧 Gmail"]].map(([id,label])=>`<button class="tab-btn ${S.tab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}
     </div>
