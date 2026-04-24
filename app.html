@@ -1262,6 +1262,308 @@ function renderApp(){
   `;
 }
 
+
+function renderVoice(mode){
+  const vs=S.voiceState;
+  const bg=vs==="recording"?"recording":vs==="processing"?"processing":"";
+  const btnBg=vs==="recording"?"#E24B4A":vs==="processing"?"#1D9E75":"#378ADD";
+  const icon=vs==="recording"?"⏹":vs==="processing"?"⏳":"🎙";
+  const fn=mode==="suivi"?"startVoiceSuivi()":"startVoice()";
+  let txt="";
+  if(vs==="idle"&&!S.voiceTranscript)txt=`<p style="font-size:14px;font-weight:500;margin-bottom:2px;">${mode==="suivi"?"Dicter le suivi":"Dicter le document"}</p><p style="font-size:12px;color:#888;">Parle naturellement — appuie sur ⏹ pour analyser</p>`;
+  else if(vs==="recording")txt=`<p style="font-size:14px;font-weight:500;color:#A32D2D;">Enregistrement en cours...</p><p style="font-size:12px;color:#A32D2D;">Appuie sur ⏹ quand tu as fini</p>`;
+  else if(vs==="processing")txt=`<p style="font-size:14px;font-weight:500;color:#085041;">Analyse en cours...</p>${S.voiceTranscript?`<p style="font-size:12px;color:#085041;font-style:italic;">"${S.voiceTranscript}"</p>`:""}`;
+  else txt=`<p style="font-size:12px;color:#888;font-style:italic;">✓ "${S.voiceTranscript}"</p>`;
+  return`<div class="voice-box ${bg}" onclick="${vs==="idle"?fn:""}">
+    <button class="voice-btn" style="background:${btnBg};" onclick="event.stopPropagation();${vs==="recording"?"stopVoice()":fn};">${icon}</button>
+    <div style="flex:1;">${txt}</div>
+  </div>`;
+}
+
+function renderPieces(){
+  const p=S.pieces;
+  return`<div style="margin-bottom:14px;">
+    <label class="label" style="margin-bottom:8px;">Prestations / Articles</label>
+    <div class="pieces-grid" style="margin-bottom:4px;">
+      ${["Description","Qté","Prix HT €",""].map(h=>`<span style="font-size:11px;color:#888;">${h}</span>`).join("")}
+    </div>
+    ${p.map((x,i)=>`<div class="pieces-grid" style="margin-bottom:6px;">
+      <input value="${esc(x.description)}" placeholder="${L('ph_fourniture')}" data-pid="${i}_description" oninput="S.pieces[${i}]={...S.pieces[${i}],description:this.value};renderTotauxOnly()" />
+      <input type="number" value="${esc(x.quantite)}" min="1" data-pid="${i}_quantite" oninput="S.pieces[${i}]={...S.pieces[${i}],quantite:this.value};renderTotauxOnly()" />
+      <input type="number" value="${esc(x.prix_unitaire)}" placeholder="0.00" data-pid="${i}_prix_unitaire" oninput="S.pieces[${i}]={...S.pieces[${i}],prix_unitaire:this.value};renderTotauxOnly()" />
+      <button class="remove-btn" onclick="S.pieces.splice(${i},1);render()">×</button>
+    </div>`).join("")}
+    <button class="btn-small btn-gray" style="font-size:12px;padding:6px 12px;" onclick="S.pieces.push({description:'',quantite:'1',prix_unitaire:''});render()">+ Ajouter une pièce</button>
+  </div>`;
+}
+
+window.renderTotauxOnly=function(){
+  const el=document.getElementById("totaux-container");
+  if(el) el.innerHTML=renderTotaux();
+}
+function renderTotaux(){
+  const f=S.fields,e=S.entreprise,p=S.pieces;
+  if(!f.nb_heures||!e.taux_horaire)return"";
+  const t=calcTotaux(f.nb_heures,e.taux_horaire,p,f.tva);
+  return`<div class="totaux">
+    <div class="totaux-row"><span>Main d'œuvre (${f.nb_heures}h × ${e.taux_horaire}€)</span><span>${t.moHT.toFixed(2)} € HT</span></div>
+    <div class="totaux-row"><span>Fournitures</span><span>${t.piecesHT.toFixed(2)} € HT</span></div>
+    <div class="totaux-total"><span>Total HT</span><span>${t.totalHT.toFixed(2)} €</span></div>
+    ${parseFloat(f.tva)>0?`<div class="totaux-total"><span>Total TTC (${f.tva}%)</span><span>${t.ttc.toFixed(2)} €</span></div>`:""}
+  </div>`;
+}
+
+function updateTotaux(){
+  const el=document.getElementById('totaux-container');
+  if(el)el.innerHTML=renderTotaux();
+}
+function renderDevisFacture(){
+  const f=S.fields,tab=S.tab,e=S.entreprise;
+  const fields=[
+    ["client_nom","Nom du client",L("ph_client_nom"),"text",false],
+    ["client_adresse","Adresse du client",L("ph_client_adresse"),"text",true],
+    ["client_tel","Téléphone client",L("ph_client_tel"),"text",true],
+    ["client_email","Email client",L("ph_client_email"),"text",true],
+    ["date_prestation",tab==="devis"?"Date prévue de la prestation":"Date de la prestation","","date",true],
+    ["heure_prestation",tab==="devis"?"Heure prévue":"Heure de la prestation","","select_heure",true],
+    ["heure_fin_prestation",tab==="devis"?"Heure de fin estimée":"Heure de fin","","select_heure",true],
+    ["travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false],
+    ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true],
+    S.entreprise.assujetti_tva?["tva","TVA (%)","10 (rénovation) ou 20 (neuf)","text",false]:null,
+  ];
+  return`<div class="card">
+    ${renderVoice("devis")}
+    ${fields.filter(f=>f!==null).map(([id,label,ph,type,opt])=>{
+      const heureOpts=(()=>{
+        let opts='<option value="">-- Optionnel --</option>';
+        for(let h=6;h<=21;h++){
+          for(let m=0;m<60;m+=15){
+            const hh=String(h).padStart(2,"0"),mm=String(m).padStart(2,"0");
+            const val=hh+":"+mm,sel=(S.fields[id]||"")==val?"selected":"";
+            opts+=`<option value="${val}" ${sel}>${h}h${m>0?m:""}</option>`;
+          }
+        }
+        return opts;
+      })();
+      const input=type==="textarea"
+        ?`<textarea placeholder="${ph}" data-fid="${id}">${esc(S.fields[id]||"")}</textarea>`
+        :type==="select_heure"
+          ?`<select data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;" onchange="S.fields['${id}']=this.value">${heureOpts}</select>`
+          :type==="date"
+            ?`<input type="date" value="${S.fields[id]||""}" data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;font-family:inherit;" oninput="S.fields['${id}']=this.value"/>`
+            :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'updateTotaux()':''}"/>`;
+      return`<div class="field">
+      <label class="label">${label}${opt?`<span class="opt">(optionnel)</span>`:""}</label>
+      ${input}
+    </div>`;
+    }).join("")}
+    ${renderPieces()}
+    <div id="totaux-container">${renderTotaux()}</div>
+    <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":"Générer"}</button>
+  </div>
+  ${S.generatedDoc?`<div class="card">${renderDocPreview(S.generatedDoc)}</div>`:""}`;
+}
+
+function renderEmail(){
+  const f=S.fields,m=S.emailMode;
+  const reponseF=[["client_nom","Nom du client","Ex: M. Martin","text",false],["message","Message reçu du client","Colle ici le message...","textarea",false],["contexte","Contexte 🎙","Ex: infos que le client ne connaît pas encore, contexte particulier...","textarea",true,"voice"]];
+  const suiviF=[["client_nom","Nom du client",L("ph_client_nom"),"text",false],["adresse_travaux","Adresse du chantier","Ex: 12 rue de la Paix","text",true],["avancement","Où en sont les travaux","Ex: installation terminée, il reste la mise en service demain...","textarea",false],["suite","Prochaine étape","Ex: retour jeudi matin","text",true],["contexte","Contexte","Ex: retard dû à une livraison, attente validation client...","textarea",true]];
+  const activeF=m==="reponse"?reponseF:suiviF;
+  return`<div class="card">
+    <div class="mode-tabs">
+      <button class="mode-btn ${m==="reponse"?"active":""}" onclick="setEmailMode('reponse')">💬 Répondre à un message</button>
+      <button class="mode-btn ${m==="suivi"?"active":""}" onclick="setEmailMode('suivi')">🔧 Mise à jour chantier</button>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label class="label" style="margin-bottom:8px;">Ton de la réponse <span style="font-weight:400;font-size:11px;color:#999;">(plusieurs choix possibles)</span></label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${["vouvoiement","tutoiement","amical","institutionnel","ferme"].map(ton=>{
+          const active=(S.emailTons||[]).includes(ton);
+          return`<button onclick="toggleTon('${ton}')" style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${active?"#378ADD":"#d0d0cc"};background:${active?"#E6F1FB":"transparent"};color:${active?"#185FA5":"#666"};font-weight:${active?"500":"400"};">
+            ${active?"✓ ":""}${ton.charAt(0).toUpperCase()+ton.slice(1)}
+          </button>`;
+        }).join("")}
+      </div>
+    </div>
+    ${m==="suivi"?renderVoice("suivi"):""}
+    ${activeF.map(([id,label,ph,type,opt,extra])=>`<div class="field">
+      <label class="label" style="display:flex;align-items:center;gap:6px;">
+        ${label}${opt?`<span class="opt">(optionnel)</span>`:""}
+        ${extra==="voice"?`<button onclick="startVoiceContexte('${id}')" style="background:${S.voiceContextField===id?"#E24B4A":"#378ADD"};border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Dicter le contexte">${S.voiceContextField===id?"⏹":"🎙"}</button>`:""}
+      </label>
+      ${type==="textarea"?`<textarea placeholder="${ph}" data-fid="${id}">${esc(f[id]||"")}</textarea>`:`<input type="${type}" value="${esc(f[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value" />`}
+    </div>`).join("")}
+    <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":"Générer l'email"}</button>
+    ${S.generatedText?`<div class="result-box">
+      <div class="result-header">
+        <span style="font-size:13px;font-weight:500;color:#666;">Email généré — copie et envoie depuis ta messagerie</span>
+        <button class="btn-small ${S.copied?"btn-green":"btn-gray"}" onclick="copyText(${JSON.stringify(S.generatedText)})">${S.copied?"Copié ✓":"Copier"}</button>
+      </div>
+      <pre>${esc(S.generatedText)}</pre>
+    </div>`:""}
+  </div>`;
+}
+
+function renderEmailsGmail(){
+  if(!S.gmailToken){
+    return`<div class="card" style="text-align:center;padding:2rem;">
+      <p style="font-size:20px;margin-bottom:12px;">📧</p>
+      <p style="font-weight:500;margin-bottom:8px;">Connexion Gmail</p>
+      <p style="font-size:13px;color:#888;margin-bottom:20px;">Lis et réponds à tes emails directement depuis Artio. Configure ton Google Client ID dans les paramètres.</p>
+      <button class="btn-primary" onclick="set({showSettings:true,settingsPage:'gmail'})">⚙ Configurer Gmail</button>
+    </div>`;
+  }
+  return`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <p style="font-weight:500;">Emails non lus</p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-small btn-blue" onclick="gmailFetchEmails()">${S.emailsLoading?"⏳ Chargement...":"🔄 Actualiser"}</button>
+        <button class="btn-small btn-gray" onclick="gmailDisconnect()">Déconnecter</button>
+      </div>
+    </div>
+    ${S.emailsError?`<div style="color:#E24B4A;font-size:13px;margin-bottom:12px;">${esc(S.emailsError)}</div>`:""}
+    ${S.emails.length===0&&!S.emailsLoading?`<div style="text-align:center;padding:2rem;color:#888;">
+      <p>Aucun email non lu</p>
+      <button class="btn-primary" style="margin-top:12px;" onclick="gmailFetchEmails()">Charger les emails</button>
+    </div>`:""}
+    ${S.emails.map(m=>`
+    <div class="dossier-card" style="margin-bottom:12px;">
+      <div style="padding:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+          <p style="font-weight:500;font-size:14px;flex:1;">${esc(m.subject||"(sans objet)")}</p>
+          <span style="font-size:11px;color:#888;margin-left:8px;white-space:nowrap;">${esc((m.date||"").slice(0,16))}</span>
+        </div>
+        <p style="font-size:12px;color:#888;margin-bottom:8px;">${esc(m.from)}</p>
+        <p style="font-size:12px;color:#666;font-style:italic;margin-bottom:12px;">${esc(m.snippet||"")}</p>
+        <button class="btn-small btn-blue" onclick="generateEmailReply('${m.id}','${esc(m.from).replace(/'/g,"\'")}','${esc(m.subject||"").replace(/'/g,"\'")}',${JSON.stringify(m.body||"").replace(/'/g,"\'")})">
+          🤖 Générer une réponse
+        </button>
+      </div>
+    </div>`).join("")}
+  </div>`;
+}
+
+function renderHistorique(){
+  const now=new Date();
+  const devisEnAttente=S.dossiers.filter(d=>d.statut==="devis_envoye").length;
+  const caMois=S.dossiers.reduce((s,d)=>(d.documents||[]).filter(doc=>{
+    if(doc.type!=="facture")return false;
+    const parts=(doc.date||"").split("/");
+    if(parts.length<3)return false;
+    const dt=new Date(parts[2],parts[1]-1,parts[0]);
+    return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear();
+  }).reduce((ss,doc)=>ss+(doc.ttc||0),s),0);
+  const relancesNecessaires=S.dossiers.filter(d=>{
+    if(d.statut!=="devis_envoye")return false;
+    const devis=(d.documents||[]).find(doc=>doc.type==="devis"&&!doc.accepte);
+    if(!devis||!devis.date)return false;
+    const parts=devis.date.split("/");
+    if(parts.length<3)return false;
+    const jours=Math.floor((Date.now()-new Date(parts[2],parts[1]-1,parts[0]))/86400000);
+    return jours>=14;
+  }).length;
+  const statsBar=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem;">
+    <div class="card" style="padding:12px;text-align:center;">
+      <div style="font-size:11px;color:#888;margin-bottom:4px;">CA ce mois</div>
+      <div style="font-size:18px;font-weight:700;color:#534AB7;">${caMois.toLocaleString("fr-FR",{minimumFractionDigits:0})} €</div>
+    </div>
+    <div class="card" style="padding:12px;text-align:center;">
+      <div style="font-size:11px;color:#888;margin-bottom:4px;">Devis en attente</div>
+      <div style="font-size:18px;font-weight:700;color:#E65100;">${devisEnAttente}</div>
+    </div>
+    <div class="card" style="padding:12px;text-align:center;${relancesNecessaires>0?"background:#FFF8E1;border-color:#FFB74D;":""}">
+      <div style="font-size:11px;color:#888;margin-bottom:4px;">À relancer</div>
+      <div style="font-size:18px;font-weight:700;color:${relancesNecessaires>0?"#E65100":"#2E7D32"};">${relancesNecessaires}</div>
+    </div>
+  </div>`;
+  if(!S.dossiers.length)return statsBar+`<div class="card" style="text-align:center;padding:2rem;"><p style="color:#888;font-size:13px;">Aucun dossier pour l'instant.</p></div>`;
+  return statsBar+S.dossiers.map(dos=>{
+    const st=(getStatuts()[dos.statut]||getStatuts().devis_envoye);
+    const isOpen=S.openDossier===dos.id;
+    const hasFacture=(dos.documents||[]).some(d=>d.type==="facture");
+    const jrsDepuis=dos.createdAt?Math.floor((Date.now()-new Date(dos.createdAt))/86400000):0;
+    const needsRelance=dos.statut==="devis_envoye"&&jrsDepuis>=14;
+    return`<div class="dossier-card"${needsRelance?' style="border-left:3px solid #FFB74D;"':''}>
+      <div class="dossier-header" onclick="toggleDossier('${dos.id}')">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+            <span class="badge" style="background:${st.bg};color:${st.color};">${st.label}</span>
+            ${needsRelance?'<span style="font-size:10px;background:#FFF3E0;color:#E65100;padding:2px 6px;border-radius:4px;">📩 À relancer</span>':''}
+            <span style="font-size:13px;font-weight:500;">${esc(dos.nom)}</span>
+          </div>
+          <p style="font-size:12px;color:#888;">${(dos.documents||[]).length} document${(dos.documents||[]).length>1?"s":""} · ${dos.createdAt||""}</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:12px;">
+          ${dos.statut!=="termine"?`<button class="btn-small btn-teal" onclick="event.stopPropagation();markTermine('${dos.id}')">✓ Clôturer</button>`:""}
+          ${S.renamingDossierId===dos.id?`
+            <input value="${esc(S.renamingDossierVal)}" onclick="event.stopPropagation()" oninput="S.renamingDossierVal=this.value" onkeydown="if(event.key==='Enter')renameDossier('${dos.id}')" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #378ADD;width:150px;" />
+            <button class="btn-small btn-blue" onclick="event.stopPropagation();renameDossier('${dos.id}')">OK</button>
+            <button class="btn-small" onclick="event.stopPropagation();set({renamingDossierId:null})">✕</button>
+          `:`<button class="btn-small" onclick="event.stopPropagation();startRename('${dos.id}')">✏</button>`}
+          <button class="btn-small" onclick="event.stopPropagation();if(window.confirm('Supprimer ce dossier définitivement ?'))confirmDeleteDossier('${dos.id}')" style="color:#A32D2D;border-color:#F09595;">🗑</button>
+        </div>
+      </div>
+      ${isOpen?`<div class="dossier-docs" style="padding:12px;border-top:0.5px solid #f0eeea;">
+        ${(dos.documents||[]).map(doc=>{
+          const hasF=(dos.documents||[]).some(d=>d.type==="facture");
+          return`<div style="background:#f9f8f6;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+              <div>
+                <p style="font-size:13px;font-weight:500;">${doc.docNumber||""}</p>
+                <p style="font-size:12px;color:#888;">${doc.date||""} · ${(doc.ttc||0).toFixed(2)} € TTC</p>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="btn-small" onclick="downloadPDF('${doc.docNumber}')">⬇ PDF</button>
+                ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small btn-blue" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}
+                ${doc.type==="devis"&&doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;font-size:11px;" onclick="downloadSignedProof('${doc.docNumber}')">📄 Preuve signée</button>`:""}\n                ${doc.type==="devis"&&doc.accepte&&!hasF?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
+                ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#f0eeff;color:#534AB7;border-color:#7F77DD;" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:""}
+                ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:#FFF8E1;color:#E65100;border-color:#FFB74D;" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:""}
+                ${doc.type==="facture"?`<button class="btn-small" style="background:${doc.factpulse_id?'#f0fff4':'#f0eeff'};color:${doc.factpulse_id?'#276749':'#534AB7'};border-color:${doc.factpulse_id?'#68D391':'#7F77DD'};" onclick="emettreFacture('${dos.id}','${doc.docNumber}')">${S.emettreId===doc.docNumber?'⏳ Envoi...':(doc.factpulse_id?'✅ Émise':'⚡ Émettre')}</button>`:""}
+                ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button>`:`<button class="btn-small" style="color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
+              </div>
+            </div>
+            ${S.previewDocNum===doc.docNumber?`<div style="background:#fff;border-radius:8px;padding:1rem;border:0.5px solid #e0deda;">${renderDocPreview(doc)}</div>`:
+              `<button class="btn-small" style="font-size:11px;" onclick="set({previewDocNum:S.previewDocNum==='${doc.docNumber}'?null:'${doc.docNumber}'})">👁 Aperçu</button>`}
+          </div>`;
+        }).join("")}
+        
+      </div>`:""}
+    </div>`;
+  }).join("");
+}
+function renderDocPreview(doc){
+  return`<div class="doc-preview-wrapper" style="font-size:13px;line-height:1.7;">
+    <div class="preview-grid">
+      <div><p style="font-weight:500;margin-bottom:2px;">${esc(doc.entreprise.nom)}</p><p style="color:#888;font-size:12px;">${esc(doc.entreprise.adresse)}<br/>${esc(doc.entreprise.tel)} — ${esc(doc.entreprise.email)}<br/>SIRET : ${esc(doc.entreprise.siret)}</p></div>
+      <div style="text-align:right;"><p style="font-weight:500;font-size:16px;margin-bottom:2px;">${doc.type==="devis"?"DEVIS":"FACTURE"}</p><p style="color:#888;font-size:12px;">N° ${doc.docNumber}<br/>Date : ${doc.date}${doc.validUntil?"<br/>Valable jusqu'au : "+doc.validUntil:""}${doc.date_prestation?"<br/>"+(doc.type==="devis"?"Prestation prévue":"Prestation réalisée")+" : "+new Date(doc.date_prestation).toLocaleDateString("fr-FR")+(doc.heure_prestation?" à "+doc.heure_prestation+(doc.heure_fin_prestation?" → "+doc.heure_fin_prestation:""):""):""}</p></div>
+    </div>
+    <div class="divider"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">CLIENT</p><p>${esc(doc.client.nom)}<br/>${esc(doc.client.adresse)}${doc.client.tel?"<br/>Tél : "+esc(doc.client.tel):""}</p></div>
+    ${doc.adresse_travaux?`<div style="margin-bottom:10px;"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">ADRESSE DES TRAVAUX</p><p>${esc(doc.adresse_travaux)}</p></div>`:""}
+    <div style="margin-bottom:12px;"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">DESCRIPTION</p><p>${esc(doc.description)}</p></div>
+    <table class="preview-table">
+      <thead><tr><th style="text-align:left;">Description</th><th style="text-align:right;">Qté</th><th style="text-align:right;">Prix unit. HT</th><th style="text-align:right;">Total HT</th></tr></thead>
+      <tbody>
+        <tr><td>Main d'œuvre (${doc.nb_heures}h × ${doc.entreprise.taux_horaire} €/h)</td><td style="text-align:right;">${doc.nb_heures}</td><td style="text-align:right;">${parseFloat(doc.entreprise.taux_horaire).toFixed(2)} €</td><td style="text-align:right;">${doc.moHT.toFixed(2)} €</td></tr>
+        ${doc.pieces.map(p=>`<tr><td>${esc(p.description)}</td><td style="text-align:right;">${p.quantite}</td><td style="text-align:right;">${parseFloat(p.prix_unitaire).toFixed(2)} €</td><td style="text-align:right;">${(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)} €</td></tr>`).join("")}
+      </tbody>
+    </table>
+    <div style="text-align:right;font-size:13px;">
+      <p style="margin:3px 0;color:#888;">Total HT : ${doc.totalHT.toFixed(2)} €</p>
+      ${doc.entreprise.assujetti_tva?`<p style="margin:3px 0;color:#888;">TVA (${doc.tvaRate}%) : ${doc.tva.toFixed(2)} €</p>`:`<p style="margin:3px 0;color:#888;font-size:11px;">TVA non applicable — art. 293B du CGI</p>`}
+      <p style="margin:6px 0 0;font-weight:500;font-size:15px;">${doc.entreprise.assujetti_tva?"Total TTC":"Total"} : ${doc.ttc.toFixed(2)} €</p>
+    </div>
+    ${doc.type==="devis"?(()=>{
+      const BTP_SEC=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
+      const cMap={"30_reception":"Paiement à réception de facture.","30_jours":"Paiement à 30 jours.","45_jours":"Paiement à 45 jours.","60_jours":"Paiement à 60 jours.","acompte_30":"30% d'acompte à la commande, solde à réception.","acompte_50":"50% d'acompte à la commande, solde à réception.","3_versements":"3 versements égaux.","custom":"Voir conditions spécifiques."};
+      const cTxt=cMap[doc.entreprise?.conditions_paiement||""]||"Paiement à réception de facture.";
+      const delai=doc.entreprise?.delai_paiement||"30";
+      const isBTP=BTP_SEC.includes(doc.entreprise?.secteur||"");
+      const extras=(isBTP?" Garantie décennale applicable.":"")+(isBTP&&doc.entreprise?.certifications?" Certif. : "+doc.entreprise.certifications+".":"");
+      return`<div style="margin-top:12px;padding:10px;background:#f0eeea;border-radius:8px;font-size:11px;color:#888;">${cTxt} Devis valable ${delai} jours.${extras}</div>`;
+    })():""}
+  </div>`;
+}
+
 // ——— INIT ———
 initAuth();
 
