@@ -222,12 +222,7 @@
 <header class="topbar">
   <div class="logo">Artio</div>
   <div class="topbar-right">
-    <div class="lang-toggle">
-      <button class="lang-btn active" onclick="setLang('fr')">FR</button>
-      <button class="lang-btn" onclick="setLang('en')">EN</button>
-      <button class="lang-btn" onclick="setLang('es')">ES</button>
-      <button class="lang-btn" onclick="setLang('zh')">中</button>
-    </div>
+
     <div class="user-chip" id="user-chip" style="display:none">
       <div class="user-avatar" id="user-initials">–</div>
       <div class="user-email" id="user-email"></div>
@@ -465,10 +460,37 @@ function updateGreeting() {
     document.getElementById('greeting-name').textContent = email.split('@')[0];
     document.getElementById('nav-auth').style.display = 'block';
 
-    // Placeholder stats (à connecter à Supabase)
-    document.getElementById('stat-ca').textContent = '–';
-    document.getElementById('stat-devis').textContent = '–';
-    document.getElementById('stat-clients').textContent = '–';
+    // Stats Supabase
+    try {
+      const uid = session.user.id;
+      const now = new Date();
+      const debutMois = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const [{ count: nbClients }, { data: dossiers }] = await Promise.all([
+        sb.from('clients').select('*', { count: 'exact', head: true }).eq('user_id', uid),
+        sb.from('dossiers').select('documents').eq('user_id', uid).gte('created_at', debutMois)
+      ]);
+
+      // CA ce mois : somme des montants TTC des factures du mois
+      let caMois = 0;
+      let nbDevis = 0;
+      (dossiers || []).forEach(d => {
+        (d.documents || []).forEach(doc => {
+          if (doc.type === 'facture' && typeof doc.montant_ttc === 'number') caMois += doc.montant_ttc;
+          if (doc.type === 'devis') nbDevis++;
+        });
+      });
+
+      document.getElementById('stat-ca').textContent = caMois > 0
+        ? caMois.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
+        : '–';
+      document.getElementById('stat-devis').textContent = nbDevis || '–';
+      document.getElementById('stat-clients').textContent = nbClients || '–';
+    } catch {
+      document.getElementById('stat-ca').textContent = '–';
+      document.getElementById('stat-devis').textContent = '–';
+      document.getElementById('stat-clients').textContent = '–';
+    }
   } else {
     document.getElementById('nav-guest').style.display = 'block';
   }
