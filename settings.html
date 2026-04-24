@@ -200,13 +200,13 @@ function toast(msg) {
 /* ── RENDER MAIN ── */
 function render() {
   const lang = localStorage.getItem("artio_langue") || "fr";
-  const tabs = [["profil","Mon entreprise"],["gmail","Gmail"],["theme","Thème"],["abonnement","Abonnement"]];
+  const tabs = [["profil","Mon entreprise"],["gmail","Gmail"],["abonnement","Abonnement"]];
   document.getElementById("root").innerHTML = `
     <div class="page-title">Paramètres</div>
     <div class="tab-bar">
       ${tabs.map(([id,label]) => `<button class="tab-btn ${activeTab===id?"active":""}" onclick="activeTab='${id}';render()">${label}</button>`).join("")}
     </div>
-    ${activeTab==="profil" ? renderProfil() : activeTab==="gmail" ? renderGmail() : activeTab==="abonnement" ? renderAbonnement() : renderTheme()}`;
+    ${activeTab==="profil" ? renderProfil() : activeTab==="gmail" ? renderGmail() : renderAbonnement()}`;
 }
 
 /* ── PROFIL TAB ── */
@@ -300,40 +300,6 @@ function doGmailConnect() {
 }
 function doGmailDisconnect() { gmailToken = null; sessionStorage.removeItem("gmail_token"); render(); toast("Gmail déconnecté"); }
 
-/* ── THEME TAB ── */
-function renderTheme() {
-  const lang = localStorage.getItem("artio_langue") || "fr";
-  return `
-    <div class="card">
-      <div class="card-title">Thème</div>
-      <div class="theme-opts">
-        <button class="theme-opt ${!document.body.classList.contains("dark")?"on":""}" onclick="setTheme(false)">☀️ Clair</button>
-        <button class="theme-opt ${document.body.classList.contains("dark")?"on":""}" onclick="setTheme(true)">🌙 Sombre</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">Langue</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        ${Object.entries(LANG_LABELS).map(([code, label]) => `
-          <button onclick="setLang('${code}')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-radius:10px;border:1px solid ${lang===code?"var(--amber)":"var(--border)"};background:${lang===code?"var(--amber-dim)":"var(--surface-2)"};color:${lang===code?"var(--amber)":"var(--muted)"};cursor:pointer;font-size:13px;font-weight:${lang===code?"700":"500"};font-family:var(--fb);transition:all .2s;width:100%;text-align:left;">
-            ${label}
-            ${lang===code ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>' : ""}
-          </button>`).join("")}
-      </div>
-    </div>`;
-}
-
-function setTheme(dark) {
-  if (dark) document.body.classList.add("dark");
-  else document.body.classList.remove("dark");
-  localStorage.setItem("artio_dark", dark ? "1" : "0");
-  render();
-}
-function setLang(code) {
-  localStorage.setItem("artio_langue", code);
-  render();
-  toast("✓ " + (LANG_LABELS[code] || code));
-}
 
 /* ── ABONNEMENT TAB ── */
 function renderAbonnement() {
@@ -535,7 +501,7 @@ document.getElementById("btn-logout").addEventListener("click", async () => { aw
   if (subParam === "success") { activeTab = "abonnement"; toast("✅ Abonnement activé ! Bienvenue dans le Plan Pro."); }
   else if (subParam === "cancelled") { activeTab = "abonnement"; }
   const tab = urlParams.get("tab");
-  if (tab && ["profil","gmail","theme","abonnement"].includes(tab)) activeTab = tab;
+  if (tab && ["profil","gmail","abonnement"].includes(tab)) activeTab = tab;
   history.replaceState(null,"",location.pathname);
   render();
 })();
