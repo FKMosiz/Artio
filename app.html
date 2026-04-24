@@ -1169,6 +1169,9 @@ function render(){
   renderApp();
 }
 
+// ——— INIT ———
+initAuth();
+
 function renderApp(){
   const e=S.entreprise,apiOk=!!e.api_key;
   document.getElementById("root").innerHTML=`
