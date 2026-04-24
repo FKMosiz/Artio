@@ -1169,9 +1169,6 @@ function render(){
   renderApp();
 }
 
-// ——— INIT ———
-initAuth();
-
 function renderApp(){
   const e=S.entreprise,apiOk=!!e.api_key;
   document.getElementById("root").innerHTML=`
@@ -1187,9 +1184,6 @@ function renderApp(){
       <button class="nav-btn" onclick="location.href='settings.html'">Paramètres</button>
       <button class="nav-btn" onclick="handleLogout()">Déconnexion</button>
     </div>
-  <div class="app">
-    </div>
-  </div>
   </nav>
   <div class="app">
     ${!apiOk?'<div class="warn-bar" onclick="set({showSettings:true,settingsPage:\'profil\'})">⚠️ Configure ton entreprise et ta clé API</div>':""}    <div class="tabs">
@@ -1265,3 +1259,5 @@ function renderApp(){
     </div>
     `}
   </div></div>`:""}
+// ——— INIT ———
+initAuth();
