@@ -413,19 +413,16 @@ function render() {
       <span>${L('legal')}</span>
     </div>`;
 
-  // Close lang dropdown on outside click
-  setTimeout(() => {
-    document.addEventListener('click', function closeDrop(e) {
-      if (!e.target.closest('.lang-row')) {
-        S.langOpen = false;
-        document.removeEventListener('click', closeDrop);
-        render();
-      }
-    }, { once: true });
-  }, 0);
 }
 
 /* ── INIT ── */
+document.addEventListener('click', (e) => {
+  if (S.langOpen && !e.target.closest('.lang-row')) {
+    S.langOpen = false;
+    render();
+  }
+});
+
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
   if (session?.user) { window.location.href = 'home.html'; return; }
