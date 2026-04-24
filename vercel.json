@@ -8,7 +8,7 @@
     },
     {
       "source": "/login",
-      "destination": "/index.html"
+      "destination": "/login.html"
     },
     {
       "source": "/home",
