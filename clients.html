@@ -633,35 +633,67 @@ function generateClientPDF(d) {
 window.generateClientPDF = generateClientPDF;
 
 window.downloadSignedProof = async function(docNumber) {
-  const { data:sig, error } = await sb.from("signatures").select("*").eq("doc_number",docNumber).eq("user_id",user.id).eq("status","signed").single();
-  if (error||!sig) { alert("Preuve introuvable."); return; }
-  const doc = sig.doc_data; const e = doc.entreprise||{};
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({unit:"mm",format:"a4"});
-  const W=210, m=18, cW=W-2*m, rX=W-m; let y=m;
-  pdf.setFontSize(16).setFont(undefined,"bold").text(e.nom||"",m,y);y+=6;
-  pdf.setFontSize(9).setFont(undefined,"normal").text(e.adresse||"",m,y);y+=5;
-  pdf.text("Tél : "+(e.tel||""),m,y);y+=4; pdf.text("Email : "+(e.email||""),m,y);y+=4;
-  if(e.siret)pdf.text("SIRET : "+e.siret,m,y);y+=8;
-  pdf.setFontSize(15).setFont(undefined,"bold").setTextColor(245,167,66);
-  pdf.text("DEVIS N° "+doc.docNumber,W/2,y,{align:"center"});y+=5;
-  pdf.setFontSize(9).setFont(undefined,"normal").setTextColor(0);
-  pdf.text("Date : "+doc.date,W/2,y,{align:"center"});y+=8;
-  pdf.setFillColor(240,238,255);pdf.roundedRect(m,y,cW,18,2,2,"F");
-  pdf.setFontSize(8).setTextColor(120).text("CLIENT",m+4,y+5);
-  pdf.setFontSize(10).setTextColor(0).setFont(undefined,"bold").text(doc.client?.nom||"",m+4,y+11);
-  y+=22;
-  if(doc.description){const dl=pdf.splitTextToSize(doc.description,cW);pdf.text(dl,m,y);y+=dl.length*4.5+4;}
-  pdf.setFont(undefined,"bold").setFontSize(10).setTextColor(245,167,66);
-  pdf.text("✓ DEVIS SIGNÉ ÉLECTRONIQUEMENT",W/2,y+8,{align:"center"});
-  pdf.setFont(undefined,"normal").setFontSize(8).setTextColor(60);
-  const sd = sig.signed_at ? new Date(sig.signed_at).toLocaleString("fr-FR") : "—";
-  pdf.text("Signé par : "+(doc.client?.nom||"Le client")+"  |  Date : "+sd,W/2,y+14,{align:"center"});
-  if(sig.signature_data){try{pdf.addImage(sig.signature_data,"PNG",m+10,y+22,cW-20,22);}catch(er){}}
-  y+=55;
-  pdf.setFont(undefined,"italic").setFontSize(7).setTextColor(120);
-  pdf.text("Preuve de signature électronique — Artio — "+new Date().toLocaleString("fr-FR"),W/2,y,{align:"center"});
-  pdf.save("PREUVE_SIGNATURE_"+docNumber+".pdf");
+  try {
+    const { data:sig, error } = await sb.from("signatures").select("*").eq("doc_number",docNumber).eq("user_id",user.id).eq("status","signed").single();
+    if (error||!sig) { alert("Preuve introuvable."); return; }
+    const doc = sig.doc_data; const e = doc.entreprise||{};
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({unit:"mm",format:"a4"});
+    const W=210, m=18, cW=W-2*m, rX=W-m; let y=m;
+    // En-tête entreprise
+    pdf.setFontSize(16).setFont(undefined,"bold").text(e.nom||"",m,y); y+=6;
+    pdf.setFontSize(9).setFont(undefined,"normal").text(e.adresse||"",m,y); y+=5;
+    pdf.text("Tél : "+(e.tel||""),m,y); y+=4;
+    pdf.text("Email : "+(e.email||""),m,y); y+=4;
+    if(e.siret) pdf.text("SIRET : "+e.siret,m,y); y+=8;
+    // Numéro de devis
+    pdf.setFontSize(15).setFont(undefined,"bold").setTextColor(245,167,66);
+    pdf.text("DEVIS N° "+doc.docNumber,W/2,y,{align:"center"}); y+=5;
+    pdf.setFontSize(9).setFont(undefined,"normal").setTextColor(0);
+    pdf.text("Date : "+doc.date,W/2,y,{align:"center"}); y+=8;
+    // Bloc client
+    pdf.setFillColor(249,248,246); pdf.roundedRect(m,y,cW,18,2,2,"F");
+    pdf.setFontSize(8).setTextColor(120).text("CLIENT",m+4,y+5);
+    pdf.setFontSize(10).setTextColor(0).setFont(undefined,"bold").text(doc.client?.nom||"",m+4,y+11);
+    if(doc.client?.adresse) { pdf.setFontSize(8).setFont(undefined,"normal").setTextColor(80).text(doc.client.adresse,m+4,y+15); }
+    y+=22; pdf.setFontSize(9).setTextColor(0);
+    // Description
+    if(doc.description) { const dl=pdf.splitTextToSize(doc.description,cW); pdf.text(dl,m,y); y+=dl.length*4.5+4; }
+    // Tableau des pièces + main d'œuvre
+    const tbB=[];
+    if(doc.nb_heures && parseFloat(doc.nb_heures)>0)
+      tbB.push(["Main d'\u0153uvre ("+doc.nb_heures+"h \u00d7 "+e.taux_horaire+"\u20ac/h)", doc.nb_heures, parseFloat(e.taux_horaire||0).toFixed(2)+" \u20ac", (doc.moHT||0).toFixed(2)+" \u20ac"]);
+    (doc.pieces||[]).filter(p=>p.description).forEach(p=>
+      tbB.push([p.description, p.quantite, parseFloat(p.prix_unitaire||0).toFixed(2)+" \u20ac", (parseFloat(p.quantite||0)*parseFloat(p.prix_unitaire||0)).toFixed(2)+" \u20ac"])
+    );
+    if(tbB.length>0) {
+      pdf.autoTable({startY:y, head:[["Description","Qté","Prix unit. HT","Total HT"]], body:tbB, margin:{left:m,right:m}, styles:{fontSize:9,cellPadding:3}, headStyles:{fillColor:[245,167,66],textColor:255,fontStyle:"bold"}, columnStyles:{0:{cellWidth:85},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});
+      y=pdf.lastAutoTable.finalY+6;
+    }
+    // Totaux
+    pdf.setFontSize(9).setTextColor(0).setFont(undefined,"normal");
+    pdf.text("Total HT :",135,y); pdf.text((doc.totalHT||0).toFixed(2)+" \u20ac",rX,y,{align:"right"}); y+=5;
+    if(e.assujetti_tva && doc.tva) { pdf.text("TVA ("+doc.tvaRate+"%) :",135,y); pdf.text((doc.tva||0).toFixed(2)+" \u20ac",rX,y,{align:"right"}); y+=5; }
+    pdf.setFont(undefined,"bold").setFontSize(11);
+    pdf.text(e.assujetti_tva?"TOTAL TTC :":"TOTAL :",145,y); pdf.text((doc.ttc||0).toFixed(2)+" \u20ac",rX,y,{align:"right"}); y+=14;
+    // Ligne séparatrice
+    pdf.setDrawColor(245,167,66); pdf.setLineWidth(0.5); pdf.line(m,y,W-m,y); y+=6;
+    // Section signature
+    pdf.setFillColor(255,248,235); pdf.roundedRect(m,y,cW,52,3,3,"F");
+    pdf.setFont(undefined,"bold").setFontSize(10).setTextColor(245,167,66);
+    pdf.text("\u2713 DEVIS SIGNÉ ÉLECTRONIQUEMENT",W/2,y+8,{align:"center"});
+    pdf.setFont(undefined,"normal").setFontSize(8).setTextColor(60);
+    const sd = sig.signed_at ? new Date(sig.signed_at).toLocaleString("fr-FR") : "\u2014";
+    pdf.text("Signé par : "+(doc.client?.nom||"Le client")+"  |  Date : "+sd,W/2,y+14,{align:"center"});
+    pdf.text("La signature ci-dessous a valeur contractuelle.",W/2,y+19,{align:"center"});
+    if(sig.signature_data) { try { pdf.addImage(sig.signature_data,"PNG",m+10,y+22,cW-20,22); } catch(er) {} }
+    pdf.setDrawColor(180); pdf.setLineWidth(0.3); pdf.rect(m+10,y+22,cW-20,22); y+=55;
+    // Footer
+    pdf.setFont(undefined,"italic").setFontSize(7).setTextColor(120);
+    pdf.text("Preuve de signature électronique — Artio — "+new Date().toLocaleString("fr-FR"),W/2,y,{align:"center"});
+    pdf.setFontSize(7).setTextColor(150).text((e.nom||"")+" — SIRET : "+(e.siret||""),W/2,287,{align:"center"});
+    pdf.save("PREUVE_SIGNATURE_"+docNumber+".pdf");
+  } catch(err) { alert("Erreur : "+err.message); }
 };
 
 /* ── INIT ── */
