@@ -121,12 +121,11 @@
     }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 48px rgba(245,167,66,.42); }
     .hero-legal {
-      display: inline-flex; align-items: center; gap: 7px;
-      margin-top: 20px; font-size: 12px; color: var(--muted);
-      background: rgba(62,207,207,.07); border: 1px solid rgba(62,207,207,.18);
-      border-radius: 100px; padding: 6px 14px;
+      display: inline-flex; align-items: flex-start; gap: 12px;
+      margin-top: 20px; padding: 12px 14px; background: rgba(62,207,207,.1); border: 1px solid rgba(62,207,207,.22);
+      border-radius: 100px; font-size: 12px; color: rgba(62,207,207,.9);
     }
-    .hero-legal svg { color: var(--teal); flex-shrink: 0; }
+    .hero-legal svg { color: var(--teal); flex-shrink: 0; margin-top: 1px; }
       border: 1px solid var(--border-hi); border-radius: 12px; font-size: 15px; font-weight: 500;
       cursor: pointer; font-family: var(--fb); transition: border-color .2s, background .2s;
     }
@@ -157,6 +156,7 @@
     @keyframes wv { 0%,100% { height:4px; opacity:.3; } 50% { height:var(--wh,18px); opacity:1; } }
     .voice-caption { font-size: 13px; color: var(--muted); font-style: italic; text-align: center; line-height: 1.6; }
     .voice-name { color: var(--teal); transition: opacity .35s; }
+    .activity-text { color: var(--amber); transition: opacity .35s; }
     .arrow-bounce { text-align: center; color: var(--muted); font-size: 18px; margin: 12px 0; animation: ab 2s ease-in-out infinite; }
     @keyframes ab { 0%,100% { transform:translateY(0); } 50% { transform:translateY(5px); } }
     .doc-card {
@@ -392,6 +392,109 @@
       .pricing-grid { grid-template-columns: 1fr; }
       footer { padding: 32px 20px; flex-direction: column; text-align: center; }
     }
+    #time-savings {
+      padding: 120px 48px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .ts-inner { max-width: 1100px; margin: 0 auto; }
+    .ts-header { text-align: center; margin-bottom: 72px; }
+    .ts-before-after {
+      display: grid; grid-template-columns: 1fr 80px 1fr; align-items: center;
+      gap: 0; margin-bottom: 72px;
+    }
+    .ts-side {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 20px; padding: 36px 32px;
+    }
+    .ts-side.before { border-color: rgba(248,113,113,.2); }
+    .ts-side.after {
+      border-color: rgba(245,167,66,.3);
+      background: linear-gradient(145deg, rgba(245,167,66,.06) 0%, var(--bg) 60%);
+      position: relative;
+    }
+    .ts-side.after::before {
+      content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--amber), transparent);
+    }
+    .ts-label {
+      font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .ts-label.before { color: #f87171; }
+    .ts-label.after { color: var(--amber); }
+    .ts-task {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 0; border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .ts-task:last-child { border: none; }
+    .ts-task-name { color: var(--muted); }
+    .ts-time-before {
+      font-family: var(--fh); font-weight: 700; font-size: 15px; color: #f87171;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .ts-time-after {
+      font-family: var(--fh); font-weight: 700; font-size: 15px; color: var(--amber);
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .ts-arrow-col {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: var(--muted);
+    }
+    .ts-total-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 0 0; border-top: 1px solid var(--border); margin-top: 4px;
+    }
+    .ts-total-label { font-size: 13px; font-weight: 600; color: var(--text); }
+    .ts-total-val { font-family: var(--fh); font-weight: 800; font-size: 18px; }
+    .ts-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .ts-counter-card {
+      background: var(--bg); border: 1px solid rgba(245,167,66,.25);
+      border-radius: 20px; padding: 36px 32px;
+      background: linear-gradient(145deg, rgba(245,167,66,.05) 0%, var(--bg) 70%);
+      position: relative; overflow: hidden;
+    }
+    .ts-counter-card::after {
+      content: ''; position: absolute; bottom: -40px; right: -40px;
+      width: 160px; height: 160px;
+      background: radial-gradient(circle, rgba(245,167,66,.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .ts-big-num {
+      font-family: var(--fh); font-size: 72px; font-weight: 800; line-height: 1;
+      color: var(--amber); margin-bottom: 4px;
+    }
+    .ts-big-unit { font-family: var(--fh); font-size: 28px; font-weight: 600; color: var(--amber); opacity: .7; }
+    .ts-big-desc { font-size: 15px; color: var(--muted); margin-top: 10px; line-height: 1.6; }
+    .ts-time-back {
+      background: var(--bg); border: 1px solid rgba(62,207,207,.2);
+      border-radius: 20px; padding: 36px 32px;
+    }
+    .ts-time-back-title {
+      font-family: var(--fh); font-size: 17px; font-weight: 700; margin-bottom: 20px;
+      color: var(--teal);
+    }
+    .ts-activity {
+      display: flex; align-items: center; gap: 14px; padding: 12px 0;
+      border-bottom: 1px solid var(--border); font-size: 14px;
+    }
+    .ts-activity:last-child { border: none; }
+    .ts-activity-icon {
+      width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+      background: var(--surface-2);
+    }
+    .ts-activity-text { flex: 1; color: var(--text); line-height: 1.4; }
+    .ts-activity-time { font-family: var(--fh); font-size: 13px; font-weight: 700; color: var(--teal); white-space: nowrap; }
+
+    @media(max-width:900px) {
+      #time-savings { padding: 80px 20px; }
+      .ts-before-after { grid-template-columns: 1fr; gap: 20px; }
+      .ts-arrow-col { display: none; }
+      .ts-bottom { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -433,8 +536,11 @@
 
       </div>
       <div class="hero-legal">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span data-fr="Solution Compatible — conforme à la réforme de facturation électronique obligatoire (DGFiP 2026)" data-en="Compatible Solution — compliant with mandatory e-invoicing reform (DGFiP 2026)">Solution Compatible — conforme à la réforme de facturation électronique obligatoire (DGFiP 2026)</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <div>
+          <div style="font-weight: 700; font-size: 13px; margin-bottom: 3px; color: var(--text);" data-fr="Solution compatible DGFIP 2026" data-en="Compatible solution DGFIP 2026">Solution compatible DGFIP 2026</div>
+          <div style="font-size: 12px; color: var(--muted);" data-fr="Conforme à la réforme de facturation électronique obligatoire" data-en="Compliant with mandatory e-invoicing reform">Conforme à la réforme de facturation électronique obligatoire</div>
+        </div>
       </div>
     </div>
 
@@ -452,7 +558,7 @@
           <p class="voice-caption">
             <span data-fr='"Créer un devis pour' data-en='"Create a quote for'>"Créer un devis pour</span>
             <span class="voice-name" id="vname">M. Dupont</span>
-            <span data-fr=', 3h de plomberie…"' data-en=', 3h of plumbing…"'>, 3h de plomberie…"</span>
+            <span id="vactivity" class="activity-text" data-fr=', Un shoot photo…"' data-en=', A photo shoot…"'>, Un shoot photo…"</span>
           </p>
         </div>
         <div class="arrow-bounce">↓</div>
@@ -560,8 +666,8 @@
           <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
         </svg>
       </div>
-      <div class="ft" data-fr="Revenus & KPIs" data-en="Revenue & KPIs">Revenus & KPIs</div>
-      <p class="fd" data-fr="Suivez votre CA, taux de conversion et clients actifs en temps réel." data-en="Track your revenue, conversion rate and active clients in real time.">Suivez votre CA, taux de conversion et clients actifs en temps réel.</p>
+      <div class="ft" data-fr="Mes clients & revenus" data-en="My clients & revenue">Mes clients & revenus</div>
+      <p class="fd" data-fr="Vue d'ensemble de votre portefeuille clients et chiffre d'affaires, accessible en ligne." data-en="Overview of your client portfolio and revenue, accessible online.">Vue d'ensemble de votre portefeuille clients et chiffre d'affaires, accessible en ligne.</p>
     </div>
     <div class="fc">
       <div class="fi t">
@@ -586,6 +692,103 @@
 </section>
 
 
+
+<section id="time-savings">
+  <div class="ts-inner reveal">
+    <div class="ts-header">
+      <div class="section-tag" data-fr="Gain de temps" data-en="Time saved">Gain de temps</div>
+      <div class="section-title" data-fr="Chaque minute compte.<br>Artio vous en rend des centaines." data-en="Every minute counts.<br>Artio gives you hundreds back.">Chaque minute compte.<br>Artio vous en rend des centaines.</div>
+      <p class="section-sub" style="margin:0 auto" data-fr="Le temps passé sur l'admin, c'est du temps en moins sur votre chantier. Voici ce que vous récupérez." data-en="Time spent on admin is time taken away from your craft. Here's what you get back.">Le temps passé sur l'admin, c'est du temps en moins sur votre chantier. Voici ce que vous récupérez.</p>
+    </div>
+
+    <!-- Before / After -->
+    <div class="ts-before-after">
+      <div class="ts-side before">
+        <div class="ts-label before" data-fr="❌ Avant Artio" data-en="❌ Before Artio">❌ Avant Artio</div>
+        <div class="ts-task">
+          <span class="ts-task-name" data-fr="Rédiger un devis" data-en="Write a quote">Rédiger un devis</span>
+          <span class="ts-time-before">~25 min</span>
+        </div>
+        <div class="ts-task">
+          <span class="ts-task-name" data-fr="Créer une facture" data-en="Create an invoice">Créer une facture</span>
+          <span class="ts-time-before">~20 min</span>
+        </div>
+        <div class="ts-task">
+          <span class="ts-task-name" data-fr="Rédiger une relance" data-en="Write a follow-up">Rédiger une relance</span>
+          <span class="ts-time-before">~10 min</span>
+        </div>
+        <div class="ts-task">
+          <span class="ts-task-name" data-fr="Répondre à un email client" data-en="Reply to a client email">Répondre à un email client</span>
+          <span class="ts-time-before">~15 min</span>
+        </div>
+        <div class="ts-total-row">
+          <span class="ts-total-label" data-fr="Total / semaine (5 docs)" data-en="Total / week (5 docs)">Total / semaine (5 docs)</span>
+          <span class="ts-total-val" style="color:#f87171" data-fr="~3h30" data-en="~3h30">~3h30</span>
+        </div>
+      </div>
+
+      <div class="ts-arrow-col">→</div>
+
+      <div class="ts-side after">
+        <div class="ts-label after" data-fr="✓ Avec Artio" data-en="✓ With Artio">✓ Avec Artio</div>
+        <div class="ts-task">
+          <span class="ts-task-name" data-fr="Rédiger un devis" data-en="Write a quote">Rédiger un devis</span>
+          <span class="ts-time-after">30 sec</span>
+        </div>
+        <div class="ts-task">
+          <span class="ts-task-name" data-fr="Créer une facture" data-en="Create an invoice">Créer une facture</span>
+          <span class="ts-time-after">30 sec</span>
+        </div>
+        <div class="ts-task">
+          <span class="ts-task-name" data-fr="Rédiger une relance" data-en="Write a follow-up">Rédiger une relance</span>
+          <span class="ts-time-after">15 sec</span>
+        </div>
+        <div class="ts-task">
+          <span class="ts-task-name" data-fr="Répondre à un email client" data-en="Reply to a client email">Répondre à un email client</span>
+          <span class="ts-time-after">20 sec</span>
+        </div>
+        <div class="ts-total-row">
+          <span class="ts-total-label" data-fr="Total / semaine (5 docs)" data-en="Total / week (5 docs)">Total / semaine (5 docs)</span>
+          <span class="ts-total-val" style="color:var(--amber)" data-fr="~10 min" data-en="~10 min">~10 min</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Counter + Time back -->
+    <div class="ts-bottom">
+      <div class="ts-counter-card">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;" data-fr="Temps récupéré par an" data-en="Time recovered per year">Temps récupéré par an</div>
+        <div>
+          <span class="ts-big-num" id="ts-counter">0</span><span class="ts-big-unit">h</span>
+        </div>
+        <p class="ts-big-desc" data-fr="C'est le temps moyen qu'un artisan récupère chaque année en passant à Artio. Soit plus de 3 semaines de travail libérées." data-en="That's the average time a tradesperson recovers every year by switching to Artio. Over 3 work weeks freed up.">C'est le temps moyen qu'un artisan récupère chaque année en passant à Artio. Soit <strong>plus de 3 semaines de travail libérées.</strong></p>
+      </div>
+      <div class="ts-time-back">
+        <div class="ts-time-back-title" data-fr="Avec ces 160h, vous pouvez…" data-en="With those 160h, you could…">Avec ces 160h, vous pouvez…</div>
+        <div class="ts-activity">
+          <div class="ts-activity-icon">🔨</div>
+          <div class="ts-activity-text" data-fr="Réaliser 4 chantiers supplémentaires" data-en="Complete 4 extra jobs">Réaliser 4 chantiers supplémentaires</div>
+          <div class="ts-activity-time" data-fr="+4 clients" data-en="+4 clients">+4 clients</div>
+        </div>
+        <div class="ts-activity">
+          <div class="ts-activity-icon">💶</div>
+          <div class="ts-activity-text" data-fr="Facturer ~4 800 € de prestations en plus (à 30€/h)" data-en="Invoice ~€4,800 more (at €30/h)">Facturer ~4 800 € de prestations en plus</div>
+          <div class="ts-activity-time">+4 800 €</div>
+        </div>
+        <div class="ts-activity">
+          <div class="ts-activity-icon">🏖️</div>
+          <div class="ts-activity-text" data-fr="Prendre 4 semaines de vraies vacances" data-en="Take 4 weeks of real vacation">Prendre 4 semaines de vraies vacances</div>
+          <div class="ts-activity-time" data-fr="4 semaines" data-en="4 weeks">4 semaines</div>
+        </div>
+        <div class="ts-activity">
+          <div class="ts-activity-icon">😴</div>
+          <div class="ts-activity-text" data-fr="Ne plus travailler le soir sur les papiers" data-en="Stop working evenings on paperwork">Ne plus travailler le soir sur les papiers</div>
+          <div class="ts-activity-time" data-fr="Chaque soir" data-en="Every night">Chaque soir</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- TESTIMONIALS -->
 <section id="testimonials">
@@ -629,6 +832,8 @@
     </div>
   </div>
 </section>
+
+
 
 <!-- PRICING -->
 <section id="pricing" class="reveal">
@@ -749,19 +954,62 @@
 
   /* ── TYPING NAME ── */
   const names = ['M. Dupont', 'Atelier Martin', 'Sophie K.', 'Jean-Paul R.', 'Élodie M.'];
+  const activities = [
+    { fr: ', Un shoot photo…"', en: ', A photo shoot…"' },
+    { fr: ', developpement d\'un site web…"', en: ', website development…"' },
+    { fr: ', Une séance de coaching vocal…"', en: ', A vocal coaching session…"' },
+    { fr: ', lavage de voiture…"', en: ', car wash…"' },
+    { fr: ', 3h de plomberie…"', en: ', 3h of plumbing…"' }
+  ];
   let ni = 0;
   const vname = document.getElementById('vname');
+  const vactivity = document.getElementById('vactivity');
   setInterval(() => {
     vname.style.opacity = 0;
-    setTimeout(() => { vname.textContent = names[ni = (ni + 1) % names.length]; vname.style.opacity = 1; }, 350);
+    vactivity.style.opacity = 0;
+    setTimeout(() => {
+      ni = (ni + 1) % names.length;
+      vname.textContent = names[ni];
+      vactivity.setAttribute('data-fr', activities[ni].fr);
+      vactivity.setAttribute('data-en', activities[ni].en);
+      vactivity.innerHTML = activities[ni][lang];
+      vname.style.opacity = 1;
+      vactivity.style.opacity = 1;
+    }, 350);
   }, 3000);
   vname.style.transition = 'opacity .35s';
+  vactivity.style.transition = 'opacity .35s';
 
   /* ── SCROLL REVEAL ── */
   const obs = new IntersectionObserver(entries => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
   }, { threshold: 0.1 });
   document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+  /* ── TIME SAVINGS COUNTER ── */
+  const counterEl = document.getElementById('ts-counter');
+  const targetNum = 160;
+  let currentNum = 0;
+  const increment = 4;
+  const speed = 30;
+
+  const counterObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting && currentNum === 0) {
+        const interval = setInterval(() => {
+          currentNum += increment;
+          if (currentNum >= targetNum) {
+            currentNum = targetNum;
+            clearInterval(interval);
+          }
+          counterEl.textContent = currentNum;
+        }, speed);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  const tsSection = document.querySelector('#time-savings');
+  if (tsSection) counterObs.observe(tsSection);
 </script>
 </body>
 </html>
