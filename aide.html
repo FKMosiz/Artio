@@ -751,8 +751,8 @@ async function submitContact() {
   if (!valid) return;
   
   // Récupérer les données du formulaire
-  const nom = document.querySelector('.field-input[placeholder="Votre nom"]')?.value || '';
-  const email = document.querySelector('.field-input[placeholder="votre@email.com"]')?.value || '';
+  const nom = document.querySelector('.field-input[placeholder="Ex: Thomas B."]')?.value || '';
+  const email = document.querySelector('.field-input[type="email"]')?.value || '';
   const sujet = document.querySelector('.field-select')?.value || '';
   const message = document.querySelector('.field-textarea')?.value || '';
   
