@@ -762,24 +762,12 @@ async function submitContact() {
   successEl.style.display = 'flex';
   
   try {
-    // Appeler l'Edge Function Supabase
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-contact-email`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_KEY}`
-      },
-      body: JSON.stringify({
-        nom: nom,
-        email: email,
-        sujet: sujet,
-        message: message
-      })
+    // Appeler l'Edge Function via SDK Supabase (gère le CORS automatiquement)
+    const { error } = await sb.functions.invoke('send-contact-email', {
+      body: { nom, email, sujet, message }
     });
-    
-    if (!res.ok) {
-      throw new Error('Erreur lors de l\'envoi');
-    }
+
+    if (error) throw new Error(error.message);
     
     // Success - afficher le message
     successEl.innerHTML = `
