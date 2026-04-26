@@ -179,7 +179,8 @@ body { font-family: var(--fb); background: var(--bg); color: var(--text); min-he
     <a class="nav-link" href="calendar.html">Calendrier</a>
     <a class="nav-link" href="clients.html">Clients</a>
   </nav>
-  <div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn-logout" onclick="location.href='aide.html'">Aide</button>
     <button class="btn-logout" id="btn-logout">Déconnexion</button>
   </div>
 </header>
@@ -379,6 +380,5 @@ document.getElementById("btn-logout").addEventListener("click", async () => {
   }
 })();
 </script>
-<script src="chat-widget.js"></script>
 </body>
 </html>

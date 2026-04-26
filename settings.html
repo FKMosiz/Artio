@@ -162,7 +162,10 @@ select.field-input option { background: var(--surface-2); color: var(--text); }
     <a class="nav-link" href="calendar.html">Calendrier</a>
     <a class="nav-link" href="clients.html">Clients</a>
   </nav>
-  <div><button class="btn-logout" id="btn-logout">Déconnexion</button></div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn-logout" onclick="location.href='aide.html'">Aide</button>
+    <button class="btn-logout" id="btn-logout">Déconnexion</button>
+  </div>
 </header>
 
 <div id="toast-el" class="toast"></div>
@@ -506,6 +509,5 @@ document.getElementById("btn-logout").addEventListener("click", async () => { aw
   render();
 })();
 </script>
-<script src="chat-widget.js"></script>
 </body>
 </html>
