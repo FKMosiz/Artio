@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artio — Contact</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080b14;
+      --surface: #0e1220;
+      --surface-2: #141829;
+      --border: rgba(255,255,255,0.07);
+      --border-hi: rgba(255,255,255,0.13);
+      --text: #e2e5f1;
+      --muted: #6b7494;
+      --amber: #f5a742;
+      --amber-dim: rgba(245,167,66,0.13);
+      --amber-glow: rgba(245,167,66,0.3);
+      --teal: #3ecfcf;
+      --teal-dim: rgba(62,207,207,0.12);
+      --r: 16px;
+      --fh: 'Space Grotesk', sans-serif;
+      --fb: 'Plus Jakarta Sans', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--fb);
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 9998;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.45;
+    }
+
+    /* ── NAV ─────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      height: 64px; padding: 0 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(8,11,20,0.85);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: var(--fh); font-size: 22px; font-weight: 800;
+      color: var(--amber); letter-spacing: -0.02em;
+      text-decoration: none;
+    }
+    .nav-back {
+      display: flex; align-items: center; gap: 6px;
+      color: var(--muted); text-decoration: none; font-size: 14px;
+      font-weight: 500; transition: color .2s;
+    }
+    .nav-back:hover { color: var(--text); }
+
+    /* ── MAIN ────────────────────────────────────── */
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 100px 24px 60px;
+    }
+
+    .contact-wrapper {
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .contact-tag {
+      display: inline-block;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--amber);
+      background: var(--amber-dim);
+      border: 1px solid rgba(245,167,66,0.2);
+      border-radius: 20px;
+      padding: 4px 12px;
+      margin-bottom: 20px;
+    }
+    .contact-title {
+      font-family: var(--fh);
+      font-size: clamp(28px, 5vw, 40px);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .contact-sub {
+      color: var(--muted);
+      font-size: 15px;
+      margin-bottom: 40px;
+      line-height: 1.7;
+    }
+
+    /* ── FORM ────────────────────────────────────── */
+    .contact-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: var(--text);
+      font-family: var(--fb);
+      outline: none;
+      transition: border-color .2s;
+      width: 100%;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: rgba(245,167,66,0.4);
+    }
+    .form-group input::placeholder,
+    .form-group textarea::placeholder { color: var(--muted); }
+    .form-group select { cursor: pointer; appearance: none; }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 130px;
+      line-height: 1.6;
+    }
+    .form-group.error input,
+    .form-group.error select,
+    .form-group.error textarea {
+      border-color: rgba(248,113,113,0.5);
+    }
+    .error-msg {
+      font-size: 11px;
+      color: #f87171;
+      display: none;
+    }
+    .form-group.error .error-msg { display: block; }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--amber);
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #080b14;
+      font-family: var(--fh);
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-submit:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── SUCCESS ─────────────────────────────────── */
+    .contact-success {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 48px 32px;
+      gap: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+    }
+    .success-icon {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: rgba(62,207,207,0.12);
+      border: 1px solid rgba(62,207,207,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+    }
+    .success-title {
+      font-family: var(--fh); font-size: 22px; font-weight: 700;
+    }
+    .success-sub {
+      color: var(--muted); font-size: 14px; line-height: 1.7; max-width: 320px;
+    }
+    .btn-back {
+      margin-top: 8px;
+      padding: 10px 24px;
+      background: var(--amber-dim);
+      border: 1px solid rgba(245,167,66,0.2);
+      border-radius: 10px;
+      color: var(--amber);
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: var(--fb);
+      transition: background .2s;
+      text-decoration: none;
+    }
+    .btn-back:hover { background: rgba(245,167,66,0.2); }
+
+    /* ── INFO ────────────────────────────────────── */
+    .contact-info {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .info-card {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .info-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .info-icon.amber { background: var(--amber-dim); }
+    .info-icon.teal  { background: var(--teal-dim); }
+    .info-label { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+    .info-value { font-size: 13px; font-weight: 600; color: var(--text); }
+
+    /* ── FOOTER ──────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── RESPONSIVE ──────────────────────────────── */
+    @media (max-width: 560px) {
+      nav { padding: 0 20px; }
+      .contact-form { padding: 20px; }
+      .form-row { grid-template-columns: 1fr; }
+      .contact-info { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">Artio</a>
+  <a class="nav-back" href="index.html">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Retour
+  </a>
+</nav>
+
+<main>
+  <div class="contact-wrapper">
+
+    <div class="contact-tag">Contact</div>
+    <div class="contact-title">Une question ?<br>On vous répond.</div>
+    <p class="contact-sub">Notre équipe est disponible pour répondre à toutes vos questions sur Artio — onboarding, tarifs, fonctionnalités.</p>
+
+    <!-- Info cards -->
+    <div class="contact-info">
+      <div class="info-card">
+        <div class="info-icon teal">⚡</div>
+        <div>
+          <div class="info-label">Délai de réponse</div>
+          <div class="info-value">Sous 48h</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulaire -->
+    <div class="contact-form" id="contact-form">
+      <div class="form-row">
+        <div class="form-group" id="fg-nom">
+          <label>Nom</label>
+          <input type="text" id="f-nom" placeholder="Thomas Dupont">
+          <span class="error-msg">Champ requis</span>
+        </div>
+        <div class="form-group" id="fg-email">
+          <label>Email</label>
+          <input type="email" id="f-email" placeholder="vous@email.com">
+          <span class="error-msg">Email invalide</span>
+        </div>
+      </div>
+      <div class="form-group" id="fg-sujet">
+        <label>Sujet</label>
+        <select id="f-sujet">
+          <option value="" disabled selected>Sélectionnez un sujet</option>
+          <option value="Question générale">Question générale</option>
+          <option value="Tarifs & abonnement">Tarifs & abonnement</option>
+          <option value="Problème technique">Problème technique</option>
+          <option value="Partenariat">Partenariat</option>
+          <option value="Autre">Autre</option>
+        </select>
+        <span class="error-msg">Champ requis</span>
+      </div>
+      <div class="form-group" id="fg-message">
+        <label>Message</label>
+        <textarea id="f-message" placeholder="Décrivez votre demande…"></textarea>
+        <span class="error-msg">Champ requis</span>
+      </div>
+      <button class="btn-submit" id="btn-submit" onclick="submitContact()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Envoyer le message
+      </button>
+    </div>
+
+    <!-- Success -->
+    <div class="contact-success" id="contact-success">
+      <div class="success-icon">✓</div>
+      <div class="success-title">Message envoyé !</div>
+      <p class="success-sub">Merci pour votre message. Notre équipe vous répondra dans les 24h à l'adresse indiquée.</p>
+      <a class="btn-back" href="index.html">Retour à l'accueil</a>
+    </div>
+
+  </div>
+</main>
+
+<footer>© 2026 Artio. Tous droits réservés.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  async function submitContact() {
+    const nom     = document.getElementById("f-nom").value.trim();
+    const email   = document.getElementById("f-email").value.trim();
+    const sujet   = document.getElementById("f-sujet").value;
+    const message = document.getElementById("f-message").value.trim();
+
+    // Validation
+    let valid = true;
+    const fields = { nom, sujet, message };
+    Object.entries(fields).forEach(([key, val]) => {
+      const fg = document.getElementById(`fg-${key}`);
+      if (!val) { fg.classList.add("error"); valid = false; }
+      else fg.classList.remove("error");
+    });
+
+    const fgEmail = document.getElementById("fg-email");
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      fgEmail.classList.add("error"); valid = false;
+    } else {
+      fgEmail.classList.remove("error");
+    }
+
+    if (!valid) return;
+
+    const btn = document.getElementById("btn-submit");
+    btn.disabled = true;
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="animation:spin .8s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Envoi en cours…`;
+
+    try {
+      const { error } = await sb.functions.invoke("send-contact-email", {
+        body: { nom, email, sujet, message }
+      });
+
+      if (error) throw new Error(error.message);
+
+      document.getElementById("contact-form").style.display = "none";
+      document.getElementById("contact-success").style.display = "flex";
+
+    } catch (e) {
+      console.error("Erreur contact:", e.message);
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Réessayer`;
+    }
+  }
+</script>
+<style>
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+
+</body>
+</html>
