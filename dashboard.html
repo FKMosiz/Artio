@@ -390,12 +390,33 @@ function render() {
     </div>
 
     <div class="chart-card">
-      <div class="card-title">Récap déclaration</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div class="card-title" style="margin-bottom:3px">Aide à la déclaration TVA</div>
+          <div style="font-size:11px;color:var(--muted)">Chiffres à reporter sur votre déclaration fiscale · ${kpi.nbFactures} facture${kpi.nbFactures>1?"s":""} émise${kpi.nbFactures>1?"s":""}</div>
+        </div>
+      </div>
       <div class="decl-grid">
-        <div class="decl-item"><div class="decl-label">CA HT total</div><div class="decl-val" style="color:var(--amber)">${fmt(kpi.caHT)}</div></div>
-        <div class="decl-item"><div class="decl-label">TVA collectée</div><div class="decl-val" style="color:var(--teal)">${fmt(kpi.tvaColl)}</div></div>
-        <div class="decl-item"><div class="decl-label">CA TTC total</div><div class="decl-val">${fmt(kpi.caTotal)}</div></div>
-        <div class="decl-item"><div class="decl-label">Nb factures</div><div class="decl-val">${kpi.nbFactures}</div></div>
+        <div class="decl-item" style="border-left:2px solid var(--amber);padding-left:12px;">
+          <div class="decl-label">① CA HT — à déclarer</div>
+          <div class="decl-val" style="color:var(--amber)">${fmt(kpi.caHT)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">Votre chiffre d'affaires hors taxes</div>
+        </div>
+        <div class="decl-item" style="border-left:2px solid var(--teal);padding-left:12px;">
+          <div class="decl-label">② TVA — à reverser à l'État</div>
+          <div class="decl-val" style="color:var(--teal)">${fmt(kpi.tvaColl)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">${kpi.tvaColl===0?"Franchise en base ou aucune TVA facturée":"Montant à reverser à l'administration fiscale"}</div>
+        </div>
+        <div class="decl-item" style="border-left:2px solid var(--border);padding-left:12px;">
+          <div class="decl-label">CA TTC total</div>
+          <div class="decl-val" style="color:var(--text)">${fmt(kpi.caTotal)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">Ce que vos clients ont réellement payé</div>
+        </div>
+        <div class="decl-item" style="border-left:2px solid var(--border);padding-left:12px;display:flex;flex-direction:column;justify-content:center;">
+          <div class="decl-label">Taux de TVA moyen</div>
+          <div class="decl-val" style="color:var(--text)">${kpi.caHT>0?Math.round(kpi.tvaColl/kpi.caHT*100)+"%":"—"}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">TVA collectée / CA HT</div>
+        </div>
       </div>
     </div>`;
 }
