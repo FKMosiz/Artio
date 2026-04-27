@@ -171,6 +171,10 @@ body {
 .month-cell.other { opacity: .3; }
 .month-cell.today { background: var(--amber-dim); }
 .month-cell.today .m-num { color: var(--amber); }
+.month-cell.ferie .m-num { color: #f87171; font-weight: 700; }
+.m-ferie-label { font-size: 8px; color: #f87171; opacity: .85; line-height:1.2; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cal-day-hdr.ferie-col .hdr-num { color: #f87171; font-weight: 700; }
+.cal-day-hdr.ferie-col .hdr-day { color: #f87171; opacity: .8; }
 .m-num { font-family: var(--fh); font-size: 12px; font-weight: 700; margin-bottom: 4px; }
 .m-ev {
   font-size: 9px; font-weight: 600; padding: 2px 5px; border-radius: 4px;
@@ -312,6 +316,39 @@ const COLORS = [
 
 function getColor(id) { return COLORS.find(c => c.id === id) || COLORS[0]; }
 
+/* ── JOURS FÉRIÉS FRANÇAIS ── */
+function easterDate(y) {
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4;
+  const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3);
+  const h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4;
+  const l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+  const mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;
+  return new Date(y,mo-1,da);
+}
+function getFeries(y) {
+  const map={};
+  function add(d,n){ map[localKey(d)]=n; }
+  add(new Date(y,0,1),  "Jour de l'An");
+  add(new Date(y,4,1),  "Fête du Travail");
+  add(new Date(y,4,8),  "Victoire 1945");
+  add(new Date(y,6,14), "Fête Nationale");
+  add(new Date(y,7,15), "Assomption");
+  add(new Date(y,10,1), "Toussaint");
+  add(new Date(y,10,11),"Armistice");
+  add(new Date(y,11,25),"Noël");
+  const p=easterDate(y);
+  const off=n=>{ const d=new Date(p); d.setDate(p.getDate()+n); return d; };
+  add(off(1),  "Lundi de Pâques");
+  add(off(39), "Ascension");
+  add(off(50), "Lundi de Pentecôte");
+  return map;
+}
+function feriesForRange(y1,y2) {
+  const map={};
+  for(let y=y1;y<=y2;y++) Object.assign(map,getFeries(y));
+  return map;
+}
+
 function localKey(d) {
   if (typeof d === "string") return d.slice(0, 10);
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
@@ -350,6 +387,13 @@ function buildEvents() {
     });
   });
   rdvs.forEach(r => add(r.date, {type:"rdv", label: esc(r.titre), hour: r.heure||"", id: r.id, color: r.couleur||"amber"}));
+  // Jours fériés : couvrir l'année en cours ± 1
+  const ny = new Date().getFullYear();
+  const feries = feriesForRange(ny-1, ny+1);
+  Object.entries(feries).forEach(([dk,nom]) => {
+    if(!ev[dk]) ev[dk]=[];
+    ev[dk].unshift({type:"ferie", label:nom, hour:"", color:"red", isFerie:true});
+  });
   return ev;
 }
 
@@ -363,10 +407,12 @@ function renderWeek() {
 
   const label = `${days[0].getDate()} — ${days[6].toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}`;
 
+  const feries = feriesForRange(ws.getFullYear()-1, ws.getFullYear()+1);
   const headCells = days.map(d => {
     const isToday = localKey(d) === todayKey;
+    const isFerie = !!feries[localKey(d)];
     const dow = JOURS_FR[(d.getDay()+6)%7];
-    return `<div class="cal-day-hdr ${isToday?"today-col":""}">
+    return `<div class="cal-day-hdr ${isToday?"today-col":""} ${isFerie?"ferie-col":""}">
       <div class="hdr-dow">${dow}</div>
       <div class="hdr-num">${d.getDate()}</div>
     </div>`;
@@ -431,6 +477,7 @@ function renderMonth() {
   const ev = buildEvents();
   const y = viewDate.getFullYear(), m = viewDate.getMonth();
   const todayKey = localKey(new Date());
+  const feries = feriesForRange(y-1, y+1);
   const first = new Date(y, m, 1);
   let dow = first.getDay(); if (dow === 0) dow = 7;
   const days = [];
@@ -448,8 +495,10 @@ function renderMonth() {
       const c = getColor(e.color);
       return `<div class="m-ev" style="background:${c.dim};color:${c.text};">${e.label}</div>`;
     }).join("") + (dayEvs.length > 3 ? `<div style="font-size:9px;color:var(--muted);">+${dayEvs.length-3}</div>` : "");
-    return `<div class="month-cell ${d._other?"other":""} ${isToday?"today":""}" onclick="openPanel('${dk}',9)">
+    const isFerie = !d._other && !!feries[dk];
+    return `<div class="month-cell ${d._other?"other":""} ${isToday?"today":""} ${isFerie?"ferie":""}" onclick="openPanel('${dk}',9)">
       <div class="m-num">${d.getDate()}</div>
+      ${isFerie ? `<div class="m-ferie-label">${feries[dk]}</div>` : ""}
       ${evHtml}
     </div>`;
   }).join("");
