@@ -241,7 +241,27 @@ function renderProfil() {
           <span>Je suis assujetti à la TVA</span>
         </label>
       </div>
-      <div class="fields-2">
+      ${e.assujetti_tva ? `
+      <div class="fields-2" style="margin-top:10px;">
+        <div class="field">
+          <label class="field-label">Fréquence de déclaration</label>
+          <select class="pi field-input" data-k="tva_frequence">
+            <option value="mensuelle" ${e.tva_frequence==="mensuelle"?"selected":""}>Mensuelle</option>
+            <option value="trimestrielle" ${(e.tva_frequence||"trimestrielle")==="trimestrielle"?"selected":""}>Trimestrielle</option>
+            <option value="annuelle" ${e.tva_frequence==="annuelle"?"selected":""}>Annuelle</option>
+          </select>
+          <div style="font-size:10px;color:var(--muted);margin-top:5px">La plupart des indépendants sont en trimestrielle</div>
+        </div>
+        <div class="field">
+          <label class="field-label">Régime de TVA</label>
+          <select class="pi field-input" data-k="tva_regime">
+            <option value="encaissements" ${(e.tva_regime||"encaissements")==="encaissements"?"selected":""}>Sur les encaissements</option>
+            <option value="debits" ${e.tva_regime==="debits"?"selected":""}>Sur les débits</option>
+          </select>
+          <div style="font-size:10px;color:var(--muted);margin-top:5px">Prestations de service → encaissements · Ventes de biens → débits</div>
+        </div>
+      </div>` : ""}
+      <div class="fields-2" style="margin-top:${e.assujetti_tva?"10":"0"}px;">
         <div class="field"><label class="field-label">Conditions de paiement</label><select class="pi field-input" data-k="conditions_paiement"><option value="">-- Choisir --</option>${CONDITIONS.map(c=>`<option value="${c}" ${e.conditions_paiement===c?"selected":""}>${c}</option>`).join("")}</select></div>
         <div class="field"><label class="field-label">Délai de validité (jours)</label><input class="pi field-input" data-k="delai_paiement" type="number" value="${esc(e.delai_paiement||"30")}" placeholder="30"/></div>
       </div>
@@ -415,7 +435,7 @@ async function saveProfil() {
   if (!profil.nom || !profil.siret || !profil.taux_horaire) { toast("⚠ Nom, SIRET et taux horaire obligatoires."); return; }
   if (!profil.api_key) { toast("⚠ La clé API Anthropic est obligatoire."); return; }
   syncing = true; render();
-  const { error } = await sb.from("profils").upsert({ user_id: user.id, ...profil, assujetti_tva: profil.assujetti_tva||false, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  const { error } = await sb.from("profils").upsert({ user_id: user.id, ...profil, assujetti_tva: profil.assujetti_tva||false, tva_frequence: profil.tva_frequence||"trimestrielle", tva_regime: profil.tva_regime||"encaissements", updated_at: new Date().toISOString() }, { onConflict: "user_id" });
   syncing = false;
   if (error) { toast("Erreur : " + error.message); render(); return; }
   toast("✓ Enregistré !");
@@ -492,7 +512,7 @@ document.getElementById("btn-logout").addEventListener("click", async () => { aw
   user = session.user;
   const { data: p } = await sb.from("profils").select("*").eq("user_id", user.id).single();
   if (p) {
-    profil = { nom:p.nom||"", adresse:p.adresse||"", tel:p.tel||"", email:p.email||"", siret:p.siret||"", taux_horaire:p.taux_horaire||"", api_key:p.api_key||"", assujetti_tva:p.assujetti_tva||false, secteur:p.secteur||"", conditions_paiement:p.conditions_paiement||"", delai_paiement:p.delai_paiement||"30", iban:p.iban||"", factpulse_token:p.factpulse_token||"" };
+    profil = { nom:p.nom||"", adresse:p.adresse||"", tel:p.tel||"", email:p.email||"", siret:p.siret||"", taux_horaire:p.taux_horaire||"", api_key:p.api_key||"", assujetti_tva:p.assujetti_tva||false, tva_frequence:p.tva_frequence||"trimestrielle", tva_regime:p.tva_regime||"encaissements", secteur:p.secteur||"", conditions_paiement:p.conditions_paiement||"", delai_paiement:p.delai_paiement||"30", iban:p.iban||"", factpulse_token:p.factpulse_token||"" };
     subscriptionStatus = p.subscription_status || "free";
     subscriptionEndDate = p.subscription_end_date || null;
     cancellationRequested = p.cancellation_requested || false;
