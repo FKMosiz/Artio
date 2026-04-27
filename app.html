@@ -583,6 +583,11 @@ function startVoiceGeneric(onResult){
 
     r.onerror=e=>{
       if(e.error==="no-speech"||e.error==="aborted")return;
+      if(e.error==="network"){
+        // Erreur transitoire (serveurs Google) — relancer silencieusement
+        if(voiceRunning) setTimeout(makeSession, 500);
+        return;
+      }
       voiceRunning=false;
       set({voiceState:"idle"});
       alert("Erreur micro : "+e.error);
