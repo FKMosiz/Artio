@@ -1336,7 +1336,7 @@ function renderDevisFacture(){
     ["heure_fin_prestation",tab==="devis"?"Heure de fin estimée":"Heure de fin","","select_heure",true],
     ["travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false],
     ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true],
-    S.entreprise.assujetti_tva?["tva","TVA (%)","10 (rénovation) ou 20 (neuf)","text",false]:null,
+    S.entreprise.assujetti_tva?["tva","TVA (%)","","select",false]:null,
   ];
   return`<div class="card">
     ${renderVoice("devis")}
@@ -1358,7 +1358,13 @@ function renderDevisFacture(){
           ?`<select data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;" onchange="S.fields['${id}']=this.value">${heureOpts}</select>`
           :type==="date"
             ?`<input type="date" value="${S.fields[id]||""}" data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;font-family:inherit;" oninput="S.fields['${id}']=this.value"/>`
-            :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'updateTotaux()':''}"/>`;
+            :type==="select"
+      ?`<select data-fid="${id}" style="width:100%;padding:9px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;cursor:pointer;" onchange="S.fields['${id}']=this.value;updateTotaux()">
+          <option value="">-- Choisir le taux --</option>
+          <option value="10" ${S.fields[id]==="10"?"selected":""}>10 % — Taux réduit</option>
+          <option value="20" ${S.fields[id]==="20"?"selected":""}>20 % — Taux normal</option>
+        </select>`
+      :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'updateTotaux()':''}"/>`;
       return`<div class="field">
       <label class="label">${label}${opt?`<span class="opt">(optionnel)</span>`:""}</label>
       ${input}
