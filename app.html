@@ -584,8 +584,9 @@ function startVoiceGeneric(onResult){
     r.onerror=e=>{
       if(e.error==="no-speech"||e.error==="aborted")return;
       if(e.error==="network"){
-        // Erreur transitoire (serveurs Google) — relancer silencieusement
-        if(voiceRunning) setTimeout(makeSession, 500);
+        // Neutraliser onend pour éviter la double relance (onerror + onend)
+        r.onend=null;
+        if(voiceRunning) setTimeout(makeSession, 1000);
         return;
       }
       voiceRunning=false;
@@ -593,7 +594,7 @@ function startVoiceGeneric(onResult){
       alert("Erreur micro : "+e.error);
     };
 
-    // Relancer immédiatement si Android coupe — tant que voiceRunning=true
+    // Relancer si la session se coupe (Android / timeout navigateur)
     r.onend=()=>{
       if(voiceRunning) setTimeout(makeSession, 100);
     };
