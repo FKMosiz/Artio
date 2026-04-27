@@ -562,6 +562,7 @@ function startVoiceGeneric(onResult){
   lastIdx=0;
   voiceRunning=true;
 
+  let networkErrors=0;
   function makeSession(){
     if(!voiceRunning)return;
     const r=new SR();
@@ -583,6 +584,18 @@ function startVoiceGeneric(onResult){
 
     r.onerror=e=>{
       if(e.error==="no-speech"||e.error==="aborted")return;
+      if(e.error==="network"){
+        networkErrors++;
+        r.onend=null;
+        if(networkErrors>=3){
+          voiceRunning=false;
+          set({voiceState:"idle"});
+          alert("La reconnaissance vocale est bloquée par votre navigateur.\nUtilisez Chrome, Edge, Opera ou Safari.");
+          return;
+        }
+        if(voiceRunning) setTimeout(makeSession,1000);
+        return;
+      }
       voiceRunning=false;
       set({voiceState:"idle"});
       alert("Erreur micro : "+e.error);
