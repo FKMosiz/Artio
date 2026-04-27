@@ -75,7 +75,9 @@ body { font-family: var(--fb); background: var(--bg); color: var(--text); min-he
 .date-sep { font-size: 13px; color: var(--muted); }
 
 /* ── KPI GRID ── */
-.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+@media(max-width:900px){ .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+@media(max-width:600px){ .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 .kpi-card {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--r); padding: 18px 20px; position: relative; overflow: hidden;
@@ -89,6 +91,8 @@ body { font-family: var(--fb); background: var(--bg); color: var(--text); min-he
 .kpi-teal::before  { background: var(--teal); }
 .kpi-green::before { background: var(--green); }
 .kpi-purple::before { background: var(--purple); }
+.kpi-orange::before { background: #f97316; }
+.kpi-orange .kpi-value { color: #f97316; }
 .kpi-icon {
   width: 34px; height: 34px; border-radius: 9px;
   display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
@@ -195,7 +199,7 @@ const SUPABASE_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let user = null, dossiers = [], filterType = "mois", filterFrom = "", filterTo = "";
+let user = null, dossiers = [], filterType = "mois", filterFrom = "", filterTo = "", chartFilter = "6mois";
 const now_ = new Date();
 filterFrom = new Date(now_.getFullYear()-1, 0, 1).toISOString().slice(0,10);
 filterTo   = now_.toISOString().slice(0,10);
@@ -230,6 +234,24 @@ function filterDocs(docs) {
   return docs;
 }
 
+function buildBars(caParMois, now) {
+  const bars = [];
+  if (chartFilter === "6mois") {
+    for (let i=5; i>=0; i--) { const dt=new Date(now); dt.setMonth(dt.getMonth()-i); const k=dt.getFullYear()+"-"+dt.getMonth(); bars.push({label:MOIS[dt.getMonth()], val:caParMois[k]||0}); }
+  } else if (chartFilter === "annee") {
+    for (let i=0; i<12; i++) { const k=now.getFullYear()+"-"+i; bars.push({label:MOIS[i], val:caParMois[k]||0}); }
+  } else if (chartFilter === "custom" && filterFrom && filterTo) {
+    const from = new Date(filterFrom), to = new Date(filterTo);
+    let cur = new Date(from.getFullYear(), from.getMonth(), 1);
+    while (cur <= to) {
+      const k = cur.getFullYear()+"-"+cur.getMonth();
+      bars.push({label:MOIS[cur.getMonth()]+" "+String(cur.getFullYear()).slice(2), val:caParMois[k]||0});
+      cur.setMonth(cur.getMonth()+1);
+    }
+  }
+  return bars;
+}
+
 function calcKPIs() {
   const now = new Date();
   const all = getAllDocs();
@@ -241,13 +263,15 @@ function calcKPIs() {
   const tvaColl  = factures.reduce((s,d) => s+(d.tva||0), 0);
   const caMois   = filterType === "mois" ? caTotal : filterDocs(all.filter(d => d.type==="facture" && (() => { const dt = parseDateFR(d.date); return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear(); })())).reduce((s,d) => s+(d.ttc||0), 0);
   const devisAtt = devis.filter(d => !d.accepte);
-  const caAttente = devisAtt.reduce((s,d) => s+(d.ttc||0), 0);
-  const txConv   = devis.length > 0 ? Math.round((devis.filter(d=>d.accepte).length / devis.length)*100) : 0;
+  const devisAcc = devis.filter(d => d.accepte);
+  const caAttente  = devisAtt.reduce((s,d) => s+(d.ttc||0), 0);
+  const caAccepte  = devisAcc.reduce((s,d) => s+(d.ttc||0), 0);
+  const txConv   = devis.length > 0 ? Math.round(devisAcc.length / devis.length*100) : 0;
+  // Graphique : calcul selon chartFilter
   const caParMois = {};
   all.filter(d => d.type==="facture").forEach(d => { const dt=parseDateFR(d.date); const k=dt.getFullYear()+"-"+dt.getMonth(); caParMois[k]=(caParMois[k]||0)+(d.ttc||0); });
-  const bars = [];
-  for (let i=5; i>=0; i--) { const dt=new Date(now); dt.setMonth(dt.getMonth()-i); const k=dt.getFullYear()+"-"+dt.getMonth(); bars.push({label:MOIS[dt.getMonth()], val:caParMois[k]||0}); }
-  return { caTotal, caHT, tvaColl, caMois, caAttente, txConv, nbFactures:factures.length, nbDevis:devis.length, nbAttente:devisAtt.length, bars, factures, devis };
+  const bars = buildBars(caParMois, now);
+  return { caTotal, caHT, tvaColl, caMois, caAttente, caAccepte, txConv, nbFactures:factures.length, nbDevis:devis.length, nbAttente:devisAtt.length, nbAccepte:devisAcc.length, bars, factures, devis };
 }
 
 window.onPeriodChange = function() {
@@ -319,13 +343,21 @@ function render() {
         <div class="kpi-value">${fmt(kpi.caMois)}</div>
         <div class="kpi-sub">${MOIS_LONG[now.getMonth()]} ${now.getFullYear()}</div>
       </div>
-      <div class="kpi-card kpi-green">
-        <div class="kpi-icon" style="background:var(--green-dim)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <div class="kpi-card kpi-orange">
+        <div class="kpi-icon" style="background:rgba(249,115,22,0.12)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
         <div class="kpi-label">Devis en attente</div>
         <div class="kpi-value">${fmt(kpi.caAttente)}</div>
         <div class="kpi-sub">${kpi.nbAttente} devis</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-icon" style="background:var(--green-dim)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="kpi-label">Devis acceptés</div>
+        <div class="kpi-value">${fmt(kpi.caAccepte)}</div>
+        <div class="kpi-sub">${kpi.nbAccepte} devis</div>
       </div>
       <div class="kpi-card kpi-purple">
         <div class="kpi-icon" style="background:var(--purple-dim)">
@@ -338,7 +370,14 @@ function render() {
     </div>
 
     <div class="chart-card">
-      <div class="card-title">CA mensuel — 6 derniers mois</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:0">CA mensuel</div>
+        <select style="background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;" onchange="chartFilter=this.value;render()">
+          <option value="6mois" ${chartFilter==="6mois"?"selected":""}>6 derniers mois</option>
+          <option value="annee" ${chartFilter==="annee"?"selected":""}>Année en cours</option>
+          <option value="custom" ${chartFilter==="custom"?"selected":""}>Personnalisé</option>
+        </select>
+      </div>
       <div class="bar-chart">${bars}</div>
     </div>
 
