@@ -583,18 +583,12 @@ function startVoiceGeneric(onResult){
 
     r.onerror=e=>{
       if(e.error==="no-speech"||e.error==="aborted")return;
-      if(e.error==="network"){
-        // Neutraliser onend pour éviter la double relance (onerror + onend)
-        r.onend=null;
-        if(voiceRunning) setTimeout(makeSession, 1000);
-        return;
-      }
       voiceRunning=false;
       set({voiceState:"idle"});
       alert("Erreur micro : "+e.error);
     };
 
-    // Relancer si la session se coupe (Android / timeout navigateur)
+    // Relancer immédiatement si Android coupe — tant que voiceRunning=true
     r.onend=()=>{
       if(voiceRunning) setTimeout(makeSession, 100);
     };
