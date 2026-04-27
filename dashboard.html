@@ -199,7 +199,7 @@ const SUPABASE_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let user = null, dossiers = [], filterType = "mois", filterFrom = "", filterTo = "", chartFilter = "6mois", assujetti_tva = false;
+let user = null, dossiers = [], filterType = "mois", filterFrom = "", filterTo = "", chartFilter = "6mois", assujetti_tva = false, tva_frequence = "trimestrielle", tva_regime = "encaissements";
 const now_ = new Date();
 filterFrom = new Date(now_.getFullYear()-1, 0, 1).toISOString().slice(0,10);
 filterTo   = now_.toISOString().slice(0,10);
@@ -283,6 +283,24 @@ function calcKPIs() {
   all.filter(d => d.type==="facture").forEach(d => { const dt=parseDateFR(d.date); const k=dt.getFullYear()+"-"+dt.getMonth(); caParMois[k]=(caParMois[k]||0)+(d.ttc||0); });
   const bars = buildBars(caParMois, now);
   return { caTotal, caHT, tvaColl, tvaParTaux, caMois, caAttente, caAccepte, txConv, nbFactures:factures.length, nbDevis:devis.length, nbAttente:devisAtt.length, nbAccepte:devisAcc.length, bars, factures, devis };
+}
+
+function currentTVAPeriod() {
+  const now = new Date();
+  if (tva_frequence === "mensuelle") {
+    const from = new Date(now.getFullYear(), now.getMonth(), 1);
+    const to   = new Date(now.getFullYear(), now.getMonth()+1, 0);
+    return { from: from.toISOString().slice(0,10), to: to.toISOString().slice(0,10), label: from.toLocaleDateString("fr-FR",{month:"long",year:"numeric"}) };
+  }
+  if (tva_frequence === "trimestrielle") {
+    const q = Math.floor(now.getMonth()/3);
+    const from = new Date(now.getFullYear(), q*3, 1);
+    const to   = new Date(now.getFullYear(), q*3+3, 0);
+    return { from: from.toISOString().slice(0,10), to: to.toISOString().slice(0,10), label: "T"+(q+1)+" "+now.getFullYear() };
+  }
+  const from = new Date(now.getFullYear(), 0, 1);
+  const to   = new Date(now.getFullYear(), 11, 31);
+  return { from: from.toISOString().slice(0,10), to: to.toISOString().slice(0,10), label: String(now.getFullYear()) };
 }
 
 window.onPeriodChange = function() {
@@ -400,64 +418,71 @@ function render() {
       ${facturesRows}
     </div>
 
-    ${assujetti_tva ? `
+    ${(()=>{
+      if(!assujetti_tva) return "";
+      const tvaPeriod = currentTVAPeriod();
+      const freqLabel   = {"mensuelle":"Mensuelle","trimestrielle":"Trimestrielle","annuelle":"Annuelle"}[tva_frequence]||"";
+      const regimeLabel = tva_regime==="encaissements" ? "Sur les encaissements" : "Sur les débits";
+      const regimeInfo  = tva_regime==="encaissements"
+        ? "TVA due à la date du paiement reçu (prestations de service)"
+        : "TVA due à la date d\'émission de la facture (ventes de biens)";
+      const ventilTVA = Object.keys(kpi.tvaParTaux).sort().map(taux =>
+        `<div class="decl-item" style="border-left:2px solid var(--teal);padding-left:12px;">
+          <div class="decl-label">② TVA ${taux}% collectée</div>
+          <div class="decl-val" style="color:var(--teal)">${fmt(kpi.tvaParTaux[taux].tva)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">Sur ${fmt(kpi.tvaParTaux[taux].ht)} HT · ${kpi.tvaParTaux[taux].nb} facture${kpi.tvaParTaux[taux].nb>1?"s":""}</div>
+        </div>`
+      ).join("") || `<div class="decl-item" style="border-left:2px solid var(--teal);padding-left:12px;">
+          <div class="decl-label">② TVA collectée</div>
+          <div class="decl-val" style="color:var(--teal)">${fmt(kpi.tvaColl)}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">Aucune TVA facturée sur la période</div>
+        </div>`;
+      return `
     <div class="chart-card">
-      <!-- EN-TÊTE -->
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
         <div>
-          <div class="card-title" style="margin-bottom:3px">Déclaration TVA</div>
-          <div style="font-size:11px;color:var(--muted)">
-            Période : <strong style="color:var(--text)">${filterFrom ? new Date(filterFrom).toLocaleDateString("fr-FR") : "—"}</strong>
-            → <strong style="color:var(--text)">${filterTo ? new Date(filterTo).toLocaleDateString("fr-FR") : "—"}</strong>
-            · ${kpi.nbFactures} facture${kpi.nbFactures>1?"s":""} émise${kpi.nbFactures>1?"s":""}
+          <div class="card-title" style="margin-bottom:4px">Déclaration TVA</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.7">
+            <span style="background:rgba(62,207,207,.1);color:var(--teal);border-radius:4px;padding:1px 7px;font-weight:600;margin-right:6px">${freqLabel}</span>
+            <span style="background:rgba(255,255,255,.05);color:var(--muted);border-radius:4px;padding:1px 7px;margin-right:6px">${regimeLabel}</span>
           </div>
         </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:2px">Période TVA en cours</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${tvaPeriod.label}</div>
+          <div style="font-size:10px;color:var(--muted)">${new Date(tvaPeriod.from).toLocaleDateString("fr-FR")} → ${new Date(tvaPeriod.to).toLocaleDateString("fr-FR")}</div>
+        </div>
       </div>
-
-      <!-- TVA NETTE À PAYER — mis en avant -->
+      <div style="font-size:10px;color:var(--muted);margin-bottom:14px;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:6px;">
+        ℹ️ ${regimeInfo} · ${kpi.nbFactures} facture${kpi.nbFactures>1?"s":""} sur la période du tableau de bord
+      </div>
       <div style="background:rgba(62,207,207,0.08);border:1px solid rgba(62,207,207,0.25);border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
         <div>
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">TVA nette à reverser à l'État</div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">TVA nette à reverser à l\'État</div>
           <div style="font-size:26px;font-weight:800;font-family:var(--fh);color:var(--teal)">${fmt(kpi.tvaColl)}</div>
           <div style="font-size:10px;color:var(--muted);margin-top:3px">= TVA collectée sur vos factures (hors TVA déductible sur achats)</div>
         </div>
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.5" opacity=".5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       </div>
-
-      <!-- GRILLE 4 CASES -->
       <div class="decl-grid">
         <div class="decl-item" style="border-left:2px solid var(--amber);padding-left:12px;">
           <div class="decl-label">① CA HT à déclarer</div>
           <div class="decl-val" style="color:var(--amber)">${fmt(kpi.caHT)}</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px">Chiffre d'affaires hors taxes</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">Chiffre d\'affaires hors taxes</div>
         </div>
         <div class="decl-item" style="border-left:2px solid var(--border);padding-left:12px;">
           <div class="decl-label">CA TTC encaissé</div>
           <div class="decl-val" style="color:var(--text)">${fmt(kpi.caTotal)}</div>
           <div style="font-size:10px;color:var(--muted);margin-top:4px">Ce que vos clients ont payé</div>
         </div>
-
-        <!-- Ventilation par taux -->
-        ${Object.keys(kpi.tvaParTaux).sort().map(taux => `
-        <div class="decl-item" style="border-left:2px solid var(--teal);padding-left:12px;">
-          <div class="decl-label">② TVA ${taux}% collectée</div>
-          <div class="decl-val" style="color:var(--teal)">${fmt(kpi.tvaParTaux[taux].tva)}</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px">Sur ${fmt(kpi.tvaParTaux[taux].ht)} HT · ${kpi.tvaParTaux[taux].nb} facture${kpi.tvaParTaux[taux].nb>1?"s":""}</div>
-        </div>`).join("")}
-        ${Object.keys(kpi.tvaParTaux).length===0 ? `
-        <div class="decl-item" style="border-left:2px solid var(--teal);padding-left:12px;">
-          <div class="decl-label">② TVA collectée</div>
-          <div class="decl-val" style="color:var(--teal)">${fmt(kpi.tvaColl)}</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px">Aucune TVA facturée sur la période</div>
-        </div>` : ""}
+        ${ventilTVA}
       </div>
-
-      <!-- AVERTISSEMENT -->
       <div style="margin-top:14px;padding:10px 14px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.2);border-radius:8px;font-size:11px;color:var(--muted);display:flex;gap:8px;align-items:flex-start;">
         <span style="color:#f87171;flex-shrink:0;margin-top:1px;">⚠</span>
-        <span>Ce calcul ne tient pas compte de la <strong>TVA déductible sur vos achats</strong>. Si vous avez des charges soumises à TVA, le montant réel à reverser peut être inférieur. Consultez votre comptable pour la TVA déductible.</span>
+        <span>Ce calcul ne tient pas compte de la <strong>TVA déductible sur vos achats</strong>. Si vous avez des charges soumises à TVA, le montant réel à reverser peut être inférieur. Consultez votre comptable.</span>
       </div>
-    </div>` : ""}`;
+    </div>`;
+    })()}`;
 }
 
 document.getElementById("btn-logout").addEventListener("click", async () => {
@@ -472,10 +497,12 @@ document.getElementById("btn-logout").addEventListener("click", async () => {
     user = session.user;
     const [{ data, error }, { data: profil }] = await Promise.all([
       sb.from("dossiers").select("*").eq("user_id", user.id),
-      sb.from("profils").select("assujetti_tva").eq("user_id", user.id).single()
+      sb.from("profils").select("assujetti_tva, tva_frequence, tva_regime").eq("user_id", user.id).single()
     ]);
     if (error) console.error("Erreur dossiers:", error);
-    assujetti_tva = profil?.assujetti_tva || false;
+    assujetti_tva  = profil?.assujetti_tva  || false;
+    tva_frequence  = profil?.tva_frequence  || "trimestrielle";
+    tva_regime     = profil?.tva_regime     || "encaissements";
     dossiers = (data||[]).map(d => { let docs = []; try { docs = typeof d.documents === "string" ? JSON.parse(d.documents) : (d.documents||[]); } catch(e) {} return {...d, documents: docs}; });
     render();
   } catch(e) {
