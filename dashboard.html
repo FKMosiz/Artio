@@ -495,11 +495,13 @@ document.getElementById("btn-logout").addEventListener("click", async () => {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { window.location.href = "index.html"; return; }
     user = session.user;
-    const [{ data, error }, { data: profil }] = await Promise.all([
+    const [{ data, error }, profilRes] = await Promise.all([
       sb.from("dossiers").select("*").eq("user_id", user.id),
-      sb.from("profils").select("assujetti_tva, tva_frequence, tva_regime").eq("user_id", user.id).single()
+      sb.from("profils").select("*").eq("user_id", user.id).single()
     ]);
     if (error) console.error("Erreur dossiers:", error);
+    const profil = profilRes.data || null;
+    if (profilRes.error) console.warn("Profil:", profilRes.error.message);
     assujetti_tva  = profil?.assujetti_tva  || false;
     tva_frequence  = profil?.tva_frequence  || "trimestrielle";
     tva_regime     = profil?.tva_regime     || "encaissements";

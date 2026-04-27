@@ -237,7 +237,7 @@ function renderProfil() {
       <div class="card-title">TVA & Conditions</div>
       <div class="field">
         <label class="check-row">
-          <input class="pi" data-k="assujetti_tva" type="checkbox" ${e.assujetti_tva?"checked":""}/>
+          <input class="pi" data-k="assujetti_tva" type="checkbox" ${e.assujetti_tva?"checked":""} onchange="profil.assujetti_tva=this.checked;render()"/>
           <span>Je suis assujetti à la TVA</span>
         </label>
       </div>
