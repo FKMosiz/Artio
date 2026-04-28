@@ -684,7 +684,7 @@ searchInput.addEventListener('keydown', e => {
 const ANSWERS = {
   default: "Je comprends votre question. Pour vous aider au mieux, pouvez-vous préciser le contexte ? Notre équipe est aussi disponible via le formulaire de contact.",
   "devis": "Pour créer un devis vocal : ouvrez l'onglet **Devis** dans l'app, cliquez sur le micro, et dictez les infos du client et la prestation. Artio génère le document en moins de 30 secondes !",
-  "signature": "La signature électronique s'active depuis un devis généré : cliquez sur **Envoyer pour signature**. Un lien sécurisé est envoyé au client, valable 24h.",
+  "signature": "La signature électronique s'active depuis un devis généré : cliquez sur ✍️ Signature. Un lien sécurisé est envoyé au client, valable 72h. Le client reçoit un code OTP par email pour s'authentifier avant de signer.",
   "connexion": "Si vous ne pouvez pas vous connecter, vérifiez d'abord votre email de confirmation. Vous pouvez aussi réinitialiser votre mot de passe depuis la page de connexion.",
   "facturation": "Artio est **Solution Compatible** avec la réforme DGFiP 2026. La facturation électronique Pro se configure dans Paramètres → Mon entreprise → Token FactPulse.",
   "gmail": "Pour connecter Gmail : allez dans Paramètres → Gmail → entrez votre Google Client ID OAuth 2.0. Un guide complet est disponible dans la documentation.",
@@ -901,15 +901,33 @@ const ARTICLE_CONTENT = {
     title: '✍️ Signature électronique',
     body: `
       <h2>Comment ça fonctionne</h2>
-      <p>Vos clients signent vos devis électroniquement depuis n'importe quel appareil, sans compte ni application. Le lien est valable <strong>24 heures</strong>.</p>
-      <h2>Envoyer un devis à la signature</h2>
-      <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Ouvrez le dossier</strong><span>Dans l'Application, onglet "Dossiers", ouvrez le dossier contenant le devis.</span></div></div>
-      <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Demandez la signature</strong><span>Cliquez sur "Demander signature". Un lien unique est généré et copié dans votre presse-papier.</span></div></div>
-      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Partagez le lien</strong><span>Envoyez le lien à votre client par SMS, email ou WhatsApp.</span></div></div>
-      <div class="article-step"><div class="article-step-num">4</div><div class="article-step-body"><strong>Signature automatiquement enregistrée</strong><span>Dès signature, le devis passe en statut "Accepté" et vous pouvez générer la facture.</span></div></div>
-      <div class="article-tip"><strong>💡 Valeur légale :</strong> La signature Artio est une <strong>signature électronique simple</strong> au sens du règlement européen eIDAS — identique au niveau de base de YousSign ou DocuSign. Elle est <strong>juridiquement valable</strong> pour tous les devis et contrats de prestation de service. Éléments conservés comme preuve : dessin de signature, horodatage, token unique et adresse IP.</div>
-      <div class="article-warn"><strong>⚠ Cas non couverts :</strong> Pour certains actes spécifiques (immobilier, actes notariés, CDI), une signature qualifiée est légalement requise. Pour les devis de prestation courants, la signature simple est suffisante.</div>
-      <div class="article-warn"><strong>⚠ Expiration :</strong> Le lien expire après 24h. Générez un nouveau lien si nécessaire depuis le dossier.</div>`
+      <p>Vos clients signent vos devis électroniquement depuis n'importe quel appareil, sans compte ni application. Le lien est valable <strong>72 heures</strong>.</p>
+
+      <h2>Ce que voit votre client</h2>
+      <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Il ouvre le lien</strong><span>La page affiche le résumé du devis et l'empreinte numérique SHA-256 du document.</span></div></div>
+      <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Il vérifie son email (2FA)</strong><span>Il saisit son adresse email et reçoit un code à 6 chiffres depuis noreply@monartio.fr. Ce code prouve qu'il contrôle bien cette adresse.</span></div></div>
+      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Il signe</strong><span>Il dessine sa signature. Artio vérifie que le document n'a pas été modifié depuis l'envoi (SHA-256), puis enregistre tout.</span></div></div>
+      <div class="article-step"><div class="article-step-num">4</div><div class="article-step-body"><strong>Il reçoit une confirmation</strong><span>Un email de confirmation lui est automatiquement envoyé avec le récapitulatif du devis signé.</span></div></div>
+
+      <h2>Ce que vous obtenez</h2>
+      <div class="article-step"><div class="article-step-num">5</div><div class="article-step-body"><strong>Dossier mis à jour automatiquement</strong><span>Le devis passe en statut "Accepté" et vous pouvez générer la facture correspondante.</span></div></div>
+      <div class="article-step"><div class="article-step-num">6</div><div class="article-step-body"><strong>PDF "Preuve de signature"</strong><span>Téléchargeable depuis le dossier — contient la signature manuscrite, l'audit trail complet et l'empreinte SHA-256.</span></div></div>
+
+      <h2>Audit Trail</h2>
+      <p>Le PDF de preuve inclut un journal horodaté de chaque étape : lien créé, OTP envoyé, OTP vérifié, SHA-256 conforme, signature enregistrée, IP du signataire.</p>
+
+      <h2>Niveau de sécurité</h2>
+      <ul>
+        <li><strong>SHA-256</strong> — empreinte du document vérifiée à la signature</li>
+        <li><strong>2FA email</strong> — code OTP envoyé par Resend depuis monartio.fr</li>
+        <li><strong>IP signataire</strong> — collectée côté serveur, infalsifiable</li>
+        <li><strong>Horodatage</strong> — date et heure exactes stockées en base Supabase</li>
+        <li><strong>Audit Trail</strong> — journal complet dans le PDF de preuve</li>
+      </ul>
+
+      <div class="article-tip"><strong>💡 Valeur légale :</strong> Signature simple renforcée conforme eIDAS — niveau équivalent au niveau de base de YousSign ou DocuSign. Juridiquement valable pour tous les devis et contrats de prestation.</div>
+      <div class="article-warn"><strong>⚠ Expiration :</strong> Le lien expire après 72h. Générez un nouveau lien depuis le dossier si nécessaire.</div>
+      <div class="article-warn"><strong>⚠ Cas non couverts :</strong> Pour certains actes (immobilier, actes notariés, CDI), une signature qualifiée est légalement requise. Pour les devis courants, la signature simple renforcée est suffisante.</div>`
   },
   'gmail': {
     title: '📧 Synchronisation Gmail',
