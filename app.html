@@ -832,6 +832,13 @@ Signe au nom de "${e.nom||"l'entreprise"}". Écris directement l'email sans comm
   }
 }
 
+// ── HASH SHA-256 du document ────────────────────────────────────
+async function hashDoc(obj) {
+  const str = JSON.stringify(obj, Object.keys(obj).sort());
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
 sendForSignature=async(dosId,docNum)=>{
   const dos=S.dossiers.find(d=>d.id===dosId);
   const doc=dos?.documents?.find(d=>d.docNumber===docNum);
@@ -839,9 +846,10 @@ sendForSignature=async(dosId,docNum)=>{
   set({loading:true});
   const token=[...Array(32)].map(()=>(Math.random().toString(36)[2]||"a")).join("");
   // dossier_id en texte libre (pas de FK stricte) + dosId dans doc_data
+  const docHash = await hashDoc({...doc, _dossier_id:dosId});
   const{error}=await sb.from("signatures").upsert({
     token,user_id:S.user.id,dossier_id:dosId,doc_number:docNum,
-    doc_data:{...doc,_dossier_id:dosId},status:"pending",
+    doc_data:{...doc,_dossier_id:dosId},doc_hash:docHash,status:"pending",
     created_at:new Date().toISOString()
   },{onConflict:"token"});
   set({loading:false});
@@ -1117,6 +1125,9 @@ window.downloadSignedProof=async function(docNumber){
     pdf.setDrawColor(180);pdf.setLineWidth(0.3);pdf.rect(m+10,y+22,cW-20,22);y+=55;
     pdf.setFont(undefined,"italic").setFontSize(7).setTextColor(120);
     pdf.text("Preuve de signature électronique — Artio — "+new Date().toLocaleString("fr-FR"),W/2,y,{align:"center"});
+    y+=4;
+    if(sig.doc_hash){pdf.text("Empreinte SHA-256 : "+sig.doc_hash,W/2,y,{align:"center"});}
+    if(sig.signer_email){y+=4;pdf.text("Email signataire : "+sig.signer_email+"  |  IP : "+(sig.signer_ip||"—"),W/2,y,{align:"center"});}
     try{pdf.addImage("data:image/png;base64,"+LOGO_WHITE,"PNG",m,280,22,7);}catch{}
     pdf.setFontSize(7).setTextColor(150).text((e.nom||"")+" — SIRET : "+(e.siret||""),W/2,287,{align:"center"});
     pdf.save("PREUVE_SIGNATURE_"+docNumber+".pdf");
