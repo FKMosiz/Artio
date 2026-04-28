@@ -273,6 +273,7 @@ function renderDoc(sig) {
       </div>
       <div id="otp-section" style="display:none;">
         <div class="otp-sent" id="otp-sent-msg">✅ Code envoyé à votre adresse email. Vérifiez vos spams si nécessaire.</div>
+        <div id="otp-timer" style="font-size:11px;color:var(--muted);margin-bottom:8px;"></div>
         <div class="otp-wrap">
           <input class="otp-input" type="text" id="otp-input" maxlength="6" placeholder="000000" oninput="this.value=this.value.replace(/\D/g,'')"/>
           <button class="btn-otp" onclick="verifyOtp()">Vérifier</button>
@@ -351,29 +352,62 @@ async function hashData(obj) {
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 
-// ── OTP via Supabase Edge / email ─────────────────────────────────
+// ── OTP via Supabase Edge Function + Resend ──────────────────────
+let otpTimer = null;
+let otpExpiry = null;
+
+function startOtpTimer() {
+  clearInterval(otpTimer);
+  otpExpiry = Date.now() + 60000; // 60 secondes
+  const btn = document.getElementById("btn-send-otp");
+  const timerEl = document.getElementById("otp-timer");
+  otpTimer = setInterval(() => {
+    const remaining = Math.ceil((otpExpiry - Date.now()) / 1000);
+    if (remaining <= 0) {
+      clearInterval(otpTimer);
+      if (btn) { btn.disabled = false; btn.textContent = "Renvoyer le code"; }
+      if (timerEl) timerEl.textContent = "";
+    } else {
+      if (btn) { btn.disabled = true; btn.textContent = "Renvoyer le code"; }
+      if (timerEl) timerEl.textContent = "Renvoyer dans " + remaining + "s";
+    }
+  }, 500);
+}
+
 window.sendOtp = async function() {
   signerEmail = document.getElementById("signer-email")?.value?.trim();
   if (!signerEmail || !signerEmail.includes("@")) { alert("Veuillez saisir une adresse email valide."); return; }
   otpCode = String(Math.floor(100000 + Math.random() * 900000));
-  // Envoi via Supabase Auth OTP (magic link désactivé, juste verification)
-  const { error } = await sb.auth.signInWithOtp({ email: signerEmail, options: { shouldCreateUser: false } });
-  if (error && !error.message.includes("not found")) {
-    // Fallback : OTP maison stocké localement (le code est affiché pour démo)
-    console.log("OTP (fallback):", otpCode);
+  otpVerified = false;
+
+  const btn = document.getElementById("btn-send-otp");
+  if (btn) { btn.disabled = true; btn.textContent = "Envoi…"; }
+
+  try {
+    const { error } = await sb.functions.invoke("send-otp", {
+      body: { email: signerEmail, code: otpCode }
+    });
+    if (error) throw new Error(error.message);
+
+    document.getElementById("otp-section").style.display = "block";
+    document.getElementById("otp-sent-msg").style.display = "block";
+    document.getElementById("otp-verified-badge").style.display = "none";
+    document.getElementById("otp-input").value = "";
+    startOtpTimer();
+  } catch(e) {
+    alert("Erreur d'envoi : " + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = "Envoyer le code de vérification"; }
   }
-  document.getElementById("otp-section").style.display = "block";
-  document.getElementById("otp-sent-msg").style.display = "block";
-  document.getElementById("btn-send-otp").textContent = "Renvoyer le code";
 };
 
 window.verifyOtp = function() {
   const entered = document.getElementById("otp-input")?.value?.trim();
-  // Vérification locale du code généré
   if (entered === otpCode) {
     otpVerified = true;
+    clearInterval(otpTimer);
     document.getElementById("otp-verified-badge").style.display = "block";
     document.getElementById("otp-section").style.display = "none";
+    document.getElementById("otp-timer").textContent = "";
     document.getElementById("btn-send-otp").style.display = "none";
   } else {
     alert("Code incorrect. Veuillez réessayer.");
