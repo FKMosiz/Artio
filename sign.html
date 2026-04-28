@@ -451,11 +451,30 @@ window.submitSignature = async function() {
     return;
   }
 
+  // Envoyer email de confirmation au signataire
+  try {
+    const { data: sigRow2 } = await sb.from("signatures").select("doc_data, signed_at").eq("token", token).single();
+    if (sigRow2?.doc_data) {
+      await sb.functions.invoke("send-otp", {
+        body: {
+          type: "confirmation",
+          email: signerEmail,
+          doc: { ...sigRow2.doc_data, signed_at: sigRow2.signed_at }
+        }
+      });
+    }
+  } catch(e) { console.warn("Email confirmation:", e); }
+
   document.getElementById("content").innerHTML = `
     <div class="status-box success">
       <div class="status-icon">✅</div>
       <div class="status-title">Document signé !</div>
-      <div class="status-sub">Votre signature a bien été enregistrée.<br>Email : <strong>${signerEmail}</strong><br>Intégrité du document : <strong>${hashVerified ? "✅ Vérifiée" : "—"}</strong><br>L'entreprise a été notifiée automatiquement.</div>
+      <div class="status-sub">
+        Votre signature a bien été enregistrée.<br>
+        Un email de confirmation a été envoyé à <strong>${signerEmail}</strong>.<br>
+        Intégrité du document : <strong>${hashVerified ? "✅ Vérifiée" : "—"}</strong><br>
+        L'entreprise a été notifiée automatiquement.
+      </div>
     </div>`;
 };
 
