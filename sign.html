@@ -217,7 +217,7 @@ const SUPABASE_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let token = null, sigData = null, drawing = false, canvas = null, ctx = null, hasDrawn = false, otpCode = null, otpVerified = false, signerEmail = "", docHash = null;
+let token = null, sigData = null, drawing = false, canvas = null, ctx = null, hasDrawn = false, otpCode = null, otpVerified = false, signerEmail = "", docHash = null, signerIp = "";
 
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 function fmt(n) { return Number(n||0).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2}) + " €"; }
@@ -442,6 +442,7 @@ window.submitSignature = async function() {
     p_signature_data: sigData,
     p_signed_at: new Date().toISOString(),
     p_signer_email: signerEmail,
+    p_signer_ip: signerIp,
     p_hash_verified: hashVerified,
   });
 
@@ -492,6 +493,14 @@ window.submitSignature = async function() {
       </div>`;
     return;
   }
+  // Récupérer l'IP via la Edge Function (côté serveur, infalsifiable)
+  try {
+    const { data: ipData } = await sb.functions.invoke("send-otp", {
+      body: { type: "get-ip" }
+    });
+    signerIp = ipData?.ip || "";
+  } catch(e) { signerIp = ""; }
+
   // Afficher le hash du document dès le chargement
   try {
     const { data: sigRow } = await sb.from("signatures").select("doc_hash").eq("token", token).single();
