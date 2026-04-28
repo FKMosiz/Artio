@@ -452,17 +452,22 @@ window.submitSignature = async function() {
     return;
   }
 
-  // Envoyer email de confirmation au signataire
+  // Envoyer email de confirmation + stocker l'ID Resend
   try {
-    const { data: sigRow2 } = await sb.from("signatures").select("doc_data, signed_at").eq("token", token).single();
+    const { data: sigRow2 } = await sb.from("signatures").select("doc_data, signed_at, id").eq("token", token).single();
     if (sigRow2?.doc_data) {
-      await sb.functions.invoke("send-otp", {
+      const { data: confirmData } = await sb.functions.invoke("send-otp", {
         body: {
           type: "confirmation",
           email: signerEmail,
           doc: { ...sigRow2.doc_data, signed_at: sigRow2.signed_at }
         }
       });
+      // Stocker l'ID Resend pour l'audit trail
+      if (confirmData?.resend_id) {
+        await sb.from("signatures").update({ resend_confirmation_id: confirmData.resend_id })
+          .eq("id", sigRow2.id);
+      }
     }
   } catch(e) { console.warn("Email confirmation:", e); }
 
