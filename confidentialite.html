@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Politique de Confidentialité — Artio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#080b14;--surface:#0e1220;--surface-2:#141829;--border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.13);--text:#e2e5f1;--muted:#6b7494;--amber:#f5a742;--amber-dim:rgba(245,167,66,0.12);--amber-glow:rgba(245,167,66,0.28);--teal:#3ecfcf;--fh:'Space Grotesk',sans-serif;--fb:'Plus Jakarta Sans',sans-serif;--r:14px;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+    body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");opacity:0.4;}
+    .blob-a{position:fixed;top:-100px;right:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(245,167,66,0.06) 0%,transparent 65%);pointer-events:none;z-index:0;}
+    .blob-b{position:fixed;bottom:-80px;left:0;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(62,207,207,0.05) 0%,transparent 65%);pointer-events:none;z-index:0;}
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;background:rgba(8,11,20,0.82);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+    .logo{font-family:var(--fh);font-size:20px;font-weight:700;color:var(--amber);letter-spacing:-0.02em;text-decoration:none;}
+    .back-btn{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;text-decoration:none;transition:color .2s;}
+    .back-btn:hover{color:var(--text);}
+    main{position:relative;z-index:1;flex:1;padding:80px 24px 48px;max-width:760px;margin:0 auto;width:100%;}
+    .doc-header{margin-bottom:40px;padding-bottom:28px;border-bottom:1px solid var(--border);}
+    .doc-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(62,207,207,0.1);border:1px solid rgba(62,207,207,0.2);border-radius:100px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--teal);font-family:var(--fh);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:16px;}
+    .doc-title{font-family:var(--fh);font-size:28px;font-weight:700;letter-spacing:-0.02em;margin-bottom:8px;}
+    .doc-meta{font-size:12px;color:var(--muted);}
+    .doc-meta span{margin-right:16px;}
+    .doc-content{line-height:1.75;}
+    .doc-content h2{font-family:var(--fh);font-size:16px;font-weight:700;color:var(--teal);margin:36px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+    .doc-content h3{font-family:var(--fh);font-size:14px;font-weight:600;color:var(--amber);margin:24px 0 8px;}
+    .doc-content p{font-size:14px;color:#b8bdd4;margin-bottom:14px;}
+    .doc-content ul{list-style:none;padding:0;margin-bottom:14px;}
+    .doc-content ul li{font-size:14px;color:#b8bdd4;padding:5px 0 5px 20px;position:relative;}
+    .doc-content ul li::before{content:'–';position:absolute;left:0;color:var(--muted);}
+    .doc-content .highlight{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:0 var(--r) var(--r) 0;padding:14px 18px;margin:18px 0;font-size:13px;color:var(--muted);}
+    .rights-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0;}
+    .right-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
+    .right-card-title{font-family:var(--fh);font-size:12px;font-weight:600;color:var(--teal);margin-bottom:4px;}
+    .right-card-desc{font-size:12px;color:var(--muted);}
+    .data-table{width:100%;border-collapse:collapse;margin:18px 0;font-size:12px;}
+    .data-table th{background:rgba(62,207,207,0.08);color:var(--teal);font-family:var(--fh);font-weight:600;padding:10px 14px;text-align:left;border:1px solid var(--border);}
+    .data-table td{padding:10px 14px;color:#b8bdd4;border:1px solid var(--border);vertical-align:top;}
+    .data-table tr:nth-child(even) td{background:var(--surface);}
+    footer{position:relative;z-index:1;text-align:center;padding:16px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);}
+    @media(max-width:600px){.doc-title{font-size:22px;}.rights-grid{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+  <div class="blob-a"></div><div class="blob-b"></div>
+  <header class="topbar">
+    <a href="/" class="logo">Artio</a>
+    <a href="javascript:history.back()" class="back-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Retour
+    </a>
+  </header>
+
+  <main>
+    <div class="doc-header">
+      <div class="doc-badge">🔒 RGPD</div>
+      <div class="doc-title">Politique de Confidentialité</div>
+      <div class="doc-meta">
+        <span>Service Artio — monartio.fr</span>
+        <span>Version 2.0 — Avril 2026</span>
+      </div>
+    </div>
+
+    <div class="doc-content">
+
+      <h2>1. Qui sommes-nous ?</h2>
+      <p>Le responsable du traitement de vos données personnelles est :</p>
+      <ul>
+        <li><strong>Curtys Personnat-Seymour</strong>, auto-entrepreneur</li>
+        <li>SIRET : 91450628200021</li>
+        <li>Adresse : 5 rue de Chaage, 77100 Meaux</li>
+        <li>Email : <a href="mailto:contact@monartio.fr" style="color:var(--teal)">contact@monartio.fr</a></li>
+        <li>Site web : <a href="https://monartio.fr" style="color:var(--teal)">monartio.fr</a></li>
+      </ul>
+      <p>Nous déterminons les finalités et les moyens du traitement de vos données conformément au <strong>RGPD (Règlement UE 2016/679)</strong> et à la loi Informatique et Libertés.</p>
+
+      <h2>2. Quelles données collectons-nous ?</h2>
+      <h3>2.1 Données d'identification et de contact</h3>
+      <ul>
+        <li>Nom et prénom</li>
+        <li>Adresse email professionnelle</li>
+        <li>Numéro de téléphone (optionnel)</li>
+        <li>Adresse professionnelle, SIRET, numéro de TVA</li>
+      </ul>
+      <h3>2.2 Données liées à l'activité professionnelle</h3>
+      <ul>
+        <li>Informations sur vos clients (nom, email, adresse, SIRET)</li>
+        <li>Devis et factures générés via le Service</li>
+        <li>Données de signature électronique (IP du signataire, horodatage, email, hash du document)</li>
+        <li>Rendez-vous et événements du calendrier</li>
+        <li>IBAN (pour facturation électronique, optionnel)</li>
+      </ul>
+      <h3>2.3 Données de facturation</h3>
+      <ul>
+        <li>Traitement exclusivement par Stripe — nous ne stockons pas vos données de carte bancaire</li>
+        <li>Historique des abonnements et transactions</li>
+      </ul>
+      <h3>2.4 Données techniques</h3>
+      <ul>
+        <li>Adresse IP et informations de connexion</li>
+        <li>Journaux d'accès et d'actions (fins de sécurité et détection de fraude)</li>
+      </ul>
+      <h3>2.5 Données transmises à l'IA</h3>
+      <p>Lors de l'utilisation des fonctionnalités IA, le contenu dicté ou saisi (descriptions de prestations, montants, coordonnées client) est transmis à l'API Anthropic pour générer le document demandé.</p>
+      <div class="highlight">
+        <strong>Important :</strong> Conformément à la politique de l'API Anthropic, les données transmises via l'API <strong>ne sont pas utilisées pour entraîner les modèles</strong> d'Anthropic. Artio n'a pas activé d'opt-in d'entraînement. Anthropic peut conserver les requêtes temporairement à des fins de sécurité, conformément à sa propre politique (consultable sur anthropic.com).
+      </div>
+      <h3>2.6 Données issues de l'intégration Gmail (si activée)</h3>
+      <ul>
+        <li>Accès en lecture aux emails (affichage dans Artio, sous consentement explicite)</li>
+        <li>Accès en écriture pour l'envoi d'emails depuis votre compte Gmail</li>
+        <li>Tokens d'accès OAuth 2.0 (stockés de manière sécurisée, révocables à tout moment)</li>
+      </ul>
+
+      <h2>3. Pourquoi collectons-nous vos données ?</h2>
+      <table class="data-table">
+        <thead><tr><th>Finalité</th><th>Base légale</th><th>Durée de conservation</th></tr></thead>
+        <tbody>
+          <tr><td>Création et gestion du compte</td><td>Exécution du contrat</td><td>3 ans après clôture</td></tr>
+          <tr><td>Fourniture du Service (devis, factures)</td><td>Exécution du contrat</td><td>10 ans (obligation comptable)</td></tr>
+          <tr><td>Facturation et abonnements Stripe</td><td>Contrat + obligation légale</td><td>10 ans</td></tr>
+          <tr><td>Emails transactionnels (OTP, notifications)</td><td>Exécution du contrat</td><td>1 an</td></tr>
+          <tr><td>Signature électronique</td><td>Contrat + intérêt légitime (preuve)</td><td>10 ans</td></tr>
+          <tr><td>Génération IA (transmission à Anthropic)</td><td>Exécution du contrat</td><td>Non conservé au-delà du temps strictement nécessaire</td></tr>
+          <tr><td>Journaux de sécurité et détection de fraude</td><td>Intérêt légitime</td><td>1 an (courant), 3 ans (incidents)</td></tr>
+          <tr><td>Statistiques d'amélioration du Service</td><td>Intérêt légitime</td><td>2 ans (données anonymisées)</td></tr>
+          <tr><td>Communication sur mises à jour et offres</td><td>Consentement</td><td>Jusqu'au désabonnement</td></tr>
+          <tr><td>Intégration Gmail (envoi/lecture)</td><td>Consentement explicite OAuth</td><td>Révocable à tout moment</td></tr>
+        </tbody>
+      </table>
+
+      <h2>4. Avec qui partageons-nous vos données ?</h2>
+      <p>Nous ne vendons jamais vos données. Certaines données sont partagées avec des sous-traitants nécessaires au fonctionnement du Service, soumis à des obligations contractuelles conformes au RGPD.</p>
+      <table class="data-table">
+        <thead><tr><th>Sous-traitant</th><th>Rôle</th><th>Pays</th><th>Garanties</th></tr></thead>
+        <tbody>
+          <tr><td>Supabase</td><td>Base de données</td><td>USA / UE</td><td>SCCs RGPD</td></tr>
+          <tr><td>Vercel</td><td>Hébergement app</td><td>USA / UE</td><td>SCCs RGPD + DPA</td></tr>
+          <tr><td>Stripe</td><td>Paiements</td><td>USA / UE</td><td>SCCs + PCI-DSS + DPF</td></tr>
+          <tr><td>Resend</td><td>Emails transactionnels</td><td>USA</td><td>SCCs RGPD + DPA</td></tr>
+          <tr><td>Anthropic</td><td>IA générative (Claude)</td><td>USA</td><td>SCCs RGPD + DPA + pas d'entraînement</td></tr>
+          <tr><td>Google (Gmail API)</td><td>Intégration messagerie (opt.)</td><td>USA / UE</td><td>SCCs + Data Privacy Framework (DPF) 2023, ou tout mécanisme équivalent reconnu par la Commission européenne</td></tr>
+        </tbody>
+      </table>
+      <h3>4.1 Transferts hors Union européenne</h3>
+      <p>Les transferts hors UE sont encadrés par :</p>
+      <ul>
+        <li><strong>Clauses Contractuelles Types (SCCs)</strong> adoptées par la Commission européenne (décision 2021/914)</li>
+        <li><strong>Data Privacy Framework (DPF) UE-USA</strong> (en vigueur depuis juillet 2023, décision d'adéquation de la Commission)</li>
+      </ul>
+      <p>Ces garanties assurent un niveau de protection substantiellement équivalent au RGPD.</p>
+
+      <h2>5. Vos droits</h2>
+      <p>Conformément au RGPD, vous disposez des droits suivants :</p>
+      <div class="rights-grid">
+        <div class="right-card"><div class="right-card-title">Droit d'accès</div><div class="right-card-desc">Obtenir une copie de vos données</div></div>
+        <div class="right-card"><div class="right-card-title">Droit de rectification</div><div class="right-card-desc">Corriger des données inexactes</div></div>
+        <div class="right-card"><div class="right-card-title">Droit à l'effacement</div><div class="right-card-desc">Demander la suppression (sous réserve des obligations légales)</div></div>
+        <div class="right-card"><div class="right-card-title">Droit à la portabilité</div><div class="right-card-desc">Recevoir vos données en CSV ou JSON</div></div>
+        <div class="right-card"><div class="right-card-title">Droit d'opposition</div><div class="right-card-desc">S'opposer aux traitements sur intérêt légitime</div></div>
+        <div class="right-card"><div class="right-card-title">Droit à la limitation</div><div class="right-card-desc">Restreindre temporairement l'utilisation</div></div>
+        <div class="right-card"><div class="right-card-title">Retrait du consentement</div><div class="right-card-desc">Révoquer Gmail depuis les paramètres ou myaccount.google.com</div></div>
+        <div class="right-card"><div class="right-card-title">Recours CNIL</div><div class="right-card-desc">Déposer une réclamation sur cnil.fr</div></div>
+      </div>
+      <p>Pour exercer vos droits : <a href="mailto:contact@monartio.fr" style="color:var(--teal)">contact@monartio.fr</a>. Réponse sous 30 jours.</p>
+
+      <h2>6. Sécurité des données</h2>
+      <ul>
+        <li>Chiffrement en transit (HTTPS/TLS) et au repos</li>
+        <li>Authentification par code OTP — aucun mot de passe stocké</li>
+        <li>Row Level Security (RLS) Supabase : chaque utilisateur n'accède qu'à ses propres données</li>
+        <li>Tokens OAuth Gmail stockés de manière sécurisée, jamais exposés côté client</li>
+        <li>Journaux : 1 an (courant), 3 ans (incidents de sécurité)</li>
+      </ul>
+      <p>En cas de violation de données, nous notifions la <strong>CNIL sous 72 heures</strong> (article 33 RGPD) et vous informons dans les meilleurs délais si le risque est élevé.</p>
+
+      <h2>7. Intégration Gmail — traitement spécifique</h2>
+      <h3>7.1 Données accédées</h3>
+      <p>L'accès est strictement limité aux actions initiées par l'Utilisateur. Aucun parcours automatique de la boîte mail, aucune lecture en masse, aucune indexation systématique.</p>
+      <h3>7.2 Utilisation des données Gmail</h3>
+      <p>Les données Gmail sont utilisées exclusivement pour afficher les emails dans Artio, générer des réponses assistées par IA (sur demande explicite), et envoyer des emails validés. Elles ne sont <strong>pas</strong> utilisées à des fins publicitaires, partagées avec des tiers inutiles, ni utilisées pour entraîner des modèles d'IA.</p>
+      <p>Aucun accès humain aux emails n'est effectué par l'Éditeur, sauf nécessité technique exceptionnelle (incident de sécurité, débogage critique) et dans ce cas uniquement dans le strict minimum nécessaire, sans lecture du contenu des messages.</p>
+      <h3>7.3 Conformité Google</h3>
+      <p>L'utilisation de l'API Gmail est conforme à la <strong>Google API Services User Data Policy</strong>, notamment la politique d'utilisation limitée (Limited Use Policy).</p>
+
+      <h2>8. IA — traitement spécifique</h2>
+      <h3>8.1 Données transmises à Anthropic</h3>
+      <p>Le contenu dicté ou saisi est transmis à l'API Anthropic pour générer le document demandé. Ces transmissions sont limitées au strict minimum nécessaire.</p>
+      <h3>8.2 Absence d'entraînement</h3>
+      <p>Les données transmises via l'API ne sont pas utilisées pour entraîner les modèles d'Anthropic. Artio n'a pas activé de programme d'opt-in d'entraînement.</p>
+      <h3>8.3 Données sensibles</h3>
+      <p>L'Utilisateur est invité à ne pas transmettre de données personnelles sensibles au sens de l'article 9 du RGPD (santé, origine ethnique, religion, etc.) via les fonctionnalités IA.</p>
+
+      <h2>9. Cookies et traceurs</h2>
+      <p>Artio utilise uniquement des cookies strictement nécessaires au fonctionnement du Service (session, authentification). Aucun cookie publicitaire ou de pistage tiers. Si des outils d'analyse étaient ajoutés à l'avenir, cette politique serait mise à jour et un bandeau de consentement proposé.</p>
+
+      <h2>10. Mineurs</h2>
+      <p>Le Service est exclusivement destiné aux professionnels majeurs. Nous ne collectons pas sciemment de données de personnes de moins de 18 ans.</p>
+
+      <h2>11. Modifications</h2>
+      <p>Cette politique peut être modifiée à tout moment. En cas de modification substantielle, vous serez notifié par email au moins 15 jours avant l'entrée en vigueur. La version en vigueur est toujours accessible sur <a href="https://monartio.fr/confidentialite.html" style="color:var(--teal)">monartio.fr/confidentialite</a>.</p>
+
+      <h2>12. Contact</h2>
+      <ul>
+        <li>Email : <a href="mailto:contact@monartio.fr" style="color:var(--teal)">contact@monartio.fr</a></li>
+        <li>Adresse : Curtys Personnat-Seymour, 5 rue de Chaage, 77100 Meaux</li>
+        <li>CNIL : <a href="https://www.cnil.fr" target="_blank" rel="noopener" style="color:var(--teal)">www.cnil.fr</a></li>
+      </ul>
+
+    </div>
+  </main>
+
+  <footer>
+    <span>Politique de Confidentialité — Artio — Version 2.0 — Avril 2026</span>
+  </footer>
+  <script src="legal-footer.js"></script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>CGV — Artio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#080b14;--surface:#0e1220;--surface-2:#141829;--border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.13);--text:#e2e5f1;--muted:#6b7494;--amber:#f5a742;--amber-dim:rgba(245,167,66,0.12);--amber-glow:rgba(245,167,66,0.28);--teal:#3ecfcf;--fh:'Space Grotesk',sans-serif;--fb:'Plus Jakarta Sans',sans-serif;--r:14px; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+    body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");opacity:0.4;}
+    .blob-a{position:fixed;top:-100px;right:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(245,167,66,0.06) 0%,transparent 65%);pointer-events:none;z-index:0;}
+    .blob-b{position:fixed;bottom:-80px;left:0;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(62,207,207,0.05) 0%,transparent 65%);pointer-events:none;z-index:0;}
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;background:rgba(8,11,20,0.82);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+    .logo{font-family:var(--fh);font-size:20px;font-weight:700;color:var(--amber);letter-spacing:-0.02em;text-decoration:none;}
+    .back-btn{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;text-decoration:none;transition:color .2s;}
+    .back-btn:hover{color:var(--text);}
+    main{position:relative;z-index:1;flex:1;padding:80px 24px 48px;max-width:760px;margin:0 auto;width:100%;}
+    .doc-header{margin-bottom:40px;padding-bottom:28px;border-bottom:1px solid var(--border);}
+    .doc-badge{display:inline-flex;align-items:center;gap:6px;background:var(--amber-dim);border:1px solid rgba(245,167,66,0.2);border-radius:100px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--amber);font-family:var(--fh);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:16px;}
+    .doc-title{font-family:var(--fh);font-size:28px;font-weight:700;letter-spacing:-0.02em;margin-bottom:8px;}
+    .doc-meta{font-size:12px;color:var(--muted);}
+    .doc-meta span{margin-right:16px;}
+    .doc-content{line-height:1.75;}
+    .doc-content h2{font-family:var(--fh);font-size:16px;font-weight:700;color:var(--amber);margin:36px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+    .doc-content h3{font-family:var(--fh);font-size:14px;font-weight:600;color:var(--teal);margin:24px 0 8px;}
+    .doc-content p{font-size:14px;color:#b8bdd4;margin-bottom:14px;}
+    .doc-content ul{list-style:none;padding:0;margin-bottom:14px;}
+    .doc-content ul li{font-size:14px;color:#b8bdd4;padding:5px 0 5px 20px;position:relative;}
+    .doc-content ul li::before{content:'–';position:absolute;left:0;color:var(--muted);}
+    .doc-content .highlight{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:0 var(--r) var(--r) 0;padding:14px 18px;margin:18px 0;font-size:13px;color:var(--muted);}
+    .price-table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13px;}
+    .price-table th{background:rgba(245,167,66,0.08);color:var(--amber);font-family:var(--fh);font-weight:600;padding:10px 14px;text-align:left;border:1px solid var(--border);}
+    .price-table td{padding:10px 14px;color:#b8bdd4;border:1px solid var(--border);}
+    .price-table tr:nth-child(even) td{background:var(--surface);}
+    footer{position:relative;z-index:1;text-align:center;padding:16px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);}
+    @media(max-width:600px){.doc-title{font-size:22px;}}
+  </style>
+</head>
+<body>
+  <div class="blob-a"></div><div class="blob-b"></div>
+  <header class="topbar">
+    <a href="/" class="logo">Artio</a>
+    <a href="javascript:history.back()" class="back-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Retour
+    </a>
+  </header>
+
+  <main>
+    <div class="doc-header">
+      <div class="doc-badge">💳 Vente</div>
+      <div class="doc-title">Conditions Générales de Vente</div>
+      <div class="doc-meta">
+        <span>Service Artio — monartio.fr</span>
+        <span>Version 2.0 — Avril 2026</span>
+      </div>
+    </div>
+
+    <div class="doc-content">
+
+      <h2>Article 1 – Présentation du vendeur</h2>
+      <ul>
+        <li>Nom : <strong>Curtys Personnat-Seymour</strong></li>
+        <li>Statut : Auto-entrepreneur (micro-entreprise)</li>
+        <li>SIRET : 91450628200021</li>
+        <li>Adresse : 5 rue de Chaage, 77100 Meaux</li>
+        <li>Email : <a href="mailto:contact@monartio.fr" style="color:var(--teal)">contact@monartio.fr</a></li>
+        <li>Site web : <a href="https://monartio.fr" style="color:var(--teal)">monartio.fr</a></li>
+      </ul>
+      <p>En tant qu'auto-entrepreneur non assujetti à la TVA (franchise en base — article 293 B du CGI), la mention <strong>« TVA non applicable — article 293 B du CGI »</strong> figure sur chaque facture.</p>
+
+      <h2>Article 2 – Champ d'application</h2>
+      <p>Les présentes CGV s'appliquent à tout achat d'abonnement Artio effectué via monartio.fr. Le Service est exclusivement destiné à des <strong>professionnels (B2B)</strong>. Les dispositions protectrices du Code de la consommation ne s'appliquent pas entre professionnels. Toute commande implique l'acceptation des présentes CGV.</p>
+
+      <h2>Article 3 – Description des offres</h2>
+      <p>Artio propose un service de gestion administrative par abonnement mensuel incluant notamment :</p>
+      <ul>
+        <li>Génération de devis et factures par IA vocale</li>
+        <li>Gestion des clients et dossiers commerciaux</li>
+        <li>Calendrier professionnel et rendez-vous</li>
+        <li>Signature électronique simple (eIDAS)</li>
+        <li>Tableau de bord financier</li>
+        <li>Envoi d'emails générés par IA</li>
+        <li>Intégration Gmail optionnelle</li>
+      </ul>
+
+      <h2>Article 4 – Tarifs</h2>
+      <h3>4.1 Prix</h3>
+      <table class="price-table">
+        <thead><tr><th>Formule</th><th>Prix mensuel</th><th>Engagement</th></tr></thead>
+        <tbody>
+          <tr><td>Artio Starter</td><td>Voir monartio.fr</td><td>Mensuel, sans engagement</td></tr>
+          <tr><td>Artio Pro</td><td>Voir monartio.fr</td><td>Mensuel, sans engagement</td></tr>
+        </tbody>
+      </table>
+      <p>Prix en euros, HT = TTC (franchise TVA). Les prix en vigueur sont ceux affichés sur monartio.fr au moment de la souscription.</p>
+      <h3>4.2 Modification des tarifs</h3>
+      <p>Toute modification est notifiée 30 jours à l'avance. L'Abonné qui refuse peut résilier sans frais avant l'entrée en vigueur.</p>
+
+      <h2>Article 5 – Modalités de commande</h2>
+      <p>Souscription en ligne sur monartio.fr : sélection de la formule → saisie des informations de paiement sur Stripe → validation → email de confirmation. L'accès est activé immédiatement après confirmation du paiement.</p>
+
+      <h2>Article 6 – Paiement</h2>
+      <h3>6.1 Modalités</h3>
+      <p>Paiement par carte bancaire via <strong>Stripe</strong> (Visa, Mastercard, American Express). L'Éditeur ne stocke aucune donnée bancaire. Stripe est certifié PCI-DSS.</p>
+      <h3>6.2 Facturation et renouvellement</h3>
+      <p>L'abonnement est facturé mensuellement à la date anniversaire, avec renouvellement automatique. Une facture est émise par Stripe à chaque échéance.</p>
+      <h3>6.3 Défaut de paiement</h3>
+      <p>En cas d'échec de paiement, le Service peut être suspendu après 7 jours de notification, puis résilié après 30 jours sans régularisation.</p>
+
+      <h2>Article 7 – Résiliation et remboursement</h2>
+      <h3>7.1 Résiliation par l'Abonné</h3>
+      <p>Résiliation à tout moment sans pénalité depuis l'espace personnel ou par email à <a href="mailto:contact@monartio.fr" style="color:var(--teal)">contact@monartio.fr</a>. Effet à la fin de la période en cours, sans remboursement au prorata.</p>
+      <h3>7.2 Résiliation par l'Éditeur</h3>
+      <p>En cas de violation des CGU ou CGV, l'Éditeur peut résilier sans remboursement. En cas de cessation définitive du Service, les Abonnés sont informés 60 jours à l'avance et remboursés au prorata.</p>
+      <h3>7.3 Droit de rétractation</h3>
+      <div class="highlight">Le Service étant B2B, le droit de rétractation légal ne s'applique pas. À titre commercial uniquement, l'Éditeur accorde une période de satisfaction de <strong>7 jours</strong> suivant la première souscription : remboursement intégral du premier mois si l'usage a été non significatif, sur demande à <a href="mailto:contact@monartio.fr" style="color:var(--amber)">contact@monartio.fr</a>.</div>
+
+      <h2>Article 8 – Intelligence artificielle — limites et responsabilités</h2>
+      <h3>8.1 Nature de l'IA intégrée</h3>
+      <p>Le Service intègre l'API Anthropic (Claude) pour la génération de documents commerciaux par dictée vocale ou instructions textuelles.</p>
+      <h3>8.2 Caractère assisté et non décisionnaire</h3>
+      <p>Les contenus générés constituent exclusivement un <strong>outil d'assistance à la rédaction</strong>. L'Éditeur n'apporte aucune garantie sur leur exactitude, l'absence d'hallucinations, ou leur conformité légale, fiscale ou réglementaire.</p>
+      <h3>8.3 Obligation de validation humaine</h3>
+      <p>L'Abonné s'engage à vérifier et valider systématiquement tout document généré par l'IA avant tout envoi, usage commercial, dépôt comptable ou engagement juridique. Il est seul responsable des conséquences fiscales, sociales ou juridiques résultant de l'usage de ces documents.</p>
+      <h3>8.4 Absence de conseil</h3>
+      <p>Le Service ne constitue pas un conseil juridique, fiscal, comptable ou financier. L'Abonné est invité à consulter un professionnel qualifié pour toute question de conformité.</p>
+
+      <h2>Article 9 – Intégration Gmail</h2>
+      <p>L'intégration Gmail est optionnelle, activée sous consentement OAuth 2.0 explicite. L'Abonné est seul responsable du contenu des emails envoyés via son compte Gmail. L'Éditeur ne saurait être responsable des communications émises depuis le compte de l'Abonné. Les données Gmail sont traitées conformément à la <a href="/confidentialite.html" style="color:var(--teal)">Politique de Confidentialité</a>.</p>
+
+      <h2>Article 10 – Disponibilité du Service et maintenance</h2>
+      <p>L'Éditeur s'efforce d'assurer la disponibilité du Service mais ne peut la garantir. Des interruptions peuvent survenir pour maintenance planifiée, pannes chez des prestataires tiers, événements de force majeure, ou incidents de sécurité. Aucune indemnisation n'est due en cas d'interruption, sauf faute grave de l'Éditeur dûment démontrée.</p>
+
+      <h2>Article 11 – Sous-traitants et partenaires techniques</h2>
+      <table class="price-table">
+        <thead><tr><th>Prestataire</th><th>Rôle</th><th>Données concernées</th></tr></thead>
+        <tbody>
+          <tr><td>Supabase</td><td>Hébergement base de données</td><td>Toutes les données du compte</td></tr>
+          <tr><td>Vercel</td><td>Hébergement application</td><td>Données de navigation</td></tr>
+          <tr><td>Stripe</td><td>Paiements et facturation</td><td>Données de paiement</td></tr>
+          <tr><td>Resend</td><td>Emails transactionnels</td><td>Adresse email, notifications</td></tr>
+          <tr><td>Anthropic (Claude)</td><td>IA générative</td><td>Contenu dicté pour génération</td></tr>
+          <tr><td>Google (Gmail API)</td><td>Intégration messagerie (opt.)</td><td>Emails (si activé)</td></tr>
+        </tbody>
+      </table>
+      <p>Ces prestataires sont soumis à des obligations de confidentialité conformes au RGPD. L'Éditeur se réserve le droit de modifier ses prestataires en cas de changement substantiel affectant les données.</p>
+
+      <h2>Article 12 – Sauvegarde des données et réversibilité</h2>
+      <h3>12.1 Sauvegarde</h3>
+      <p>L'Éditeur met en œuvre des sauvegardes régulières. L'Abonné est également responsable de la sauvegarde de ses propres données. L'Éditeur ne saurait être responsable d'une perte de données résultant d'une défaillance technique, d'une erreur de manipulation ou d'un cas de force majeure.</p>
+      <h3>12.2 Export et réversibilité</h3>
+      <p>L'Abonné peut exporter ses données depuis l'interface Artio. En cas de résiliation, les données restent accessibles 30 jours pour export, puis sont supprimées définitivement.</p>
+
+      <h2>Article 13 – Évolution du Service</h2>
+      <p>L'Éditeur peut faire évoluer le Service à tout moment. Les fonctionnalités bêta sont signalées dans l'interface et fournies sans garantie de stabilité. En cas de suppression d'une fonctionnalité substantielle, les Abonnés sont informés 30 jours à l'avance avec possibilité de résiliation sans frais.</p>
+      <p>Le Service peut évoluer pour se conformer aux évolutions réglementaires ou législatives (facturation électronique, RGPD, AI Act, etc.). Ces adaptations peuvent être implémentées sans préavis spécifique lorsqu'elles résultent d'une obligation légale.</p>
+
+      <h2>Article 14 – Responsabilité</h2>
+      <h3>14.1 Obligations de l'Éditeur</h3>
+      <p>L'Éditeur s'engage à fournir le Service avec diligence. Il s'agit d'une obligation de moyens et non de résultat.</p>
+      <h3>14.2 Limitation de responsabilité</h3>
+      <p>L'Éditeur ne saurait être tenu responsable :</p>
+      <ul>
+        <li>Des erreurs ou hallucinations IA utilisées sans vérification</li>
+        <li>Des conséquences fiscales, sociales ou juridiques des documents générés</li>
+        <li>Du contenu des emails envoyés via Gmail par l'Abonné</li>
+        <li>D'une perte de données résultant d'une défaillance technique ou d'un défaut de sauvegarde</li>
+        <li>Des dommages indirects ou pertes commerciales</li>
+        <li>Des interruptions liées à des prestataires tiers</li>
+      </ul>
+      <p>En tout état de cause, la responsabilité de l'Éditeur est plafonnée au total des sommes payées au cours des <strong>3 derniers mois</strong> précédant le préjudice.</p>
+
+      <h2>Article 15 – Propriété intellectuelle</h2>
+      <p>Le Service, son interface et son code sont la propriété exclusive de l'Éditeur. La souscription confère un droit d'usage personnel, non exclusif et non cessible. Les documents créés par l'Abonné lui appartiennent entièrement.</p>
+
+      <h2>Article 16 – Confidentialité et données personnelles</h2>
+      <p>Le traitement des données est régi par la <a href="/confidentialite.html" style="color:var(--teal)">Politique de Confidentialité</a> disponible sur monartio.fr/confidentialite.</p>
+
+      <h2>Article 17 – Force majeure</h2>
+      <p>Aucune des parties ne pourra être tenue responsable en cas de force majeure au sens de l'article 1218 du Code civil.</p>
+
+      <h2>Article 18 – Droit applicable et règlement des litiges</h2>
+      <p>Les présentes CGV sont soumises au droit français. Tout litige non résolu amiablement dans un délai de 30 jours sera soumis à la compétence exclusive du <strong>Tribunal de Commerce de Meaux</strong>.</p>
+
+      <h2>Article 19 – Contact</h2>
+      <ul>
+        <li>Email : <a href="mailto:contact@monartio.fr" style="color:var(--teal)">contact@monartio.fr</a></li>
+        <li>Site web : <a href="https://monartio.fr" style="color:var(--teal)">monartio.fr</a></li>
+        <li>Adresse : Curtys Personnat-Seymour, 5 rue de Chaage, 77100 Meaux</li>
+      </ul>
+
+    </div>
+  </main>
+
+  <footer>
+    <span>Conditions Générales de Vente — Artio — Version 2.0 — Avril 2026</span>
+  </footer>
+  <script src="legal-footer.js"></script>
+</body>
+</html>

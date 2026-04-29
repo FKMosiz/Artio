@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>CGU — Artio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080b14; --surface: #0e1220; --surface-2: #141829;
+      --border: rgba(255,255,255,0.07); --border-hi: rgba(255,255,255,0.13);
+      --text: #e2e5f1; --muted: #6b7494; --amber: #f5a742;
+      --amber-dim: rgba(245,167,66,0.12); --amber-glow: rgba(245,167,66,0.28);
+      --teal: #3ecfcf; --fh: 'Space Grotesk', sans-serif; --fb: 'Plus Jakarta Sans', sans-serif; --r: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--fb); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); opacity: 0.4; }
+    .blob-a { position: fixed; top: -100px; right: -100px; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(245,167,66,0.06) 0%, transparent 65%); pointer-events: none; z-index: 0; }
+    .blob-b { position: fixed; bottom: -80px; left: 0; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(62,207,207,0.05) 0%, transparent 65%); pointer-events: none; z-index: 0; }
+
+    /* TOPBAR */
+    .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 60px; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; background: rgba(8,11,20,0.82); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+    .logo { font-family: var(--fh); font-size: 20px; font-weight: 700; color: var(--amber); letter-spacing: -0.02em; text-decoration: none; }
+    .back-btn { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; text-decoration: none; transition: color .2s; }
+    .back-btn:hover { color: var(--text); }
+    .back-btn svg { flex-shrink: 0; }
+
+    /* MAIN */
+    main { position: relative; z-index: 1; flex: 1; padding: 80px 24px 48px; max-width: 760px; margin: 0 auto; width: 100%; }
+
+    /* DOC HEADER */
+    .doc-header { margin-bottom: 40px; padding-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .doc-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--amber-dim); border: 1px solid rgba(245,167,66,0.2); border-radius: 100px; padding: 4px 12px; font-size: 11px; font-weight: 600; color: var(--amber); font-family: var(--fh); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 16px; }
+    .doc-title { font-family: var(--fh); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .doc-meta { font-size: 12px; color: var(--muted); }
+    .doc-meta span { margin-right: 16px; }
+
+    /* CONTENT */
+    .doc-content { line-height: 1.75; }
+    .doc-content h2 { font-family: var(--fh); font-size: 16px; font-weight: 700; color: var(--amber); margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .doc-content h3 { font-family: var(--fh); font-size: 14px; font-weight: 600; color: var(--teal); margin: 24px 0 8px; }
+    .doc-content p { font-size: 14px; color: #b8bdd4; margin-bottom: 14px; }
+    .doc-content ul { list-style: none; padding: 0; margin-bottom: 14px; }
+    .doc-content ul li { font-size: 14px; color: #b8bdd4; padding: 5px 0 5px 20px; position: relative; }
+    .doc-content ul li::before { content: '–'; position: absolute; left: 0; color: var(--muted); }
+    .doc-content .highlight { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--amber); border-radius: 0 var(--r) var(--r) 0; padding: 14px 18px; margin: 18px 0; font-size: 13px; color: var(--muted); }
+
+    /* FOOTER */
+    footer { position: relative; z-index: 1; text-align: center; padding: 16px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); }
+
+    @media (max-width: 600px) { .doc-title { font-size: 22px; } }
+  </style>
+</head>
+<body>
+  <div class="blob-a"></div>
+  <div class="blob-b"></div>
+
+  <header class="topbar">
+    <a href="/" class="logo">Artio</a>
+    <a href="javascript:history.back()" class="back-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Retour
+    </a>
+  </header>
+
+  <main>
+    <div class="doc-header">
+      <div class="doc-badge">⚖ Juridique</div>
+      <div class="doc-title">Conditions Générales d'Utilisation</div>
+      <div class="doc-meta">
+        <span>Service Artio — monartio.fr</span>
+        <span>Version 2.0 — Avril 2026</span>
+      </div>
+    </div>
+
+    <div class="doc-content">
+
+      <h2>Préambule</h2>
+      <p>Les présentes CGU régissent l'accès et l'utilisation de la plateforme Artio, éditée par <strong>Curtys Personnat-Seymour</strong>, auto-entrepreneur, SIRET 91450628200021, 5 rue de Chaage, 77100 Meaux.</p>
+      <p>Toute inscription ou utilisation du Service vaut acceptation pleine et entière des présentes CGU.</p>
+
+      <h2>Article 1 – Définitions</h2>
+      <ul>
+        <li><strong>« Service »</strong> : la plateforme Artio accessible sur monartio.fr.</li>
+        <li><strong>« Utilisateur »</strong> : toute personne disposant d'un compte actif sur le Service.</li>
+        <li><strong>« Compte »</strong> : l'espace personnel créé lors de l'inscription.</li>
+        <li><strong>« Contenu »</strong> : données, documents, devis, factures créés dans le Service.</li>
+        <li><strong>« Abonnement »</strong> : formule d'accès payant au Service.</li>
+        <li><strong>« IA »</strong> : fonctionnalités d'intelligence artificielle propulsées par l'API Anthropic (Claude).</li>
+        <li><strong>« Intégration Gmail »</strong> : fonctionnalité optionnelle permettant l'envoi et la lecture d'emails via le compte Gmail personnel de l'Utilisateur.</li>
+      </ul>
+
+      <h2>Article 2 – Accès au Service</h2>
+      <h3>2.1 Conditions d'accès</h3>
+      <p>Le Service est réservé aux professionnels agissant dans le cadre de leur activité. L'Utilisateur garantit l'exactitude des informations fournies lors de l'inscription.</p>
+      <h3>2.2 Création du compte</h3>
+      <p>L'inscription s'effectue via monartio.fr avec validation par code OTP email. Chaque adresse email ne peut être associée qu'à un seul compte. L'Utilisateur est seul responsable de la confidentialité de ses identifiants.</p>
+      <h3>2.3 Disponibilité du Service</h3>
+      <p>Le Service est fourni « en l'état », sans garantie de performance, de disponibilité continue ou d'adéquation à un usage particulier. L'Éditeur ne saurait être tenu responsable des interruptions liées à ses prestataires tiers (Supabase, Vercel, Anthropic, Google, Stripe, Resend).</p>
+
+      <h2>Article 3 – Fonctionnalités et limites</h2>
+      <h3>3.1 Fonctionnalités principales</h3>
+      <ul>
+        <li>Génération de devis et factures par dictée vocale assistée par IA</li>
+        <li>Gestion des dossiers clients et historique commercial</li>
+        <li>Calendrier et gestion des rendez-vous</li>
+        <li>Signature électronique de documents</li>
+        <li>Tableau de bord financier (KPIs, chiffre d'affaires)</li>
+        <li>Envoi d'emails professionnels générés par IA</li>
+        <li>Intégration Gmail optionnelle (envoi et lecture d'emails)</li>
+      </ul>
+      <h3>3.2 Fonctionnalités en version bêta</h3>
+      <p>Certaines fonctionnalités peuvent être proposées en version bêta, signalée dans l'interface. Elles sont fournies sans garantie de stabilité ou de continuité.</p>
+      <h3>3.3 Dépendance aux services tiers</h3>
+      <p>Certaines fonctionnalités dépendent de services tiers (API Anthropic, API Gmail, Stripe). L'Éditeur ne garantit pas la continuité de ces services.</p>
+      <h3>3.4 Limites liées à l'IA</h3>
+      <p>Les documents générés par l'IA constituent exclusivement un outil d'assistance à la rédaction. L'Utilisateur est seul responsable de leur vérification avant tout envoi ou utilisation légale, fiscale ou commerciale. L'Éditeur ne garantit pas l'exactitude ni l'absence d'hallucinations dans les contenus générés.</p>
+      <h3>3.5 Usages interdits des fonctionnalités IA</h3>
+      <p>L'Utilisateur s'interdit d'utiliser l'IA pour :</p>
+      <ul>
+        <li>Automatisation massive sans intervention humaine</li>
+        <li>Envoi de messages non sollicités (spam)</li>
+        <li>Détournement des fonctionnalités (scraping, revente, entraînement de modèles tiers)</li>
+        <li>Génération de contenus frauduleux, trompeurs ou illicites</li>
+      </ul>
+      <p>Tout usage abusif pourra entraîner la suspension immédiate du compte.</p>
+      <h3>3.6 Signature électronique</h3>
+      <p>La signature proposée est une signature électronique <strong>simple</strong> au sens du Règlement eIDAS n°910/2014. Elle ne constitue pas une signature avancée ou qualifiée.</p>
+
+      <h2>Article 4 – Intégration Gmail</h2>
+      <h3>4.1 Nature et caractère optionnel</h3>
+      <p>L'intégration Gmail est optionnelle et requiert un consentement explicite. Elle n'est pas activée par défaut.</p>
+      <h3>4.2 Consentement et révocabilité</h3>
+      <p>L'activation passe par le flux OAuth 2.0 de Google. Le consentement est révocable à tout moment depuis les paramètres du compte Artio ou via <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" style="color:var(--teal)">myaccount.google.com/permissions</a>.</p>
+      <h3>4.3 Périmètre d'accès</h3>
+      <ul>
+        <li><code style="color:var(--amber)">gmail.send</code> : envoi d'emails depuis le compte Gmail de l'Utilisateur</li>
+        <li><code style="color:var(--amber)">gmail.readonly</code> : lecture des emails pour affichage dans Artio</li>
+      </ul>
+      <p>Aucun accès humain aux emails n'est effectué par l'Éditeur, sauf nécessité technique exceptionnelle (incident de sécurité, débogage critique) et dans ce cas uniquement dans le strict minimum nécessaire, sans lecture du contenu des messages.</p>
+      <h3>4.4 Responsabilité sur les emails</h3>
+      <p>L'Utilisateur est seul responsable du contenu des emails envoyés, y compris ceux générés par l'IA. Il s'engage à ne pas utiliser l'intégration pour l'envoi de spam ou de contenus illicites.</p>
+      <h3>4.5 Données issues de Gmail</h3>
+      <p>Les données Gmail sont traitées conformément à la <a href="/confidentialite.html" style="color:var(--teal)">Politique de Confidentialité</a>. Elles ne sont pas utilisées à des fins publicitaires ni partagées au-delà des sous-traitants nécessaires.</p>
+
+      <h2>Article 5 – Abonnement et facturation</h2>
+      <h3>5.1 Modèle tarifaire</h3>
+      <p>L'accès complet est soumis à un Abonnement mensuel dont le montant est indiqué sur la page tarifaire de monartio.fr. En tant qu'auto-entrepreneur sous le régime de la franchise en base de TVA (article 293 B du CGI), aucune TVA n'est applicable (HT = TTC).</p>
+      <h3>5.2 Paiement</h3>
+      <p>Paiement par carte bancaire via Stripe. L'Abonnement est renouvelé automatiquement chaque mois, sauf résiliation préalable.</p>
+      <h3>5.3 Résiliation</h3>
+      <p>Résiliation possible à tout moment depuis l'espace personnel ou par email à <a href="mailto:contact@monartio.fr" style="color:var(--teal)">contact@monartio.fr</a>. Effet à la fin de la période en cours, sans remboursement partiel.</p>
+      <h3>5.4 Geste commercial de satisfaction</h3>
+      <div class="highlight">À titre purement commercial, l'Éditeur accorde une période de satisfaction de <strong>7 jours</strong> suivant la première souscription. Si l'Utilisateur n'a pas fait un usage significatif du Service, il peut demander le remboursement intégral de son premier mois à <a href="mailto:contact@monartio.fr" style="color:var(--amber)">contact@monartio.fr</a>. Ce geste est accordé à titre exceptionnel, uniquement pour la première souscription.</div>
+
+      <h2>Article 6 – Obligations de l'Utilisateur</h2>
+      <ul>
+        <li>Utiliser le Service conformément à sa destination</li>
+        <li>Ne pas utiliser le Service à des fins illicites ou frauduleuses</li>
+        <li>Ne pas contourner les mesures de sécurité</li>
+        <li>Ne pas envoyer de spam via l'intégration Gmail</li>
+        <li>Maintenir à jour les informations de son Compte</li>
+        <li>Ne pas partager ses identifiants avec des tiers</li>
+        <li>Signaler immédiatement à <a href="mailto:contact@monartio.fr" style="color:var(--teal)">contact@monartio.fr</a> tout accès non autorisé ou suspicion de compromission de ses identifiants. Jusqu'à cette notification, l'Utilisateur est seul responsable des actions réalisées depuis son compte.</li>
+        <li>Vérifier et valider tout document généré par l'IA avant utilisation</li>
+      </ul>
+
+      <h2>Article 7 – Données, sécurité et sauvegarde</h2>
+      <h3>7.1 Propriété des données</h3>
+      <p>L'Utilisateur demeure propriétaire de ses données. Il accorde à l'Éditeur une licence non exclusive et limitée pour héberger et afficher ces données dans le cadre du Service.</p>
+      <h3>7.2 Sauvegarde</h3>
+      <p>L'Éditeur met en œuvre des sauvegardes techniques régulières. Cependant, l'Utilisateur est également responsable de la sauvegarde de ses propres données. L'Éditeur ne saurait être tenu responsable d'une perte, corruption ou altération de données résultant d'une défaillance technique, d'une erreur de l'Utilisateur, ou d'un incident chez un prestataire d'hébergement. L'Éditeur ne garantit pas la conservation indéfinie des données, ni l'absence d'indisponibilité prolongée du Service.</p>
+      <h3>7.3 Export et réversibilité</h3>
+      <p>L'Utilisateur peut exporter ses données à tout moment. En cas de résiliation, les données restent accessibles 30 jours pour export, puis sont supprimées définitivement.</p>
+      <h3>7.4 Sécurité</h3>
+      <p>Mesures mises en œuvre : chiffrement HTTPS/TLS, authentification OTP, Row Level Security (RLS) Supabase, journalisation des accès sensibles.</p>
+      <h3>7.5 Sous-traitants et confidentialité</h3>
+      <p>Les données peuvent être partagées avec les sous-traitants nécessaires (Supabase, Stripe, Resend, Anthropic, Google, Vercel), dans le cadre de contrats conformes au RGPD. Consultez notre <a href="/confidentialite.html" style="color:var(--teal)">Politique de Confidentialité</a>.</p>
+
+      <h2>Article 8 – Propriété intellectuelle</h2>
+      <p>Le Service, son interface et son code sont la propriété exclusive de l'Éditeur. Les documents générés par l'Utilisateur (devis, factures) lui appartiennent entièrement.</p>
+
+      <h2>Article 9 – Responsabilité</h2>
+      <p>Le Service est fourni « en l'état », sans garantie d'exactitude, de performance ou d'adéquation à un usage particulier. L'Éditeur ne saurait être tenu responsable :</p>
+      <ul>
+        <li>Des erreurs ou hallucinations dans les documents générés par l'IA</li>
+        <li>Des conséquences fiscales, sociales ou juridiques des documents générés</li>
+        <li>Du contenu des emails envoyés via Gmail par l'Utilisateur</li>
+        <li>D'une perte, corruption ou altération de données résultant d'une défaillance technique ou d'une erreur de manipulation</li>
+        <li>Des dommages résultant d'une défaillance d'un sous-traitant tiers (Supabase, Vercel, Stripe, Resend, Anthropic, Google). L'Éditeur s'engage à sélectionner des prestataires sérieux mais ne peut garantir ni leur comportement ni leur disponibilité</li>
+        <li>Des dommages indirects ou pertes commerciales</li>
+      </ul>
+      <p>En tout état de cause, la responsabilité de l'Éditeur est plafonnée au total des sommes payées au cours des 3 derniers mois.</p>
+
+      <h2>Article 10 – Suspension et résiliation du compte</h2>
+      <p>L'Éditeur peut suspendre ou résilier tout compte en cas de violation des CGU, non-paiement, usage frauduleux, spam via Gmail, ou tentative de contournement des mécanismes de sécurité.</p>
+      <p>L'Utilisateur peut demander la suppression de son compte à <a href="mailto:contact@monartio.fr" style="color:var(--teal)">contact@monartio.fr</a>. Les données restent accessibles 30 jours pour export, puis sont supprimées.</p>
+
+      <h2>Article 11 – Modifications des CGU</h2>
+      <p>Les CGU peuvent être modifiées à tout moment. Les modifications sont notifiées par email au moins 15 jours avant leur entrée en vigueur. La poursuite de l'utilisation vaut acceptation.</p>
+
+      <h2>Article 12 – Droit applicable et juridiction</h2>
+      <p>Les présentes CGU sont soumises au droit français. En cas de litige non résolu amiablement dans un délai de 30 jours, le <strong>Tribunal de Commerce de Meaux</strong> sera seul compétent. Le Service étant exclusivement destiné à des professionnels (B2B), les dispositions du Code de la consommation relatives à la médiation de la consommation ne s'appliquent pas en principe.</p>
+
+      <h2>Article 13 – Contact</h2>
+      <ul>
+        <li>Email : <a href="mailto:contact@monartio.fr" style="color:var(--teal)">contact@monartio.fr</a></li>
+        <li>Site web : monartio.fr</li>
+        <li>Adresse : 5 rue de Chaage, 77100 Meaux</li>
+      </ul>
+
+    </div>
+  </main>
+
+  <footer>
+    <span>Conditions Générales d'Utilisation — Artio — Version 2.0 — Avril 2026</span>
+  </footer>
+
+  <script src="legal-footer.js"></script>
+</body>
+</html>
