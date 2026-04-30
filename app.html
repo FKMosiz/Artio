@@ -92,6 +92,19 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:999}
 .artio-field{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text)}
 @media(max-width:580px){.preview-grid{grid-template-columns:1fr}.btn-actions{gap:4px}.btn-small{font-size:11px;padding:4px 8px}.nav-links{display:none}.app{padding:14px 12px 40px}}
+
+    /* ── FOOTER LÉGAL ── */
+    .artio-legal-footer {
+      position: relative; z-index: 1;
+      text-align: center; padding: 12px 16px;
+      font-size: 11px; color: var(--muted, #6b7494);
+      border-top: 1px solid var(--border, rgba(255,255,255,0.07));
+    }
+    .artio-legal-footer a {
+      color: var(--muted, #6b7494); text-decoration: none;
+      transition: color 0.2s;
+    }
+    .artio-legal-footer a:hover { color: var(--amber, #f5a742); }
 </style>
 </head>
 <body>
@@ -1651,5 +1664,8 @@ initAuth();
 
 </script>
 <script src="chat-widget.js"></script>
+<div class="artio-legal-footer">
+  <a href="cgv.html">CGV</a> · <a href="cgu.html">CGU</a> · <a href="confidentialite.html">Politique de confidentialité</a>
+</div>
 </body>
 </html>
