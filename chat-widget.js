@@ -29,6 +29,7 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
 
   // ── STATE ─────────────────────────────────────────────
   let apiKey          = null;
+  let userId          = null; // pour le logging des tokens
   let userEmail       = null;
   let isOpen          = false;
   let isLoading       = false;
@@ -42,6 +43,7 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
       const { data: { session } } = await sbClient.auth.getSession();
       if (!session) return;
       userEmail = session.user.email;
+      userId    = session.user.id;
       const { data: profil } = await sbClient
         .from("profils").select("api_key")
         .eq("user_id", session.user.id).single();
@@ -61,6 +63,25 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
   function clearHistory() {
     history = [];
     localStorage.removeItem(STORAGE_KEY);
+  }
+
+  // ── LOG TOKENS (silencieux) ───────────────────────────
+  async function logTokens(usage) {
+    try {
+      if (!usage || !userId) return;
+      const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      const input  = usage.input_tokens  || 0;
+      const output = usage.output_tokens || 0;
+      const cout   = (input * 0.000003) + (output * 0.000015);
+      await sbClient.from("token_logs").insert({
+        user_id:       userId,
+        feature:       "chatbot",
+        input_tokens:  input,
+        output_tokens: output,
+        total_tokens:  input + output,
+        cout_estime:   cout
+      });
+    } catch(e) { console.debug("widget logTokens:", e.message); }
   }
 
   // ── EMAIL RÉCAP ───────────────────────────────────────
@@ -229,7 +250,13 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
           },
           body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, system: SYSTEM_PROMPT, messages })
         });
-        reply = res.ok ? (await res.json()).content?.[0]?.text || fallback(text) : fallback(text);
+        if (res.ok) {
+          const d = await res.json();
+          reply = d.content?.[0]?.text || fallback(text);
+          logTokens(d.usage); // silencieux
+        } else {
+          reply = fallback(text);
+        }
       } catch { reply = fallback(text); }
     } else {
       reply = fallback(text);
