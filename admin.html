@@ -236,6 +236,27 @@
   <div class="loader-bar"><div class="loader-bar-inner"></div></div>
 </div>
 
+
+<!-- SAISIE CLÉ SERVICE ROLE -->
+<div id="keyScreen" style="display:none;position:fixed;inset:0;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:36px 40px;max-width:420px;width:90%;text-align:center;">
+    <div style="font-size:32px;margin-bottom:12px;">🔑</div>
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:6px;">Accès Admin Artio</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:24px;">Saisis ta service_role key Supabase.<br>Elle n'est jamais stockée — seulement en mémoire.</p>
+    <input
+      id="keyInput"
+      type="password"
+      placeholder="sb_secret_..."
+      style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text);font-family:var(--mono);outline:none;margin-bottom:12px;"
+      onkeydown="if(event.key==='Enter') confirmKey()"
+    />
+    <div id="keyError" style="font-size:12px;color:var(--red);margin-bottom:10px;min-height:16px;"></div>
+    <button onclick="confirmKey()" style="width:100%;background:var(--orange);color:#000;font-weight:700;border:none;border-radius:10px;padding:12px;font-size:14px;cursor:pointer;font-family:var(--font);">
+      Accéder au dashboard
+    </button>
+  </div>
+</div>
+
 <!-- ACCESS DENIED -->
 <div id="denied">
   <div class="icon">🔒</div>
@@ -338,20 +359,12 @@
 <div id="toast"></div>
 
 <script>
-const SUPABASE_URL     = "https://mwmexkoeqeyueqgdkkni.supabase.co";
-// Clé publique pour auth — la vue est lue via service_role dans une Edge Function
-// ou simplement via la clé anon si RLS admin est configurée
-const SUPABASE_KEY     = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
-// ⚠️ Pour lire token_logs de tous les users, il faut la service_role key
-// Remplace ci-dessous par ta SERVICE_ROLE KEY (jamais exposée en prod côté client normalement)
-// Mais comme admin.html n'est accessible qu'à toi et protégée par is_admin, c'est acceptable
-const SERVICE_KEY      = "REMPLACE_PAR_TA_SERVICE_ROLE_KEY";
+const SUPABASE_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co";
+const SUPABASE_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
 
-// Un seul client avec la service_role key (bypass RLS pour lire tous les token_logs)
-// Auth fonctionne aussi avec cette clé
-const sbAuth  = supabase.createClient(SUPABASE_URL, SERVICE_KEY);
-const sbAdmin = sbAuth; // même instance — évite le warning GoTrueClient multiple
-
+// Clients initialisés après saisie de la service_role key — jamais dans le code
+let sbAuth  = null;
+let sbAdmin = null;
 let allUsers  = [];
 let sortField = 'cout_total_eur';
 let sortAsc   = false;
@@ -574,21 +587,55 @@ async function logout() {
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
-async function init() {
-  const { data: { session } } = await sbAuth.auth.getSession();
-  if (!session) { window.location.href = 'login.html'; return; }
+// ── SAISIE CLÉ ───────────────────────────────────────────────────
+async function confirmKey() {
+  const key = document.getElementById('keyInput').value.trim();
+  const err = document.getElementById('keyError');
+  if (!key.startsWith('sb_secret_') && !key.startsWith('eyJ')) {
+    err.textContent = 'Format invalide — la clé commence par sb_secret_ ou eyJ';
+    return;
+  }
+  err.textContent = 'Vérification…';
 
-  // Vérifier is_admin
-  const { data: profil } = await sbAuth.from('profils')
+  // Initialiser les clients avec cette clé
+  sbAuth  = supabase.createClient(SUPABASE_URL, key);
+  sbAdmin = sbAuth;
+
+  // Vérifier que la clé est correcte + que l'utilisateur est admin
+  const { data: { session }, error: se } = await sbAuth.auth.getSession();
+  if (se || !session) {
+    err.textContent = 'Clé invalide ou session expirée. Reconnecte-toi dabord.';
+    sbAuth = null; sbAdmin = null; return;
+  }
+
+  const { data: profil } = await sbAdmin.from('profils')
     .select('is_admin').eq('user_id', session.user.id).single();
 
   if (!profil?.is_admin) {
+    document.getElementById('keyScreen').style.display = 'none';
     document.getElementById('loader').style.display = 'none';
     document.getElementById('denied').style.display = 'flex';
     return;
   }
 
+  document.getElementById('keyScreen').style.display = 'none';
   await loadData();
+}
+
+async function init() {
+  // Vérifier d'abord s'il y a une session avec la clé publique
+  const sbPublic = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { data: { session } } = await sbPublic.auth.getSession();
+
+  if (!session) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  // Session OK — afficher l'écran de saisie de clé
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('keyScreen').style.display = 'flex';
+  document.getElementById('keyInput').focus();
 }
 
 init();
