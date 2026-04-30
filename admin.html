@@ -9,18 +9,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
   :root {
-    --bg:      #060810;
-    --bg2:     #0d1120;
-    --bg3:     #131726;
-    --border:  rgba(255,255,255,0.07);
-    --orange:  #f5a742;
-    --teal:    #3ecfcf;
-    --red:     #ff5e6c;
-    --green:   #3ecf8e;
-    --text:    #e2e5f1;
-    --muted:   #6b7494;
-    --font:    'Space Grotesk', sans-serif;
-    --mono:    'JetBrains Mono', monospace;
+    --bg:     #060810;
+    --bg2:    #0d1120;
+    --bg3:    #131726;
+    --border: rgba(255,255,255,0.07);
+    --orange: #f5a742;
+    --teal:   #3ecfcf;
+    --red:    #ff5e6c;
+    --green:  #3ecf8e;
+    --text:   #e2e5f1;
+    --muted:  #6b7494;
+    --font:   'Space Grotesk', sans-serif;
+    --mono:   'JetBrains Mono', monospace;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
@@ -33,34 +33,18 @@
   }
   .loader-logo { font-size: 28px; font-weight: 700; color: var(--orange); }
   .loader-bar { width: 160px; height: 2px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
-  .loader-bar-inner { height: 100%; width: 40%; background: var(--orange);
-    animation: slide 1s ease-in-out infinite; }
+  .loader-bar-inner { height: 100%; width: 40%; background: var(--orange); animation: slide 1s ease-in-out infinite; }
   @keyframes slide { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
 
-  /* KEY SCREEN */
-  #keyScreen {
+  /* ACCESS DENIED */
+  #denied {
     display: none; position: fixed; inset: 0; background: var(--bg);
-    align-items: center; justify-content: center; flex-direction: column;
+    align-items: center; justify-content: center; flex-direction: column; gap: 12px;
   }
-  #keyBox {
-    background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
-    padding: 36px 40px; max-width: 420px; width: 90%; text-align: center;
-  }
-  #keyBox h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-  #keyBox p  { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
-  #keyInput  {
-    width: 100%; background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--text);
-    font-family: var(--mono); outline: none; margin-bottom: 10px;
-    transition: border-color .2s;
-  }
-  #keyInput:focus { border-color: rgba(245,167,66,.4); }
-  #keyError { font-size: 12px; color: var(--red); min-height: 18px; margin-bottom: 10px; }
-  #keyBtn {
-    width: 100%; background: var(--orange); color: #000; font-weight: 700;
-    border: none; border-radius: 10px; padding: 12px; font-size: 14px;
-    cursor: pointer; font-family: var(--font);
-  }
+  #denied .icon { font-size: 48px; }
+  #denied h2 { font-size: 20px; color: var(--red); }
+  #denied p  { color: var(--muted); font-size: 14px; }
+  #denied a  { color: var(--orange); text-decoration: none; font-size: 14px; margin-top: 8px; display: inline-block; }
 
   /* APP */
   #app { display: none; min-height: 100vh; }
@@ -93,13 +77,12 @@
     width: 32px; height: 32px; border-radius: 8px;
     background: var(--bg3); border: 1px solid var(--border);
     color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: all .2s;
   }
   .btn-refresh:hover { color: var(--text); border-color: var(--orange); }
   .btn-logout {
     font-size: 12px; font-weight: 500; color: var(--muted);
     background: none; border: 1px solid var(--border); border-radius: 8px;
-    padding: 5px 12px; cursor: pointer; font-family: var(--font); transition: all .2s;
+    padding: 5px 12px; cursor: pointer; font-family: var(--font);
   }
   .btn-logout:hover { color: var(--text); }
 
@@ -109,8 +92,8 @@
   /* KPI */
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 28px; }
   .kpi-card {
-    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px;
-    position: relative; overflow: hidden;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px; position: relative; overflow: hidden;
   }
   .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent, var(--orange)); }
   .kpi-label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
@@ -124,7 +107,7 @@
   }
   .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
 
-  /* FEATURE BARS */
+  /* FEATURES */
   .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 28px; }
   .feature-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
   .feature-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -147,16 +130,13 @@
   .search-box:focus { border-color: rgba(245,167,66,.4); }
   table { width: 100%; border-collapse: collapse; }
   thead tr { border-bottom: 1px solid var(--border); }
-  th {
-    padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 600;
-    color: var(--muted); text-transform: uppercase; letter-spacing: .07em; white-space: nowrap;
-  }
+  th { padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; white-space: nowrap; }
   td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
   tbody tr:hover { background: rgba(255,255,255,.02); }
   .user-nom   { font-weight: 600; }
   .user-email { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .sub-badge  { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: .05em; }
+  .sub-badge  { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
   .sub-pro    { background: rgba(62,207,207,.12); color: var(--teal);   border: 1px solid rgba(62,207,207,.25); }
   .sub-free   { background: rgba(107,116,148,.15); color: var(--muted); border: 1px solid var(--border); }
   .sub-trial  { background: rgba(245,167,66,.12);  color: var(--orange);border: 1px solid rgba(245,167,66,.25); }
@@ -169,7 +149,7 @@
   .cout-mid   { color: var(--orange); }
   .cout-high  { color: var(--red); }
   .date-cell  { font-size: 11px; color: var(--muted); font-family: var(--mono); }
-  .empty-row td { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+  .empty-row td { text-align: center; padding: 40px; color: var(--muted); }
 
   /* TOAST */
   #toast {
@@ -180,14 +160,13 @@
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* SCROLLBAR */
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 2px; }
 
   /* FOOTER */
   .artio-legal-footer {
-    text-align: center; padding: 12px; font-size: 11px; color: var(--muted);
-    border-top: 1px solid var(--border);
+    text-align: center; padding: 12px; font-size: 11px;
+    color: var(--muted); border-top: 1px solid var(--border);
   }
   .artio-legal-footer a { color: var(--muted); text-decoration: none; }
   .artio-legal-footer a:hover { color: var(--orange); }
@@ -201,16 +180,12 @@
   <div class="loader-bar"><div class="loader-bar-inner"></div></div>
 </div>
 
-<!-- SAISIE SERVICE ROLE KEY -->
-<div id="keyScreen">
-  <div id="keyBox">
-    <div style="font-size:32px;margin-bottom:12px;">🔑</div>
-    <h2>Acces Admin Artio</h2>
-    <p>Saisis ta service_role key Supabase.<br>Elle reste uniquement en memoire, jamais stockee.</p>
-    <input id="keyInput" type="password" placeholder="sb_secret_..." />
-    <div id="keyError"></div>
-    <button id="keyBtn" onclick="confirmKey()">Acceder au dashboard</button>
-  </div>
+<!-- ACCESS DENIED -->
+<div id="denied">
+  <div class="icon">🔒</div>
+  <h2>Acces refuse</h2>
+  <p>Cette page est reservee au compte administrateur Artio.</p>
+  <a href="home.html">← Retour a l'application</a>
 </div>
 
 <!-- APP -->
@@ -222,9 +197,9 @@
     </div>
     <div class="topbar-right">
       <div class="period-tabs">
-        <button class="period-tab active" onclick="setPeriod('month',this)">Ce mois</button>
-        <button class="period-tab" onclick="setPeriod('week',this)">7 jours</button>
-        <button class="period-tab" onclick="setPeriod('all',this)">Tout</button>
+        <button class="period-tab active" onclick="setPeriod('month', this)">Ce mois</button>
+        <button class="period-tab" onclick="setPeriod('week', this)">7 jours</button>
+        <button class="period-tab" onclick="setPeriod('all', this)">Tout</button>
       </div>
       <button class="btn-refresh" onclick="loadData()" title="Rafraichir">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -306,18 +281,12 @@
 <script>
 var SUPABASE_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co";
 var SUPABASE_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-var sbAuth  = null;
-var sbAdmin = null;
 var allUsers  = [];
 var sortField = "cout_total_eur";
 var sortAsc   = false;
 var period    = "month";
-
-// ── ENTER KEY ──────────────────────────────────────────────────────
-document.getElementById("keyInput").addEventListener("keydown", function(e) {
-  if (e.key === "Enter") confirmKey();
-});
 
 // ── PERIOD ─────────────────────────────────────────────────────────
 function setPeriod(p, el) {
@@ -330,17 +299,18 @@ function setPeriod(p, el) {
 function periodFilter() {
   var now = new Date();
   if (period === "month") return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  if (period === "week")  return new Date(now - 7*24*60*60*1000).toISOString();
+  if (period === "week")  return new Date(now.getTime() - 7*24*60*60*1000).toISOString();
   return null;
 }
 
 // ── LOAD DATA ──────────────────────────────────────────────────────
 async function loadData() {
   try {
-    var resProfils = await sbAdmin.from("profils").select("user_id,nom,email,subscription_status");
+    // Grace aux policies RLS admin, on voit tous les profils avec la cle anon
+    var resProfils = await sb.from("profils").select("user_id,nom,email,subscription_status");
     if (resProfils.error) throw resProfils.error;
 
-    var query = sbAdmin.from("token_logs").select("user_id,feature,total_tokens,cout_estime,created_at");
+    var query = sb.from("token_logs").select("user_id,feature,total_tokens,cout_estime,created_at");
     var fromDate = periodFilter();
     if (fromDate) query = query.gte("created_at", fromDate);
     var resLogs = await query;
@@ -351,8 +321,7 @@ async function loadData() {
       map[p.user_id] = Object.assign({}, p, {
         nb_appels: 0, tokens_total: 0, cout_total_eur: 0,
         tokens_devis: 0, tokens_suivi: 0, tokens_chatbot: 0,
-        tokens_email: 0, tokens_description: 0,
-        dernier_appel: null
+        tokens_email: 0, tokens_description: 0, dernier_appel: null
       });
     });
 
@@ -360,10 +329,10 @@ async function loadData() {
       var u = map[l.user_id];
       if (!u) return;
       u.nb_appels++;
-      u.tokens_total    += (l.total_tokens || 0);
-      u.cout_total_eur  += parseFloat(l.cout_estime) || 0;
-      var key = "tokens_" + l.feature;
-      u[key] = (u[key] || 0) + (l.total_tokens || 0);
+      u.tokens_total   += (l.total_tokens || 0);
+      u.cout_total_eur += parseFloat(l.cout_estime) || 0;
+      var k = "tokens_" + l.feature;
+      u[k] = (u[k] || 0) + (l.total_tokens || 0);
       if (!u.dernier_appel || l.created_at > u.dernier_appel) u.dernier_appel = l.created_at;
     });
 
@@ -407,7 +376,6 @@ function renderFeatures() {
     { key: "tokens_description", label: "Description",    color: "#3ecf8e", icon: "📝" },
     { key: "tokens_suivi",       label: "Suivi chantier", color: "#ff5e6c", icon: "🏗️" }
   ];
-
   var totals = {};
   features.forEach(function(f) {
     totals[f.key] = allUsers.reduce(function(s,u) { return s + (u[f.key] || 0); }, 0);
@@ -465,13 +433,12 @@ function renderTable() {
     var pills = featureKeys.filter(function(k) {
       return (u["tokens_" + k] || 0) > 0;
     }).map(function(k) {
-      return "<span class='token-pill' style='background:" + featureColors[k] + "22;color:" + featureColors[k] + "'>" + k + " " + fmtTokens(u["tokens_" + k] || 0) + "</span>";
+      return "<span class='token-pill' style='background:" + featureColors[k] + "22;color:" + featureColors[k] + "'>" +
+             k + " " + fmtTokens(u["tokens_" + k] || 0) + "</span>";
     }).join("");
-
     var dernierAppel = u.dernier_appel
       ? new Date(u.dernier_appel).toLocaleString("fr-FR", {day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})
       : "—";
-
     return "<tr>" +
       "<td><div class='user-nom'>" + (u.nom || "—") + "</div><div class='user-email'>" + (u.email || "") + "</div></td>" +
       "<td><span class='sub-badge " + subClass + "'>" + (u.subscription_status || "free") + "</span></td>" +
@@ -499,63 +466,30 @@ function showToast(msg) {
 }
 
 async function logout() {
-  await sbAuth.auth.signOut();
+  await sb.auth.signOut();
   window.location.href = "login.html";
-}
-
-// ── VERIFICATION CLE ───────────────────────────────────────────────
-async function confirmKey() {
-  var key = document.getElementById("keyInput").value.trim();
-  var err = document.getElementById("keyError");
-
-  if (!key.startsWith("sb_secret_") && !key.startsWith("eyJ")) {
-    err.textContent = "Format invalide. La service_role key commence par sb_secret_ ou eyJ";
-    return;
-  }
-
-  err.textContent = "Verification en cours...";
-  document.getElementById("keyBtn").disabled = true;
-
-  try {
-    var sbTest = supabase.createClient(SUPABASE_URL, key);
-
-    // La service_role key bypasse le RLS.
-    // Si elle peut lire tous les profils → elle est valide.
-    var res = await sbTest.from("profils").select("user_id").limit(1);
-
-    if (res.error) {
-      err.textContent = "Cle refusee : " + res.error.message;
-      document.getElementById("keyBtn").disabled = false;
-      return;
-    }
-
-    // Cle valide — on initialise les deux clients
-    sbAuth  = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    sbAdmin = sbTest;
-
-    document.getElementById("keyScreen").style.display = "none";
-    document.getElementById("loader").style.display = "flex";
-    await loadData();
-
-  } catch(e) {
-    err.textContent = "Erreur : " + e.message;
-    document.getElementById("keyBtn").disabled = false;
-  }
 }
 
 // ── INIT ───────────────────────────────────────────────────────────
 async function init() {
-  var sbPublic = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  var sessionRes = await sbPublic.auth.getSession();
-
+  // 1. Verifier la session
+  var sessionRes = await sb.auth.getSession();
   if (!sessionRes.data.session) {
     window.location.href = "login.html";
     return;
   }
 
-  document.getElementById("loader").style.display = "none";
-  document.getElementById("keyScreen").style.display = "flex";
-  document.getElementById("keyInput").focus();
+  // 2. Verifier is_admin sur le profil de l'utilisateur connecte
+  var res = await sb.from("profils").select("is_admin").eq("user_id", sessionRes.data.session.user.id).single();
+
+  if (res.error || !res.data || !res.data.is_admin) {
+    document.getElementById("loader").style.display = "none";
+    document.getElementById("denied").style.display = "flex";
+    return;
+  }
+
+  // 3. Admin confirme — charger les donnees
+  await loadData();
 }
 
 init();
