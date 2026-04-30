@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Artio — Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:      #060810;
+    --bg2:     #0d1120;
+    --bg3:     #131726;
+    --border:  rgba(255,255,255,0.07);
+    --orange:  #f5a742;
+    --teal:    #3ecfcf;
+    --red:     #ff5e6c;
+    --green:   #3ecf8e;
+    --text:    #e2e5f1;
+    --muted:   #6b7494;
+    --font:    'Space Grotesk', sans-serif;
+    --mono:    'JetBrains Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
+
+  /* ── LOADER ── */
+  #loader {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px; z-index: 999;
+  }
+  .loader-logo { font-size: 28px; font-weight: 700; color: var(--orange); letter-spacing: -0.5px; }
+  .loader-bar { width: 160px; height: 2px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+  .loader-bar-inner { height: 100%; width: 40%; background: var(--orange); border-radius: 2px;
+    animation: slide 1s ease-in-out infinite; }
+  @keyframes slide { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
+
+  /* ── ACCESS DENIED ── */
+  #denied {
+    display: none; position: fixed; inset: 0; background: var(--bg);
+    align-items: center; justify-content: center; flex-direction: column; gap: 12px;
+  }
+  #denied .icon { font-size: 48px; }
+  #denied h2 { font-size: 20px; color: var(--red); }
+  #denied p { color: var(--muted); font-size: 14px; }
+  #denied a { color: var(--orange); text-decoration: none; font-size: 14px; margin-top: 8px; display: inline-block; }
+
+  /* ── LAYOUT ── */
+  #app { display: none; min-height: 100vh; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(6,8,16,0.9); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px; height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-size: 20px; font-weight: 700; color: var(--orange); letter-spacing: -0.3px; }
+  .badge-admin {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    background: rgba(245,167,66,0.15); color: var(--orange);
+    border: 1px solid rgba(245,167,66,0.3); border-radius: 4px;
+    padding: 2px 7px; text-transform: uppercase;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .period-tabs { display: flex; gap: 4px; background: var(--bg3); border-radius: 8px; padding: 3px; }
+  .period-tab {
+    padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 500;
+    border: none; cursor: pointer; background: none; color: var(--muted);
+    transition: all 0.2s; font-family: var(--font);
+  }
+  .period-tab.active { background: var(--bg2); color: var(--text); }
+  .btn-refresh {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .btn-refresh:hover { color: var(--text); border-color: var(--orange); }
+  .btn-logout {
+    font-size: 12px; font-weight: 500; color: var(--muted);
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 12px; cursor: pointer; font-family: var(--font);
+    transition: all 0.2s;
+  }
+  .btn-logout:hover { color: var(--text); border-color: var(--border); }
+
+  /* ── MAIN ── */
+  .main { padding: 28px; max-width: 1400px; margin: 0 auto; }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px; margin-bottom: 28px;
+  }
+  .kpi-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+    position: relative; overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent, var(--orange));
+  }
+  .kpi-card:hover { border-color: rgba(255,255,255,0.12); }
+  .kpi-label { font-size: 11px; font-weight: 500; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .kpi-value { font-size: 28px; font-weight: 700; color: var(--text); font-family: var(--mono); line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* ── SECTION ── */
+  .section-title {
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── FEATURE BARS ── */
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .feature-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px;
+  }
+  .feature-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .feature-name { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 7px; }
+  .feature-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .feature-tokens { font-family: var(--mono); font-size: 14px; font-weight: 600; }
+  .feature-bar-bg { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+  .feature-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+  .feature-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; margin-bottom: 28px;
+  }
+  .table-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-title { font-size: 14px; font-weight: 600; }
+  .search-box {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px; font-size: 12px;
+    color: var(--text); font-family: var(--font); outline: none; width: 200px;
+    transition: border-color 0.2s;
+  }
+  .search-box:focus { border-color: rgba(245,167,66,0.4); }
+  .search-box::placeholder { color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  th {
+    padding: 10px 16px; text-align: left;
+    font-size: 10px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.07em;
+    white-space: nowrap;
+  }
+  td {
+    padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  .user-nom { font-weight: 600; color: var(--text); }
+  .user-email { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .sub-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .sub-pro    { background: rgba(62,207,207,0.12); color: var(--teal); border: 1px solid rgba(62,207,207,0.25); }
+  .sub-free   { background: rgba(107,116,148,0.15); color: var(--muted); border: 1px solid var(--border); }
+  .sub-trial  { background: rgba(245,167,66,0.12); color: var(--orange); border: 1px solid rgba(245,167,66,0.25); }
+  .tokens-cell { font-family: var(--mono); font-size: 12px; }
+  .tokens-total { font-weight: 600; color: var(--text); }
+  .tokens-detail {
+    display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px;
+  }
+  .token-pill {
+    font-size: 10px; padding: 1px 6px; border-radius: 3px;
+    font-family: var(--mono);
+  }
+  .cout-cell { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+  .cout-low  { color: var(--green); }
+  .cout-mid  { color: var(--orange); }
+  .cout-high { color: var(--red); }
+  .date-cell { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .empty-row td { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+
+  /* ── MINI CHART ── */
+  .chart-wrap {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px; margin-bottom: 28px;
+  }
+  .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bar-fill { width: 100%; border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.6s ease; }
+  .bar-label { font-size: 9px; color: var(--muted); font-family: var(--mono); white-space: nowrap; }
+  .bar-val { font-size: 9px; color: var(--muted); font-family: var(--mono); }
+
+  /* ── LOADING STATE ── */
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg3) 25%, rgba(255,255,255,0.04) 50%, var(--bg3) 75%);
+    background-size: 200% 100%; animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 18px; font-size: 13px; color: var(--text);
+    opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 9999;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">Artio Admin</div>
+  <div class="loader-bar"><div class="loader-bar-inner"></div></div>
+</div>
+
+<!-- ACCESS DENIED -->
+<div id="denied">
+  <div class="icon">🔒</div>
+  <h2>Accès refusé</h2>
+  <p>Cette page est réservée à l'administrateur Artio.</p>
+  <a href="home.html">← Retour à l'application</a>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="topbar">
+    <div class="topbar-left">
+      <span class="logo">Artio</span>
+      <span class="badge-admin">Admin</span>
+    </div>
+    <div class="topbar-right">
+      <div class="period-tabs">
+        <button class="period-tab active" onclick="setPeriod('month',this)">Ce mois</button>
+        <button class="period-tab" onclick="setPeriod('week',this)">7 jours</button>
+        <button class="period-tab" onclick="setPeriod('all',this)">Tout</button>
+      </div>
+      <button class="btn-refresh" onclick="loadData()" title="Rafraîchir">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+      </button>
+      <button class="btn-logout" onclick="logout()">Déconnexion</button>
+    </div>
+  </nav>
+
+  <div class="main">
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card" style="--accent:var(--teal)">
+        <div class="kpi-label">Utilisateurs actifs</div>
+        <div class="kpi-value" id="kpiUsers">—</div>
+        <div class="kpi-sub">avec au moins 1 appel IA</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--orange)">
+        <div class="kpi-label">Tokens consommés</div>
+        <div class="kpi-value" id="kpiTokens">—</div>
+        <div class="kpi-sub" id="kpiTokensSub">sur la période</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--green)">
+        <div class="kpi-label">Coût IA total</div>
+        <div class="kpi-value" id="kpiCout">—</div>
+        <div class="kpi-sub">en dollars (tarif Anthropic)</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--red)">
+        <div class="kpi-label">Coût moyen / user</div>
+        <div class="kpi-value" id="kpiAvg">—</div>
+        <div class="kpi-sub">parmi les actifs</div>
+      </div>
+      <div class="kpi-card" style="--accent:#a78bfa">
+        <div class="kpi-label">Total utilisateurs</div>
+        <div class="kpi-value" id="kpiTotal">—</div>
+        <div class="kpi-sub">inscrits sur Artio</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--teal)">
+        <div class="kpi-label">Abonnés Pro</div>
+        <div class="kpi-value" id="kpiPro">—</div>
+        <div class="kpi-sub">subscription_status = pro</div>
+      </div>
+    </div>
+
+    <!-- FEATURE BREAKDOWN -->
+    <div class="section-title">Consommation par feature</div>
+    <div class="feature-grid" id="featureGrid">
+      <!-- injecté JS -->
+    </div>
+
+    <!-- TABLE UTILISATEURS -->
+    <div class="section-title">Détail par utilisateur</div>
+    <div class="table-wrap">
+      <div class="table-header">
+        <span class="table-title">Tous les utilisateurs</span>
+        <input class="search-box" type="text" placeholder="Rechercher…" id="searchInput" oninput="filterTable()"/>
+      </div>
+      <table id="userTable">
+        <thead>
+          <tr>
+            <th>Utilisateur</th>
+            <th>Abonnement</th>
+            <th>Tokens (période)</th>
+            <th onclick="sortBy('cout_total_eur')" style="cursor:pointer">Coût $ ↕</th>
+            <th onclick="sortBy('nb_appels')" style="cursor:pointer">Appels ↕</th>
+            <th>Dernier appel</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <tr class="empty-row"><td colspan="7">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL     = "https://mwmexkoeqeyueqgdkkni.supabase.co";
+// Clé publique pour auth — la vue est lue via service_role dans une Edge Function
+// ou simplement via la clé anon si RLS admin est configurée
+const SUPABASE_KEY     = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
+// ⚠️ Pour lire token_logs de tous les users, il faut la service_role key
+// Remplace ci-dessous par ta SERVICE_ROLE KEY (jamais exposée en prod côté client normalement)
+// Mais comme admin.html n'est accessible qu'à toi et protégée par is_admin, c'est acceptable
+const SERVICE_KEY      = "REMPLACE_PAR_TA_SERVICE_ROLE_KEY";
+
+// Un seul client avec la service_role key (bypass RLS pour lire tous les token_logs)
+// Auth fonctionne aussi avec cette clé
+const sbAuth  = supabase.createClient(SUPABASE_URL, SERVICE_KEY);
+const sbAdmin = sbAuth; // même instance — évite le warning GoTrueClient multiple
+
+let allUsers  = [];
+let sortField = 'cout_total_eur';
+let sortAsc   = false;
+let period    = 'month';
+
+// ── PERIOD ───────────────────────────────────────────────────────
+function setPeriod(p, el) {
+  period = p;
+  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadData();
+}
+
+function periodFilter() {
+  const now = new Date();
+  if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  if (period === 'week')  return new Date(now - 7*24*60*60*1000).toISOString();
+  return null; // all
+}
+
+// ── LOAD ─────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    // 1. Tous les profils
+    const { data: profils, error: ep } = await sbAdmin.from('profils')
+      .select('user_id,nom,email,subscription_status,created_at,is_admin');
+    if (ep) throw ep;
+
+    // 2. token_logs filtrés par période
+    let query = sbAdmin.from('token_logs')
+      .select('user_id,feature,input_tokens,output_tokens,total_tokens,cout_estime,created_at');
+    const from = periodFilter();
+    if (from) query = query.gte('created_at', from);
+    const { data: logs, error: el } = await query;
+    if (el) throw el;
+
+    // 3. Agréger par user
+    const map = {};
+    profils.forEach(p => {
+      map[p.user_id] = {
+        ...p,
+        nb_appels: 0, tokens_total: 0, cout_total_eur: 0,
+        tokens_devis: 0, tokens_suivi: 0, tokens_chatbot: 0,
+        tokens_email: 0, tokens_description: 0,
+        dernier_appel: null
+      };
+    });
+
+    logs.forEach(l => {
+      const u = map[l.user_id];
+      if (!u) return;
+      u.nb_appels++;
+      u.tokens_total     += l.total_tokens;
+      u.cout_total_eur   += parseFloat(l.cout_estime) || 0;
+      u['tokens_'+l.feature] = (u['tokens_'+l.feature] || 0) + l.total_tokens;
+      if (!u.dernier_appel || l.created_at > u.dernier_appel) u.dernier_appel = l.created_at;
+    });
+
+    allUsers = Object.values(map);
+    renderAll();
+  } catch(e) {
+    toast('Erreur chargement : ' + e.message);
+    console.error(e);
+  }
+}
+
+// ── RENDER ALL ───────────────────────────────────────────────────
+function renderAll() {
+  renderKPI();
+  renderFeatures();
+  renderTable();
+  hideLoader();
+}
+
+function hideLoader() {
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+// ── KPI ──────────────────────────────────────────────────────────
+function renderKPI() {
+  const active  = allUsers.filter(u => u.nb_appels > 0);
+  const total   = allUsers.length;
+  const pros    = allUsers.filter(u => u.subscription_status === 'pro').length;
+  const tokens  = allUsers.reduce((s,u) => s + u.tokens_total, 0);
+  const cout    = allUsers.reduce((s,u) => s + u.cout_total_eur, 0);
+  const avg     = active.length ? cout / active.length : 0;
+
+  document.getElementById('kpiUsers').textContent  = active.length;
+  document.getElementById('kpiTokens').textContent = fmtTokens(tokens);
+  document.getElementById('kpiCout').textContent   = '$' + cout.toFixed(4);
+  document.getElementById('kpiAvg').textContent    = '$' + avg.toFixed(4);
+  document.getElementById('kpiTotal').textContent  = total;
+  document.getElementById('kpiPro').textContent    = pros;
+}
+
+// ── FEATURES ─────────────────────────────────────────────────────
+function renderFeatures() {
+  const features = [
+    { key: 'tokens_chatbot',     label: 'Chatbot',      color: '#3ecfcf', icon: '💬' },
+    { key: 'tokens_devis',       label: 'Devis voix',   color: '#f5a742', icon: '🎙️' },
+    { key: 'tokens_email',       label: 'Email IA',     color: '#a78bfa', icon: '✉️' },
+    { key: 'tokens_description', label: 'Description',  color: '#3ecf8e', icon: '📝' },
+    { key: 'tokens_suivi',       label: 'Suivi chantier', color: '#ff5e6c', icon: '🏗️' },
+  ];
+
+  const totals = {};
+  features.forEach(f => {
+    totals[f.key] = allUsers.reduce((s,u) => s + (u[f.key]||0), 0);
+  });
+  const max = Math.max(...Object.values(totals), 1);
+
+  document.getElementById('featureGrid').innerHTML = features.map(f => {
+    const val  = totals[f.key];
+    const pct  = Math.round((val / max) * 100);
+    const cout = val * 0.000009; // approximation moyenne
+    return `
+      <div class="feature-card">
+        <div class="feature-header">
+          <div class="feature-name">
+            <div class="feature-dot" style="background:${f.color}"></div>
+            ${f.icon} ${f.label}
+          </div>
+          <div class="feature-tokens" style="color:${f.color}">${fmtTokens(val)}</div>
+        </div>
+        <div class="feature-bar-bg">
+          <div class="feature-bar-fill" style="width:${pct}%;background:${f.color}"></div>
+        </div>
+        <div class="feature-meta">
+          <span>${pct}% du total</span>
+          <span>~$${cout.toFixed(4)}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────
+function sortBy(field) {
+  if (sortField === field) sortAsc = !sortAsc;
+  else { sortField = field; sortAsc = false; }
+  renderTable();
+}
+
+function filterTable() {
+  renderTable();
+}
+
+function renderTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let rows = allUsers.filter(u =>
+    (u.nom||'').toLowerCase().includes(q) ||
+    (u.email||'').toLowerCase().includes(q)
+  );
+
+  rows.sort((a,b) => {
+    const av = a[sortField] ?? 0, bv = b[sortField] ?? 0;
+    return sortAsc ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
+  });
+
+  const featureKeys = ['devis','suivi','chatbot','email','description'];
+  const featureColors = { devis:'#f5a742', suivi:'#ff5e6c', chatbot:'#3ecfcf', email:'#a78bfa', description:'#3ecf8e' };
+
+  const tbody = document.getElementById('userTableBody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Aucun résultat</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(u => {
+    const cout = u.cout_total_eur;
+    const coutClass = cout < 0.05 ? 'cout-low' : cout < 0.20 ? 'cout-mid' : 'cout-high';
+    const subClass  = u.subscription_status === 'pro' ? 'sub-pro' :
+                      u.subscription_status === 'trial' ? 'sub-trial' : 'sub-free';
+    const pills = featureKeys
+      .filter(k => (u['tokens_'+k]||0) > 0)
+      .map(k => `<span class="token-pill" style="background:${featureColors[k]}22;color:${featureColors[k]}">${k} ${fmtTokens(u['tokens_'+k]||0)}</span>`)
+      .join('');
+    const dernierAppel = u.dernier_appel
+      ? new Date(u.dernier_appel).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      : '—';
+    const inscrit = u.created_at
+      ? new Date(u.created_at).toLocaleDateString('fr-FR')
+      : '—';
+
+    return `<tr>
+      <td>
+        <div class="user-nom">${u.nom||'—'}</div>
+        <div class="user-email">${u.email||''}</div>
+      </td>
+      <td><span class="sub-badge ${subClass}">${u.subscription_status||'free'}</span></td>
+      <td class="tokens-cell">
+        <div class="tokens-total">${fmtTokens(u.tokens_total)}</div>
+        <div class="tokens-detail">${pills}</div>
+      </td>
+      <td class="cout-cell ${coutClass}">$${cout.toFixed(4)}</td>
+      <td class="tokens-cell" style="color:var(--muted)">${u.nb_appels}</td>
+      <td class="date-cell">${dernierAppel}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────
+function fmtTokens(n) {
+  if (!n) return '0';
+  if (n >= 1_000_000) return (n/1_000_000).toFixed(1)+'M';
+  if (n >= 1_000)     return (n/1_000).toFixed(1)+'k';
+  return String(n);
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function logout() {
+  await sbAuth.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+async function init() {
+  const { data: { session } } = await sbAuth.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+
+  // Vérifier is_admin
+  const { data: profil } = await sbAuth.from('profils')
+    .select('is_admin').eq('user_id', session.user.id).single();
+
+  if (!profil?.is_admin) {
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('denied').style.display = 'flex';
+    return;
+  }
+
+  await loadData();
+}
+
+init();
+</script>
+</body>
+</html>
