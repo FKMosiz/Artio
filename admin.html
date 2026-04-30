@@ -25,45 +25,60 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
 
-  /* ── LOADER ── */
+  /* LOADER */
   #loader {
     position: fixed; inset: 0; background: var(--bg);
     display: flex; align-items: center; justify-content: center;
     flex-direction: column; gap: 16px; z-index: 999;
   }
-  .loader-logo { font-size: 28px; font-weight: 700; color: var(--orange); letter-spacing: -0.5px; }
+  .loader-logo { font-size: 28px; font-weight: 700; color: var(--orange); }
   .loader-bar { width: 160px; height: 2px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
-  .loader-bar-inner { height: 100%; width: 40%; background: var(--orange); border-radius: 2px;
+  .loader-bar-inner { height: 100%; width: 40%; background: var(--orange);
     animation: slide 1s ease-in-out infinite; }
   @keyframes slide { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
 
-  /* ── ACCESS DENIED ── */
-  #denied {
+  /* KEY SCREEN */
+  #keyScreen {
     display: none; position: fixed; inset: 0; background: var(--bg);
-    align-items: center; justify-content: center; flex-direction: column; gap: 12px;
+    align-items: center; justify-content: center; flex-direction: column;
   }
-  #denied .icon { font-size: 48px; }
-  #denied h2 { font-size: 20px; color: var(--red); }
-  #denied p { color: var(--muted); font-size: 14px; }
-  #denied a { color: var(--orange); text-decoration: none; font-size: 14px; margin-top: 8px; display: inline-block; }
+  #keyBox {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+    padding: 36px 40px; max-width: 420px; width: 90%; text-align: center;
+  }
+  #keyBox h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  #keyBox p  { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  #keyInput  {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--text);
+    font-family: var(--mono); outline: none; margin-bottom: 10px;
+    transition: border-color .2s;
+  }
+  #keyInput:focus { border-color: rgba(245,167,66,.4); }
+  #keyError { font-size: 12px; color: var(--red); min-height: 18px; margin-bottom: 10px; }
+  #keyBtn {
+    width: 100%; background: var(--orange); color: #000; font-weight: 700;
+    border: none; border-radius: 10px; padding: 12px; font-size: 14px;
+    cursor: pointer; font-family: var(--font);
+  }
 
-  /* ── LAYOUT ── */
+  /* APP */
   #app { display: none; min-height: 100vh; }
 
-  /* ── TOPBAR ── */
+  /* TOPBAR */
   .topbar {
     position: sticky; top: 0; z-index: 100;
-    background: rgba(6,8,16,0.9); backdrop-filter: blur(12px);
+    background: rgba(6,8,16,.9); backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
     padding: 0 28px; height: 56px;
     display: flex; align-items: center; justify-content: space-between;
   }
   .topbar-left { display: flex; align-items: center; gap: 12px; }
-  .logo { font-size: 20px; font-weight: 700; color: var(--orange); letter-spacing: -0.3px; }
+  .logo { font-size: 20px; font-weight: 700; color: var(--orange); }
   .badge-admin {
-    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
-    background: rgba(245,167,66,0.15); color: var(--orange);
-    border: 1px solid rgba(245,167,66,0.3); border-radius: 4px;
+    font-size: 10px; font-weight: 600; letter-spacing: .08em;
+    background: rgba(245,167,66,.15); color: var(--orange);
+    border: 1px solid rgba(245,167,66,.3); border-radius: 4px;
     padding: 2px 7px; text-transform: uppercase;
   }
   .topbar-right { display: flex; align-items: center; gap: 16px; }
@@ -71,174 +86,111 @@
   .period-tab {
     padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 500;
     border: none; cursor: pointer; background: none; color: var(--muted);
-    transition: all 0.2s; font-family: var(--font);
+    transition: all .2s; font-family: var(--font);
   }
   .period-tab.active { background: var(--bg2); color: var(--text); }
   .btn-refresh {
     width: 32px; height: 32px; border-radius: 8px;
     background: var(--bg3); border: 1px solid var(--border);
     color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
+    transition: all .2s;
   }
   .btn-refresh:hover { color: var(--text); border-color: var(--orange); }
   .btn-logout {
     font-size: 12px; font-weight: 500; color: var(--muted);
     background: none; border: 1px solid var(--border); border-radius: 8px;
-    padding: 5px 12px; cursor: pointer; font-family: var(--font);
-    transition: all 0.2s;
+    padding: 5px 12px; cursor: pointer; font-family: var(--font); transition: all .2s;
   }
-  .btn-logout:hover { color: var(--text); border-color: var(--border); }
+  .btn-logout:hover { color: var(--text); }
 
-  /* ── MAIN ── */
+  /* MAIN */
   .main { padding: 28px; max-width: 1400px; margin: 0 auto; }
 
-  /* ── KPI CARDS ── */
-  .kpi-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px; margin-bottom: 28px;
-  }
+  /* KPI */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 28px; }
   .kpi-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 12px; padding: 18px 20px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px;
     position: relative; overflow: hidden;
-    transition: border-color 0.2s;
   }
-  .kpi-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: var(--accent, var(--orange));
-  }
-  .kpi-card:hover { border-color: rgba(255,255,255,0.12); }
-  .kpi-label { font-size: 11px; font-weight: 500; color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-  .kpi-value { font-size: 28px; font-weight: 700; color: var(--text); font-family: var(--mono); line-height: 1; }
-  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent, var(--orange)); }
+  .kpi-label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  .kpi-value { font-size: 28px; font-weight: 700; font-family: var(--mono); line-height: 1; }
+  .kpi-sub   { font-size: 11px; color: var(--muted); margin-top: 6px; }
 
-  /* ── SECTION ── */
+  /* SECTION */
   .section-title {
-    font-size: 13px; font-weight: 600; color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.08em;
-    margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .08em; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
   }
-  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
 
-  /* ── FEATURE BARS ── */
+  /* FEATURE BARS */
   .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 28px; }
-  .feature-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 12px; padding: 16px 18px;
-  }
+  .feature-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
   .feature-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .feature-name { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 7px; }
-  .feature-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .feature-name { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .feature-dot  { width: 8px; height: 8px; border-radius: 50%; }
   .feature-tokens { font-family: var(--mono); font-size: 14px; font-weight: 600; }
-  .feature-bar-bg { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
-  .feature-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+  .feature-bar-bg   { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+  .feature-bar-fill { height: 100%; border-radius: 2px; transition: width .8s cubic-bezier(.4,0,.2,1); }
   .feature-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
 
-  /* ── TABLE ── */
-  .table-wrap {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 14px; overflow: hidden; margin-bottom: 28px;
-  }
-  .table-header {
-    padding: 14px 20px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-  }
+  /* TABLE */
+  .table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 28px; }
+  .table-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
   .table-title { font-size: 14px; font-weight: 600; }
   .search-box {
-    background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 8px; padding: 6px 12px; font-size: 12px;
-    color: var(--text); font-family: var(--font); outline: none; width: 200px;
-    transition: border-color 0.2s;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; font-size: 12px; color: var(--text); font-family: var(--font);
+    outline: none; width: 200px; transition: border-color .2s;
   }
-  .search-box:focus { border-color: rgba(245,167,66,0.4); }
-  .search-box::placeholder { color: var(--muted); }
+  .search-box:focus { border-color: rgba(245,167,66,.4); }
   table { width: 100%; border-collapse: collapse; }
   thead tr { border-bottom: 1px solid var(--border); }
   th {
-    padding: 10px 16px; text-align: left;
-    font-size: 10px; font-weight: 600; color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.07em;
-    white-space: nowrap;
+    padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .07em; white-space: nowrap;
   }
-  td {
-    padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-  }
+  td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
-  tbody tr { transition: background 0.15s; }
-  tbody tr:hover { background: rgba(255,255,255,0.02); }
-  .user-nom { font-weight: 600; color: var(--text); }
+  tbody tr:hover { background: rgba(255,255,255,.02); }
+  .user-nom   { font-weight: 600; }
   .user-email { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .sub-badge {
-    font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
-    text-transform: uppercase; letter-spacing: 0.05em;
-  }
-  .sub-pro    { background: rgba(62,207,207,0.12); color: var(--teal); border: 1px solid rgba(62,207,207,0.25); }
-  .sub-free   { background: rgba(107,116,148,0.15); color: var(--muted); border: 1px solid var(--border); }
-  .sub-trial  { background: rgba(245,167,66,0.12); color: var(--orange); border: 1px solid rgba(245,167,66,0.25); }
-  .tokens-cell { font-family: var(--mono); font-size: 12px; }
-  .tokens-total { font-weight: 600; color: var(--text); }
-  .tokens-detail {
-    display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px;
-  }
-  .token-pill {
-    font-size: 10px; padding: 1px 6px; border-radius: 3px;
-    font-family: var(--mono);
-  }
-  .cout-cell { font-family: var(--mono); font-size: 13px; font-weight: 600; }
-  .cout-low  { color: var(--green); }
-  .cout-mid  { color: var(--orange); }
-  .cout-high { color: var(--red); }
-  .date-cell { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .sub-badge  { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: .05em; }
+  .sub-pro    { background: rgba(62,207,207,.12); color: var(--teal);   border: 1px solid rgba(62,207,207,.25); }
+  .sub-free   { background: rgba(107,116,148,.15); color: var(--muted); border: 1px solid var(--border); }
+  .sub-trial  { background: rgba(245,167,66,.12);  color: var(--orange);border: 1px solid rgba(245,167,66,.25); }
+  .tokens-cell  { font-family: var(--mono); font-size: 12px; }
+  .tokens-total { font-weight: 600; }
+  .tokens-detail { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
+  .token-pill { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-family: var(--mono); }
+  .cout-cell  { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+  .cout-low   { color: var(--green); }
+  .cout-mid   { color: var(--orange); }
+  .cout-high  { color: var(--red); }
+  .date-cell  { font-size: 11px; color: var(--muted); font-family: var(--mono); }
   .empty-row td { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
 
-  /* ── MINI CHART ── */
-  .chart-wrap {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 14px; padding: 20px; margin-bottom: 28px;
-  }
-  .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
-  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
-  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .bar-fill { width: 100%; border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.6s ease; }
-  .bar-label { font-size: 9px; color: var(--muted); font-family: var(--mono); white-space: nowrap; }
-  .bar-val { font-size: 9px; color: var(--muted); font-family: var(--mono); }
-
-  /* ── LOADING STATE ── */
-  .skeleton {
-    background: linear-gradient(90deg, var(--bg3) 25%, rgba(255,255,255,0.04) 50%, var(--bg3) 75%);
-    background-size: 200% 100%; animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-  }
-  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-
-  /* ── SCROLLBAR ── */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
-
-  /* ── TOAST ── */
+  /* TOAST */
   #toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
     background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
     padding: 10px 18px; font-size: 13px; color: var(--text);
-    opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 9999;
-    white-space: nowrap;
+    opacity: 0; transition: all .3s; pointer-events: none; z-index: 9999; white-space: nowrap;
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* ── FOOTER LÉGAL ── */
-    .artio-legal-footer {
-      position: relative; z-index: 1;
-      text-align: center; padding: 12px 16px;
-      font-size: 11px; color: var(--muted, #6b7494);
-      border-top: 1px solid var(--border, rgba(255,255,255,0.07));
-    }
-    .artio-legal-footer a {
-      color: var(--muted, #6b7494); text-decoration: none;
-      transition: color 0.2s;
-    }
-    .artio-legal-footer a:hover { color: var(--amber, #f5a742); }
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 2px; }
+
+  /* FOOTER */
+  .artio-legal-footer {
+    text-align: center; padding: 12px; font-size: 11px; color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+  .artio-legal-footer a { color: var(--muted); text-decoration: none; }
+  .artio-legal-footer a:hover { color: var(--orange); }
 </style>
 </head>
 <body>
@@ -249,33 +201,16 @@
   <div class="loader-bar"><div class="loader-bar-inner"></div></div>
 </div>
 
-
-<!-- SAISIE CLÉ SERVICE ROLE -->
-<div id="keyScreen" style="display:none;position:fixed;inset:0;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;gap:16px;">
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:36px 40px;max-width:420px;width:90%;text-align:center;">
+<!-- SAISIE SERVICE ROLE KEY -->
+<div id="keyScreen">
+  <div id="keyBox">
     <div style="font-size:32px;margin-bottom:12px;">🔑</div>
-    <h2 style="font-size:18px;font-weight:700;margin-bottom:6px;">Accès Admin Artio</h2>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:24px;">Saisis ta service_role key Supabase.<br>Elle n'est jamais stockée — seulement en mémoire.</p>
-    <input
-      id="keyInput"
-      type="password"
-      placeholder="sb_secret_..."
-      style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text);font-family:var(--mono);outline:none;margin-bottom:12px;"
-      onkeydown="if(event.key==='Enter') confirmKey()"
-    />
-    <div id="keyError" style="font-size:12px;color:var(--red);margin-bottom:10px;min-height:16px;"></div>
-    <button onclick="confirmKey()" style="width:100%;background:var(--orange);color:#000;font-weight:700;border:none;border-radius:10px;padding:12px;font-size:14px;cursor:pointer;font-family:var(--font);">
-      Accéder au dashboard
-    </button>
+    <h2>Acces Admin Artio</h2>
+    <p>Saisis ta service_role key Supabase.<br>Elle reste uniquement en memoire, jamais stockee.</p>
+    <input id="keyInput" type="password" placeholder="sb_secret_..." />
+    <div id="keyError"></div>
+    <button id="keyBtn" onclick="confirmKey()">Acceder au dashboard</button>
   </div>
-</div>
-
-<!-- ACCESS DENIED -->
-<div id="denied">
-  <div class="icon">🔒</div>
-  <h2>Accès refusé</h2>
-  <p>Cette page est réservée à l'administrateur Artio.</p>
-  <a href="home.html">← Retour à l'application</a>
 </div>
 
 <!-- APP -->
@@ -291,36 +226,34 @@
         <button class="period-tab" onclick="setPeriod('week',this)">7 jours</button>
         <button class="period-tab" onclick="setPeriod('all',this)">Tout</button>
       </div>
-      <button class="btn-refresh" onclick="loadData()" title="Rafraîchir">
+      <button class="btn-refresh" onclick="loadData()" title="Rafraichir">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
           <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
         </svg>
       </button>
-      <button class="btn-logout" onclick="logout()">Déconnexion</button>
+      <button class="btn-logout" onclick="logout()">Deconnexion</button>
     </div>
   </nav>
 
   <div class="main">
-
-    <!-- KPI CARDS -->
-    <div class="kpi-grid" id="kpiGrid">
+    <div class="kpi-grid">
       <div class="kpi-card" style="--accent:var(--teal)">
         <div class="kpi-label">Utilisateurs actifs</div>
         <div class="kpi-value" id="kpiUsers">—</div>
         <div class="kpi-sub">avec au moins 1 appel IA</div>
       </div>
       <div class="kpi-card" style="--accent:var(--orange)">
-        <div class="kpi-label">Tokens consommés</div>
+        <div class="kpi-label">Tokens consommes</div>
         <div class="kpi-value" id="kpiTokens">—</div>
-        <div class="kpi-sub" id="kpiTokensSub">sur la période</div>
+        <div class="kpi-sub">sur la periode</div>
       </div>
       <div class="kpi-card" style="--accent:var(--green)">
-        <div class="kpi-label">Coût IA total</div>
+        <div class="kpi-label">Cout IA total</div>
         <div class="kpi-value" id="kpiCout">—</div>
         <div class="kpi-sub">en dollars (tarif Anthropic)</div>
       </div>
       <div class="kpi-card" style="--accent:var(--red)">
-        <div class="kpi-label">Coût moyen / user</div>
+        <div class="kpi-label">Cout moyen / user</div>
         <div class="kpi-value" id="kpiAvg">—</div>
         <div class="kpi-sub">parmi les actifs</div>
       </div>
@@ -330,331 +263,302 @@
         <div class="kpi-sub">inscrits sur Artio</div>
       </div>
       <div class="kpi-card" style="--accent:var(--teal)">
-        <div class="kpi-label">Abonnés Pro</div>
+        <div class="kpi-label">Abonnes Pro</div>
         <div class="kpi-value" id="kpiPro">—</div>
         <div class="kpi-sub">subscription_status = pro</div>
       </div>
     </div>
 
-    <!-- FEATURE BREAKDOWN -->
     <div class="section-title">Consommation par feature</div>
-    <div class="feature-grid" id="featureGrid">
-      <!-- injecté JS -->
-    </div>
+    <div class="feature-grid" id="featureGrid"></div>
 
-    <!-- TABLE UTILISATEURS -->
-    <div class="section-title">Détail par utilisateur</div>
+    <div class="section-title">Detail par utilisateur</div>
     <div class="table-wrap">
       <div class="table-header">
         <span class="table-title">Tous les utilisateurs</span>
-        <input class="search-box" type="text" placeholder="Rechercher…" id="searchInput" oninput="filterTable()"/>
+        <input class="search-box" type="text" placeholder="Rechercher..." id="searchInput" oninput="filterTable()"/>
       </div>
-      <table id="userTable">
+      <table>
         <thead>
           <tr>
             <th>Utilisateur</th>
             <th>Abonnement</th>
-            <th>Tokens (période)</th>
-            <th onclick="sortBy('cout_total_eur')" style="cursor:pointer">Coût $ ↕</th>
-            <th onclick="sortBy('nb_appels')" style="cursor:pointer">Appels ↕</th>
+            <th>Tokens (periode)</th>
+            <th style="cursor:pointer" onclick="sortBy('cout_total_eur')">Cout $ ↕</th>
+            <th style="cursor:pointer" onclick="sortBy('nb_appels')">Appels ↕</th>
             <th>Dernier appel</th>
           </tr>
         </thead>
         <tbody id="userTableBody">
-          <tr class="empty-row"><td colspan="7">Chargement…</td></tr>
+          <tr class="empty-row"><td colspan="6">Chargement...</td></tr>
         </tbody>
       </table>
     </div>
-
   </div>
 </div>
 
 <div id="toast"></div>
 
+<div class="artio-legal-footer">
+  <a href="cgv.html">CGV</a> &nbsp;·&nbsp; <a href="cgu.html">CGU</a> &nbsp;·&nbsp; <a href="confidentialite.html">Politique de confidentialite</a>
+</div>
+
 <script>
-const SUPABASE_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co";
-const SUPABASE_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
+var SUPABASE_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co";
+var SUPABASE_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
 
-// Clients initialisés après saisie de la service_role key — jamais dans le code
-let sbAuth  = null;
-let sbAdmin = null;
-let allUsers  = [];
-let sortField = 'cout_total_eur';
-let sortAsc   = false;
-let period    = 'month';
+var sbAuth  = null;
+var sbAdmin = null;
+var allUsers  = [];
+var sortField = "cout_total_eur";
+var sortAsc   = false;
+var period    = "month";
 
-// ── PERIOD ───────────────────────────────────────────────────────
+// ── ENTER KEY ──────────────────────────────────────────────────────
+document.getElementById("keyInput").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") confirmKey();
+});
+
+// ── PERIOD ─────────────────────────────────────────────────────────
 function setPeriod(p, el) {
   period = p;
-  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+  document.querySelectorAll(".period-tab").forEach(function(t) { t.classList.remove("active"); });
+  el.classList.add("active");
   loadData();
 }
 
 function periodFilter() {
-  const now = new Date();
-  if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  if (period === 'week')  return new Date(now - 7*24*60*60*1000).toISOString();
-  return null; // all
+  var now = new Date();
+  if (period === "month") return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  if (period === "week")  return new Date(now - 7*24*60*60*1000).toISOString();
+  return null;
 }
 
-// ── LOAD ─────────────────────────────────────────────────────────
+// ── LOAD DATA ──────────────────────────────────────────────────────
 async function loadData() {
   try {
-    // 1. Tous les profils
-    const { data: profils, error: ep } = await sbAdmin.from('profils')
-      .select('user_id,nom,email,subscription_status,created_at,is_admin');
-    if (ep) throw ep;
+    var resProfils = await sbAdmin.from("profils").select("user_id,nom,email,subscription_status");
+    if (resProfils.error) throw resProfils.error;
 
-    // 2. token_logs filtrés par période
-    let query = sbAdmin.from('token_logs')
-      .select('user_id,feature,input_tokens,output_tokens,total_tokens,cout_estime,created_at');
-    const from = periodFilter();
-    if (from) query = query.gte('created_at', from);
-    const { data: logs, error: el } = await query;
-    if (el) throw el;
+    var query = sbAdmin.from("token_logs").select("user_id,feature,total_tokens,cout_estime,created_at");
+    var fromDate = periodFilter();
+    if (fromDate) query = query.gte("created_at", fromDate);
+    var resLogs = await query;
+    if (resLogs.error) throw resLogs.error;
 
-    // 3. Agréger par user
-    const map = {};
-    profils.forEach(p => {
-      map[p.user_id] = {
-        ...p,
+    var map = {};
+    resProfils.data.forEach(function(p) {
+      map[p.user_id] = Object.assign({}, p, {
         nb_appels: 0, tokens_total: 0, cout_total_eur: 0,
         tokens_devis: 0, tokens_suivi: 0, tokens_chatbot: 0,
         tokens_email: 0, tokens_description: 0,
         dernier_appel: null
-      };
+      });
     });
 
-    logs.forEach(l => {
-      const u = map[l.user_id];
+    (resLogs.data || []).forEach(function(l) {
+      var u = map[l.user_id];
       if (!u) return;
       u.nb_appels++;
-      u.tokens_total     += l.total_tokens;
-      u.cout_total_eur   += parseFloat(l.cout_estime) || 0;
-      u['tokens_'+l.feature] = (u['tokens_'+l.feature] || 0) + l.total_tokens;
+      u.tokens_total    += (l.total_tokens || 0);
+      u.cout_total_eur  += parseFloat(l.cout_estime) || 0;
+      var key = "tokens_" + l.feature;
+      u[key] = (u[key] || 0) + (l.total_tokens || 0);
       if (!u.dernier_appel || l.created_at > u.dernier_appel) u.dernier_appel = l.created_at;
     });
 
     allUsers = Object.values(map);
     renderAll();
   } catch(e) {
-    toast('Erreur chargement : ' + e.message);
+    showToast("Erreur : " + e.message);
     console.error(e);
   }
 }
 
-// ── RENDER ALL ───────────────────────────────────────────────────
+// ── RENDER ─────────────────────────────────────────────────────────
 function renderAll() {
   renderKPI();
   renderFeatures();
   renderTable();
-  hideLoader();
+  document.getElementById("loader").style.display = "none";
+  document.getElementById("app").style.display = "block";
 }
 
-function hideLoader() {
-  document.getElementById('loader').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-}
-
-// ── KPI ──────────────────────────────────────────────────────────
 function renderKPI() {
-  const active  = allUsers.filter(u => u.nb_appels > 0);
-  const total   = allUsers.length;
-  const pros    = allUsers.filter(u => u.subscription_status === 'pro').length;
-  const tokens  = allUsers.reduce((s,u) => s + u.tokens_total, 0);
-  const cout    = allUsers.reduce((s,u) => s + u.cout_total_eur, 0);
-  const avg     = active.length ? cout / active.length : 0;
+  var active = allUsers.filter(function(u) { return u.nb_appels > 0; });
+  var tokens = allUsers.reduce(function(s,u) { return s + u.tokens_total; }, 0);
+  var cout   = allUsers.reduce(function(s,u) { return s + u.cout_total_eur; }, 0);
+  var avg    = active.length ? cout / active.length : 0;
+  var pros   = allUsers.filter(function(u) { return u.subscription_status === "pro"; }).length;
 
-  document.getElementById('kpiUsers').textContent  = active.length;
-  document.getElementById('kpiTokens').textContent = fmtTokens(tokens);
-  document.getElementById('kpiCout').textContent   = '$' + cout.toFixed(4);
-  document.getElementById('kpiAvg').textContent    = '$' + avg.toFixed(4);
-  document.getElementById('kpiTotal').textContent  = total;
-  document.getElementById('kpiPro').textContent    = pros;
+  document.getElementById("kpiUsers").textContent  = active.length;
+  document.getElementById("kpiTokens").textContent = fmtTokens(tokens);
+  document.getElementById("kpiCout").textContent   = "$" + cout.toFixed(4);
+  document.getElementById("kpiAvg").textContent    = "$" + avg.toFixed(4);
+  document.getElementById("kpiTotal").textContent  = allUsers.length;
+  document.getElementById("kpiPro").textContent    = pros;
 }
 
-// ── FEATURES ─────────────────────────────────────────────────────
 function renderFeatures() {
-  const features = [
-    { key: 'tokens_chatbot',     label: 'Chatbot',      color: '#3ecfcf', icon: '💬' },
-    { key: 'tokens_devis',       label: 'Devis voix',   color: '#f5a742', icon: '🎙️' },
-    { key: 'tokens_email',       label: 'Email IA',     color: '#a78bfa', icon: '✉️' },
-    { key: 'tokens_description', label: 'Description',  color: '#3ecf8e', icon: '📝' },
-    { key: 'tokens_suivi',       label: 'Suivi chantier', color: '#ff5e6c', icon: '🏗️' },
+  var features = [
+    { key: "tokens_chatbot",     label: "Chatbot",        color: "#3ecfcf", icon: "💬" },
+    { key: "tokens_devis",       label: "Devis voix",     color: "#f5a742", icon: "🎙️" },
+    { key: "tokens_email",       label: "Email IA",       color: "#a78bfa", icon: "✉️" },
+    { key: "tokens_description", label: "Description",    color: "#3ecf8e", icon: "📝" },
+    { key: "tokens_suivi",       label: "Suivi chantier", color: "#ff5e6c", icon: "🏗️" }
   ];
 
-  const totals = {};
-  features.forEach(f => {
-    totals[f.key] = allUsers.reduce((s,u) => s + (u[f.key]||0), 0);
+  var totals = {};
+  features.forEach(function(f) {
+    totals[f.key] = allUsers.reduce(function(s,u) { return s + (u[f.key] || 0); }, 0);
   });
-  const max = Math.max(...Object.values(totals), 1);
+  var max = Math.max.apply(null, Object.values(totals).concat([1]));
 
-  document.getElementById('featureGrid').innerHTML = features.map(f => {
-    const val  = totals[f.key];
-    const pct  = Math.round((val / max) * 100);
-    const cout = val * 0.000009; // approximation moyenne
-    return `
-      <div class="feature-card">
-        <div class="feature-header">
-          <div class="feature-name">
-            <div class="feature-dot" style="background:${f.color}"></div>
-            ${f.icon} ${f.label}
-          </div>
-          <div class="feature-tokens" style="color:${f.color}">${fmtTokens(val)}</div>
-        </div>
-        <div class="feature-bar-bg">
-          <div class="feature-bar-fill" style="width:${pct}%;background:${f.color}"></div>
-        </div>
-        <div class="feature-meta">
-          <span>${pct}% du total</span>
-          <span>~$${cout.toFixed(4)}</span>
-        </div>
-      </div>`;
-  }).join('');
+  document.getElementById("featureGrid").innerHTML = features.map(function(f) {
+    var val  = totals[f.key];
+    var pct  = Math.round((val / max) * 100);
+    var cout = (val * 0.000009).toFixed(4);
+    return "<div class='feature-card'>" +
+      "<div class='feature-header'>" +
+        "<div class='feature-name'><div class='feature-dot' style='background:" + f.color + "'></div>" + f.icon + " " + f.label + "</div>" +
+        "<div class='feature-tokens' style='color:" + f.color + "'>" + fmtTokens(val) + "</div>" +
+      "</div>" +
+      "<div class='feature-bar-bg'><div class='feature-bar-fill' style='width:" + pct + "%;background:" + f.color + "'></div></div>" +
+      "<div class='feature-meta'><span>" + pct + "% du total</span><span>~$" + cout + "</span></div>" +
+    "</div>";
+  }).join("");
 }
 
-// ── TABLE ─────────────────────────────────────────────────────────
 function sortBy(field) {
   if (sortField === field) sortAsc = !sortAsc;
   else { sortField = field; sortAsc = false; }
   renderTable();
 }
 
-function filterTable() {
-  renderTable();
-}
+function filterTable() { renderTable(); }
 
 function renderTable() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  let rows = allUsers.filter(u =>
-    (u.nom||'').toLowerCase().includes(q) ||
-    (u.email||'').toLowerCase().includes(q)
-  );
-
-  rows.sort((a,b) => {
-    const av = a[sortField] ?? 0, bv = b[sortField] ?? 0;
+  var q = (document.getElementById("searchInput").value || "").toLowerCase();
+  var rows = allUsers.filter(function(u) {
+    return (u.nom || "").toLowerCase().indexOf(q) >= 0 || (u.email || "").toLowerCase().indexOf(q) >= 0;
+  });
+  rows.sort(function(a, b) {
+    var av = a[sortField] != null ? a[sortField] : 0;
+    var bv = b[sortField] != null ? b[sortField] : 0;
     return sortAsc ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
   });
 
-  const featureKeys = ['devis','suivi','chatbot','email','description'];
-  const featureColors = { devis:'#f5a742', suivi:'#ff5e6c', chatbot:'#3ecfcf', email:'#a78bfa', description:'#3ecf8e' };
+  var featureKeys   = ["devis","suivi","chatbot","email","description"];
+  var featureColors = { devis:"#f5a742", suivi:"#ff5e6c", chatbot:"#3ecfcf", email:"#a78bfa", description:"#3ecf8e" };
 
-  const tbody = document.getElementById('userTableBody');
+  var tbody = document.getElementById("userTableBody");
   if (!rows.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Aucun résultat</td></tr>';
+    tbody.innerHTML = "<tr class='empty-row'><td colspan='6'>Aucun resultat</td></tr>";
     return;
   }
 
-  tbody.innerHTML = rows.map(u => {
-    const cout = u.cout_total_eur;
-    const coutClass = cout < 0.05 ? 'cout-low' : cout < 0.20 ? 'cout-mid' : 'cout-high';
-    const subClass  = u.subscription_status === 'pro' ? 'sub-pro' :
-                      u.subscription_status === 'trial' ? 'sub-trial' : 'sub-free';
-    const pills = featureKeys
-      .filter(k => (u['tokens_'+k]||0) > 0)
-      .map(k => `<span class="token-pill" style="background:${featureColors[k]}22;color:${featureColors[k]}">${k} ${fmtTokens(u['tokens_'+k]||0)}</span>`)
-      .join('');
-    const dernierAppel = u.dernier_appel
-      ? new Date(u.dernier_appel).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
-      : '—';
-    const inscrit = u.created_at
-      ? new Date(u.created_at).toLocaleDateString('fr-FR')
-      : '—';
+  tbody.innerHTML = rows.map(function(u) {
+    var cout = u.cout_total_eur;
+    var coutClass = cout < 0.05 ? "cout-low" : cout < 0.20 ? "cout-mid" : "cout-high";
+    var subClass  = u.subscription_status === "pro"   ? "sub-pro"  :
+                    u.subscription_status === "trial" ? "sub-trial": "sub-free";
+    var pills = featureKeys.filter(function(k) {
+      return (u["tokens_" + k] || 0) > 0;
+    }).map(function(k) {
+      return "<span class='token-pill' style='background:" + featureColors[k] + "22;color:" + featureColors[k] + "'>" + k + " " + fmtTokens(u["tokens_" + k] || 0) + "</span>";
+    }).join("");
 
-    return `<tr>
-      <td>
-        <div class="user-nom">${u.nom||'—'}</div>
-        <div class="user-email">${u.email||''}</div>
-      </td>
-      <td><span class="sub-badge ${subClass}">${u.subscription_status||'free'}</span></td>
-      <td class="tokens-cell">
-        <div class="tokens-total">${fmtTokens(u.tokens_total)}</div>
-        <div class="tokens-detail">${pills}</div>
-      </td>
-      <td class="cout-cell ${coutClass}">$${cout.toFixed(4)}</td>
-      <td class="tokens-cell" style="color:var(--muted)">${u.nb_appels}</td>
-      <td class="date-cell">${dernierAppel}</td>
-    </tr>`;
-  }).join('');
+    var dernierAppel = u.dernier_appel
+      ? new Date(u.dernier_appel).toLocaleString("fr-FR", {day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})
+      : "—";
+
+    return "<tr>" +
+      "<td><div class='user-nom'>" + (u.nom || "—") + "</div><div class='user-email'>" + (u.email || "") + "</div></td>" +
+      "<td><span class='sub-badge " + subClass + "'>" + (u.subscription_status || "free") + "</span></td>" +
+      "<td class='tokens-cell'><div class='tokens-total'>" + fmtTokens(u.tokens_total) + "</div><div class='tokens-detail'>" + pills + "</div></td>" +
+      "<td class='cout-cell " + coutClass + "'>$" + cout.toFixed(4) + "</td>" +
+      "<td class='tokens-cell' style='color:var(--muted)'>" + u.nb_appels + "</td>" +
+      "<td class='date-cell'>" + dernierAppel + "</td>" +
+    "</tr>";
+  }).join("");
 }
 
-// ── UTILS ─────────────────────────────────────────────────────────
+// ── UTILS ──────────────────────────────────────────────────────────
 function fmtTokens(n) {
-  if (!n) return '0';
-  if (n >= 1_000_000) return (n/1_000_000).toFixed(1)+'M';
-  if (n >= 1_000)     return (n/1_000).toFixed(1)+'k';
+  if (!n) return "0";
+  if (n >= 1000000) return (n/1000000).toFixed(1) + "M";
+  if (n >= 1000)    return (n/1000).toFixed(1) + "k";
   return String(n);
 }
 
-function toast(msg) {
-  const t = document.getElementById('toast');
+function showToast(msg) {
+  var t = document.getElementById("toast");
   t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 3500);
 }
 
 async function logout() {
   await sbAuth.auth.signOut();
-  window.location.href = 'login.html';
+  window.location.href = "login.html";
 }
 
-// ── INIT ─────────────────────────────────────────────────────────
-// ── SAISIE CLÉ ───────────────────────────────────────────────────
+// ── VERIFICATION CLE ───────────────────────────────────────────────
 async function confirmKey() {
-  const key = document.getElementById('keyInput').value.trim();
-  const err = document.getElementById('keyError');
-  if (!key.startsWith('sb_secret_') && !key.startsWith('eyJ')) {
-    err.textContent = 'Format invalide — la clé commence par sb_secret_ ou eyJ';
-    return;
-  }
-  err.textContent = 'Vérification…';
+  var key = document.getElementById("keyInput").value.trim();
+  var err = document.getElementById("keyError");
 
-  // Initialiser les clients avec cette clé
-  sbAuth  = supabase.createClient(SUPABASE_URL, key);
-  sbAdmin = sbAuth;
-
-  // Vérifier que la clé est correcte + que l'utilisateur est admin
-  const { data: { session }, error: se } = await sbAuth.auth.getSession();
-  if (se || !session) {
-    err.textContent = 'Clé invalide ou session expirée. Reconnecte-toi dabord.';
-    sbAuth = null; sbAdmin = null; return;
-  }
-
-  const { data: profil } = await sbAdmin.from('profils')
-    .select('is_admin').eq('user_id', session.user.id).single();
-
-  if (!profil?.is_admin) {
-    document.getElementById('keyScreen').style.display = 'none';
-    document.getElementById('loader').style.display = 'none';
-    document.getElementById('denied').style.display = 'flex';
+  if (!key.startsWith("sb_secret_") && !key.startsWith("eyJ")) {
+    err.textContent = "Format invalide. La service_role key commence par sb_secret_ ou eyJ";
     return;
   }
 
-  document.getElementById('keyScreen').style.display = 'none';
-  await loadData();
+  err.textContent = "Verification en cours...";
+  document.getElementById("keyBtn").disabled = true;
+
+  try {
+    var sbTest = supabase.createClient(SUPABASE_URL, key);
+
+    // La service_role key bypasse le RLS.
+    // Si elle peut lire tous les profils → elle est valide.
+    var res = await sbTest.from("profils").select("user_id").limit(1);
+
+    if (res.error) {
+      err.textContent = "Cle refusee : " + res.error.message;
+      document.getElementById("keyBtn").disabled = false;
+      return;
+    }
+
+    // Cle valide — on initialise les deux clients
+    sbAuth  = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    sbAdmin = sbTest;
+
+    document.getElementById("keyScreen").style.display = "none";
+    document.getElementById("loader").style.display = "flex";
+    await loadData();
+
+  } catch(e) {
+    err.textContent = "Erreur : " + e.message;
+    document.getElementById("keyBtn").disabled = false;
+  }
 }
 
+// ── INIT ───────────────────────────────────────────────────────────
 async function init() {
-  // Vérifier d'abord s'il y a une session avec la clé publique
-  const sbPublic = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { data: { session } } = await sbPublic.auth.getSession();
+  var sbPublic = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var sessionRes = await sbPublic.auth.getSession();
 
-  if (!session) {
-    window.location.href = 'login.html';
+  if (!sessionRes.data.session) {
+    window.location.href = "login.html";
     return;
   }
 
-  // Session OK — afficher l'écran de saisie de clé
-  document.getElementById('loader').style.display = 'none';
-  document.getElementById('keyScreen').style.display = 'flex';
-  document.getElementById('keyInput').focus();
+  document.getElementById("loader").style.display = "none";
+  document.getElementById("keyScreen").style.display = "flex";
+  document.getElementById("keyInput").focus();
 }
 
 init();
 </script>
-<div class="artio-legal-footer">
-  <a href="cgv.html">CGV</a> · <a href="cgu.html">CGU</a> · <a href="confidentialite.html">Politique de confidentialité</a>
-</div>
 </body>
 </html>
