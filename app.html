@@ -468,6 +468,7 @@ window.generateEmailReply=async function(emailId,from,subject,body){
     const e=S.entreprise;
     const {text:raw,usage:u0}=await callClaude(
 `Tu es l'assistant de ${e.nom||"l'entreprise"}. Rédige une réponse professionnelle à cet email.
+${e.contexte_ia?`\nContexte sur l'activité :\n${e.contexte_ia}\n`:""}
 Ton : ${(S.emailTons||["vouvoiement"]).join(" + ")}
 De : ${from}
 Objet : ${subject}
@@ -785,7 +786,7 @@ window.handleGenerate=async()=>{
     set({loading:true,generatedText:""});
     try{
       const prompt=S.emailMode==="reponse"
-        ?`Rédige une réponse email professionnelle en ${{"fr":"français","en":"English","es":"español","zh":"中文"}[S.langue]||"français"} pour ${e.nom}.\nClient : ${f.client_nom}\nMessage : ${f.message}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`
+        ?`Rédige une réponse email professionnelle en ${{"fr":"français","en":"English","es":"español","zh":"中文"}[S.langue]||"français"} pour ${e.nom}.\n${e.contexte_ia?`Contexte sur l'activité :\n${e.contexte_ia}\n`:""}\nClient : ${f.client_nom}\nMessage : ${f.message}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`
         :`Rédige un email de mise à jour pour ${e.nom}.\nTon souhaité: ${(S.emailTons||["vouvoiement"]).join(" + ")}.\nClient : ${f.client_nom}\nChantier : ${f.adresse_travaux||""}\nAvancement : ${f.avancement}\nProchaine étape : ${f.suite||"à définir"}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`;
       const {text,usage:ue}=await callClaude(prompt,500);
       logTokens("email", ue);
