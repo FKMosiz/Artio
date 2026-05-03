@@ -158,7 +158,7 @@ function getNextNum(type,entreprise){
 let S={
   user:null,
   tab:"devis",
-  emailMode:"reponse",emailTons:["vouvoiement"],voiceContextField:null,renamingDossierId:null,renamingDossierVal:"",showSettings:false,langue:"fr",darkMode:false,settingsPage:"main",gmailToken:null,gmailClientId:"",emails:[],emailsLoading:false,emailsError:"",
+  emailMode:"reponse",emailTons:["vouvoiement"],voiceContextField:null,renamingDossierId:null,renamingDossierVal:"",showSettings:false,langue:"fr",darkMode:false,settingsPage:"main",gmailEmail:null,gmailAccessToken:null,emails:[],emailsLoading:false,emailsError:"",
   showProfil:false,
   loading:false,
   voiceState:"idle",
@@ -203,6 +203,8 @@ async function loadUserData(userId){
           nature_operation:profil.nature_operation||""
       };
       S.profilSaved=!!profil.nom;
+      S.gmailEmail=profil.gmail_email||null;
+      S.gmailAccessToken=profil.gmail_access_token||null;
     }
     // Charger les dossiers
     const{data:dossiers,error:de}=await sb.from("dossiers").select("*").eq("user_id",userId).order("updated_at",{ascending:false});
@@ -358,78 +360,49 @@ function applyLangue(){
   if(localStorage.getItem("artio_langue")) S.langue=localStorage.getItem("artio_langue");
 })();
 
-// ——— GMAIL OAUTH ———
+// ——— GMAIL ———
 function gmailConnect(){
-  const clientId=S.gmailClientId.trim();
-  if(!clientId){alert("Entre ton Google Client ID dans les paramètres.");return}
-  const redirectUri=window.location.origin+window.location.pathname;
-  const scope="https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send";
-  const url="https://accounts.google.com/o/oauth2/v2/auth?"+
-    "client_id="+encodeURIComponent(clientId)+
-    "&redirect_uri="+encodeURIComponent(redirectUri)+
-    "&response_type=token"+
-    "&scope="+encodeURIComponent(scope)+
-    "&prompt=consent";
-  window.location.href=url;
+  window.location.href="settings.html?tab=gmail";
 }
 
-function gmailDisconnect(){
-  S.gmailToken=null;S.emails=[];
-  sessionStorage.removeItem("gmail_token");
+async function gmailDisconnect(){
+  const{data:{session}}=await sb.auth.getSession();
+  await sb.from("profils").update({
+    gmail_access_token:null,gmail_refresh_token:null,
+    gmail_token_expiry:null,gmail_email:null
+  }).eq("user_id",session.user.id);
+  S.gmailEmail=null;S.gmailAccessToken=null;S.emails=[];
   render();
 }
 
-// Lire le token OAuth dans l'URL au retour de Google
-(function checkGmailCallback(){
-  const hash=window.location.hash;
-  if(hash&&hash.includes("access_token")){
-    const params=new URLSearchParams(hash.substring(1));
-    const token=params.get("access_token");
-    if(token){
-      S.gmailToken=token;
-      sessionStorage.setItem("gmail_token",token);
-      // Nettoyer l'URL
-      history.replaceState(null,"",window.location.pathname);
-    }
-  }
-  // Restaurer token de session
-  const saved=sessionStorage.getItem("gmail_token");
-  if(saved&&!S.gmailToken) S.gmailToken=saved;
-})();
-
 async function gmailFetchEmails(){
-  if(!S.gmailToken){alert("Connecte ton Gmail d'abord.");return}
+  if(!S.gmailEmail){alert("Connecte ton Gmail dans les paramètres.");return}
   S.emailsLoading=true;S.emailsError="";render();
   try{
-    // Lister les messages non lus
     const listRes=await fetch(
       "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread&maxResults=10",
-      {headers:{"Authorization":"Bearer "+S.gmailToken}}
+      {headers:{"Authorization":"Bearer "+S.gmailAccessToken}}
     );
     if(listRes.status===401){
-      S.gmailToken=null;sessionStorage.removeItem("gmail_token");
-      S.emailsError="Session expirée. Reconnecte-toi.";
+      S.gmailEmail=null;S.gmailAccessToken=null;
+      S.emailsError="Session expirée. Reconnecte Gmail dans les paramètres.";
       S.emailsLoading=false;render();return;
     }
     const listData=await listRes.json();
     const messages=listData.messages||[];
-    // Récupérer le détail de chaque message
     const emails=await Promise.all(messages.map(async m=>{
       const r=await fetch(
         "https://gmail.googleapis.com/gmail/v1/users/me/messages/"+m.id+"?format=full",
-        {headers:{"Authorization":"Bearer "+S.gmailToken}}
+        {headers:{"Authorization":"Bearer "+S.gmailAccessToken}}
       );
       const d=await r.json();
       const headers=d.payload?.headers||[];
       const get=name=>headers.find(h=>h.name===name)?.value||"";
-      // Extraire le corps du message
       let body="";
       const parts=d.payload?.parts||[];
       if(parts.length>0){
         const textPart=parts.find(p=>p.mimeType==="text/plain")||parts[0];
-        if(textPart?.body?.data){
-          body=atob(textPart.body.data.replace(/-/g,"+").replace(/_/g,"/"));
-        }
+        if(textPart?.body?.data) body=atob(textPart.body.data.replace(/-/g,"+").replace(/_/g,"/"));
       } else if(d.payload?.body?.data){
         body=atob(d.payload.body.data.replace(/-/g,"+").replace(/_/g,"/"));
       }
@@ -442,23 +415,17 @@ async function gmailFetchEmails(){
 }
 
 async function gmailSendReply(emailId,from,subject,replyBody){
-  if(!S.gmailToken)return;
-  // Construire le message RFC 2822
-  const to=from.replace(/<.*?>/g,"").trim()||from;
+  if(!S.gmailEmail)return;
+  const{data:{session}}=await sb.auth.getSession();
   const subj=subject.startsWith("Re:")?subject:"Re: "+subject;
-  const raw=`To: ${from}
-Subject: ${subj}
-Content-Type: text/plain; charset=utf-8
-
-${replyBody}`;
-  const encoded=btoa(unescape(encodeURIComponent(raw))).replace(/[+]/g,"-").replace(/[/]/g,"_").replace(/=+$/,"");
-  const res=await fetch(
-    "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
-    {method:"POST",headers:{"Authorization":"Bearer "+S.gmailToken,"Content-Type":"application/json"},
-     body:JSON.stringify({raw:encoded,threadId:emailId})}
-  );
-  if(res.ok){alert("Email envoyé !");gmailFetchEmails();}
-  else{const e=await res.json();alert("Erreur envoi : "+(e.error?.message||"inconnue"));}
+  const res=await fetch(FUNCTIONS_URL+"/gmail-send",{
+    method:"POST",
+    headers:{"Authorization":"Bearer "+session.access_token,"apikey":SB_KEY,"Content-Type":"application/json"},
+    body:JSON.stringify({to:from,subject:subj,html:replyBody.replace(/\n/g,"<br/>")})
+  });
+  const data=await res.json();
+  if(data.success){alert("Email envoyé !");gmailFetchEmails();}
+  else{alert("Erreur envoi : "+(data.error||"inconnue"));}
 }
 
 window.generateEmailReply=async function(emailId,from,subject,body){
@@ -1283,7 +1250,7 @@ function renderApp(){
   </nav>
   <div class="app">
     ${!apiOk?'<div class="warn-bar" onclick="set({showSettings:true,settingsPage:\'profil\'})">⚠️ Configure ton entreprise et ta clé API</div>':""}    <div class="tabs">
-      ${[["devis",L("devis")],["facture",L("facture")],["email",L("email")],["historique",L("historique")+(S.dossiers.length?" ("+S.dossiers.length+")":"")],["emails_gmail",S.gmailToken?"📧 Emails"+(S.emails.length?" ("+S.emails.length+")":""):"📧 Gmail"]].map(([id,label])=>`<button class="tab-btn ${S.tab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}
+      ${[["devis",L("devis")],["facture",L("facture")],["email",L("email")],["historique",L("historique")+(S.dossiers.length?" ("+S.dossiers.length+")":"")],["emails_gmail",S.gmailEmail?"📧 Emails"+(S.emails.length?" ("+S.emails.length+")":""):"📧 Gmail"]].map(([id,label])=>`<button class="tab-btn ${S.tab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}
     </div>
     ${S.tab==="emails_gmail"?renderEmailsGmail():S.tab==="historique"?renderHistorique():S.tab==="email"?renderEmail():renderDevisFacture()}
   </div>
@@ -1309,18 +1276,13 @@ function renderApp(){
     `:S.settingsPage==="gmail"?`
       <div>
         <p style="font-size:14px;font-weight:500;margin-bottom:8px;">📧 Connexion Gmail</p>
-        <p style="font-size:12px;color:#888;margin-bottom:16px;">Pour activer la connexion Gmail, tu dois créer un projet sur Google Cloud Console et obtenir un Client ID OAuth 2.0.</p>
-        <div class="field">
-          <label class="label">Google Client ID</label>
-          <input type="text" value="${esc(S.gmailClientId)}" placeholder="xxxx.apps.googleusercontent.com" oninput="S.gmailClientId=this.value" />
-        </div>
-        <p style="font-size:11px;color:#888;margin-bottom:12px;">⚠️ Dans Google Cloud Console → Credentials → OAuth 2.0, ajoute ${window.location.origin+window.location.pathname} comme URI de redirection autorisée.</p>
-        ${S.gmailToken?`
-          <div style="background:var(--teal-dim);border:1px solid rgba(62,207,207,.2);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--teal)">✓ Gmail connecté</div>
+        ${S.gmailEmail?`
+          <div style="background:var(--teal-dim);border:1px solid rgba(62,207,207,.2);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--teal)">✓ Connecté : ${esc(S.gmailEmail)}</div>
           <button class="btn-primary" onclick="gmailFetchEmails();set({showSettings:false,tab:'emails_gmail'})">Voir les emails</button>
           <button class="btn-small btn-gray" style="margin-top:8px;width:100%;" onclick="gmailDisconnect()">Déconnecter</button>
         `:`
-          <button class="btn-primary" onclick="gmailConnect()">Se connecter à Gmail</button>
+          <p style="font-size:12px;color:#888;margin-bottom:16px;">Gmail n'est pas encore connecté. Configure-le dans les paramètres.</p>
+          <a href="settings.html?tab=gmail" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;font-family:var(--fh);text-align:center;box-shadow:0 0 24px var(--amber-glow)">Connecter Gmail →</a>
         `}
       </div>
     `:`
@@ -1334,7 +1296,7 @@ function renderApp(){
     <button onclick="set({settingsPage:'gmail'})" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);cursor:pointer;margin-bottom:8px;transition:border-color .2s">
       <span style="font-size:20px;">📧</span>
       <div>
-        <span style="font-family:var(--fh);font-size:13px;font-weight:600;color:var(--text)">Gmail ${S.gmailToken?"✓":""}</span><br><span style="font-size:11px;color:var(--muted)">${S.gmailToken?"Gmail connecté":"Connecte Gmail pour répondre"}</span>
+        <span style="font-family:var(--fh);font-size:13px;font-weight:600;color:var(--text)">Gmail ${S.gmailEmail?"✓":""}</span><br><span style="font-size:11px;color:var(--muted)">${S.gmailEmail?"Connecté : "+esc(S.gmailEmail):"Connecte Gmail pour envoyer tes emails"}</span>
       </div>
       <span style="margin-left:auto;color:#888;">›</span>
     </button>
@@ -1500,12 +1462,12 @@ function renderEmail(){
 }
 
 function renderEmailsGmail(){
-  if(!S.gmailToken){
+  if(!S.gmailEmail){
     return`<div class="card" style="text-align:center;padding:2rem;">
       <p style="font-size:20px;margin-bottom:12px;">📧</p>
       <p style="font-weight:500;margin-bottom:8px;">Connexion Gmail</p>
-      <p style="font-size:13px;color:#888;margin-bottom:20px;">Lis et réponds à tes emails directement depuis Artio. Configure ton Google Client ID dans les paramètres.</p>
-      <button class="btn-primary" onclick="set({showSettings:true,settingsPage:'gmail'})">⚙ Configurer Gmail</button>
+      <p style="font-size:13px;color:#888;margin-bottom:20px;">Lis et réponds à tes emails directement depuis Artio.</p>
+      <a href="settings.html?tab=gmail" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;font-family:var(--fh);text-align:center;box-shadow:0 0 24px var(--amber-glow)">⚙ Connecter Gmail</a>
     </div>`;
   }
   return`<div class="card">
