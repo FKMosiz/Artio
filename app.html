@@ -361,6 +361,14 @@ function applyLangue(){
 })();
 
 // ——— GMAIL ———
+function decodeBase64Utf8(str){
+  try{
+    return decodeURIComponent(escape(atob(str.replace(/-/g,"+").replace(/_/g,"/"))));
+  }catch(e){
+    return atob(str.replace(/-/g,"+").replace(/_/g,"/"));
+  }
+}
+
 function gmailConnect(){
   window.location.href="settings.html?tab=gmail";
 }
@@ -402,9 +410,9 @@ async function gmailFetchEmails(){
       const parts=d.payload?.parts||[];
       if(parts.length>0){
         const textPart=parts.find(p=>p.mimeType==="text/plain")||parts[0];
-        if(textPart?.body?.data) body=atob(textPart.body.data.replace(/-/g,"+").replace(/_/g,"/"));
+        if(textPart?.body?.data) body=decodeBase64Utf8(textPart.body.data);
       } else if(d.payload?.body?.data){
-        body=atob(d.payload.body.data.replace(/-/g,"+").replace(/_/g,"/"));
+        body=decodeBase64Utf8(d.payload.body.data);
       }
       return{id:m.id,from:get("From"),subject:get("Subject"),date:get("Date"),body:body.slice(0,2000),snippet:d.snippet};
     }));
@@ -1491,7 +1499,7 @@ function renderEmailsGmail(){
           <span style="font-size:11px;color:#888;margin-left:8px;white-space:nowrap;">${esc((m.date||"").slice(0,16))}</span>
         </div>
         <p style="font-size:12px;color:#888;margin-bottom:8px;">${esc(m.from)}</p>
-        <p style="font-size:12px;color:#666;font-style:italic;margin-bottom:12px;">${esc(m.snippet||"")}</p>
+        <p style="font-size:12px;color:#666;font-style:italic;margin-bottom:12px;">${esc(m.snippet||"").replace(/\\r\\n|\\n|\\r/g,"<br/>")}</p>
         <button class="btn-small btn-blue" onclick="generateEmailReply('${m.id}','${esc(m.from).replace(/'/g,"\'")}','${esc(m.subject||"").replace(/'/g,"\'")}',${JSON.stringify(m.body||"").replace(/'/g,"\'")})">
           🤖 Générer une réponse
         </button>
