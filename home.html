@@ -459,6 +459,14 @@ function updateGreeting() {
 
   if (session?.user) {
     const email = session.user.email;
+    const uid = session.user.id;
+
+    // Vérifier onboarding avant tout
+    const { data: profil } = await sb.from('profils').select('nom, onboarding_done').eq('user_id', uid).single();
+    if (!profil?.nom || !profil?.onboarding_done) {
+      window.location.href = 'onboarding.html'; return;
+    }
+
     const initials = email.slice(0, 2).toUpperCase();
     document.getElementById('user-initials').textContent = initials;
     document.getElementById('user-email').textContent = email;
@@ -468,7 +476,6 @@ function updateGreeting() {
 
     // Stats Supabase
     try {
-      const uid = session.user.id;
       const now = new Date();
 
       const [{ count: nbClients }, { data: dossiers }] = await Promise.all([
