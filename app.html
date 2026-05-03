@@ -435,7 +435,11 @@ async function gmailFetchEmails(){
       }
       return{id:m.id,from:get("From"),subject:get("Subject"),date:get("Date"),body:body.slice(0,2000),snippet:d.snippet};
     }));
-    S.emails=emails;S.emailsLoading=false;render();
+    S.emails=emails;
+    // Stockage des corps dans un objet global pour éviter l'injection HTML
+    window.__emailBodies={};
+    emails.forEach(m=>{window.__emailBodies[m.id]=m.body||"";});
+    S.emailsLoading=false;render();
   }catch(e){
     S.emailsError="Erreur : "+e.message;S.emailsLoading=false;render();
   }
@@ -1527,7 +1531,7 @@ function renderEmailsGmail(){
         `:`
           <button class="btn-small btn-gray" style="margin-bottom:10px;" onclick="set({expandedEmail:'${m.id}'})">👁 Voir le message</button>
         `}
-        <button class="btn-small btn-blue" onclick="generateEmailReply('${m.id}','${esc(m.from).replace(/'/g,"\'")}','${esc(m.subject||"").replace(/'/g,"\'")}',${JSON.stringify(m.body||"").replace(/'/g,"\'")})">
+        <button class="btn-small btn-blue" onclick="generateEmailReply('${m.id}','${esc(m.from).replace(/'/g,"\'")}','${esc(m.subject||"").replace(/'/g,"\'")}',window.__emailBodies['${m.id}']||'')">
           🤖 Générer une réponse
         </button>
       </div>
