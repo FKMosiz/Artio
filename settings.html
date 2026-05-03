@@ -333,7 +333,7 @@ function doGmailConnect() {
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/userinfo.email"
   ].join(" "));
-  const redirect = encodeURIComponent(window.location.origin + "/settings.html");
+  const redirect = encodeURIComponent("https://www.monartio.fr/settings.html");
   const url = `https://accounts.google.com/o/oauth2/v2/auth`
     + `?client_id=${GOOGLE_CLIENT_ID}`
     + `&redirect_uri=${redirect}`
@@ -556,14 +556,7 @@ function downloadFacture(index) {
 }
 
 /* ── GMAIL OAUTH CALLBACK ── */
-(function checkGmailCallback() {
-  const urlParams = new URLSearchParams(location.search);
-  const code = urlParams.get("code");
-  if (code) {
-    // On nettoie l'URL immédiatement, le code sera traité après l'init
-    history.replaceState(null, "", location.pathname + "?_gmailcode=" + encodeURIComponent(code));
-  }
-})();
+// Le code est lu directement dans l'init depuis ?code=
 
 /* ── LOGOUT ── */
 document.getElementById("btn-logout").addEventListener("click", async () => { await sb.auth.signOut(); location.href = "index.html"; });
@@ -586,7 +579,7 @@ document.getElementById("btn-logout").addEventListener("click", async () => { aw
 
   // Gestion retour OAuth Gmail
   const urlParams = new URLSearchParams(location.search);
-  const gmailCode = urlParams.get("_gmailcode") || urlParams.get("code");
+  const gmailCode = urlParams.get("code");
   if (gmailCode) {
     history.replaceState(null, "", location.pathname);
     activeTab = "gmail";
