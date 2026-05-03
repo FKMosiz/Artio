@@ -160,7 +160,7 @@ function getNextNum(type,entreprise){
 let S={
   user:null,
   tab:"devis",
-  emailMode:"reponse",emailTons:["vouvoiement"],voiceContextField:null,renamingDossierId:null,renamingDossierVal:"",showSettings:false,langue:"fr",darkMode:false,settingsPage:"main",gmailEmail:null,gmailAccessToken:null,emails:[],emailsLoading:false,emailsError:"",expandedEmail:null,
+  emailMode:"reponse",emailTons:["vouvoiement"],voiceContextField:null,renamingDossierId:null,renamingDossierVal:"",showSettings:false,langue:"fr",darkMode:false,settingsPage:"main",gmailEmail:null,gmailAccessToken:null,gmailTokenExpiry:null,emails:[],emailsLoading:false,emailsError:"",expandedEmail:null,
   showProfil:false,
   loading:false,
   voiceState:"idle",
@@ -209,6 +209,7 @@ async function loadUserData(userId){
       S.profilSaved=!!profil.nom;
       S.gmailEmail=profil.gmail_email||null;
       S.gmailAccessToken=profil.gmail_access_token||null;
+      S.gmailTokenExpiry=profil.gmail_token_expiry?new Date(profil.gmail_token_expiry):null;
     }
     // Charger les dossiers
     const{data:dossiers,error:de}=await sb.from("dossiers").select("*").eq("user_id",userId).order("updated_at",{ascending:false});
@@ -396,6 +397,16 @@ function gmailConnect(){
   window.location.href="settings.html?tab=gmail";
 }
 
+function isGmailExpired(){
+  return S.gmailTokenExpiry && new Date() > new Date(S.gmailTokenExpiry);
+}
+
+function handleGmailExpired(){
+  S.gmailEmail=null;S.gmailAccessToken=null;S.gmailTokenExpiry=null;S.emails=[];
+  showToast("⚠️ Session Gmail expirée — reconnecte-toi dans les paramètres");
+  render();
+}
+
 async function gmailDisconnect(){
   const{data:{session}}=await sb.auth.getSession();
   await sb.from("profils").update({
@@ -408,6 +419,7 @@ async function gmailDisconnect(){
 
 async function gmailFetchEmails(){
   if(!S.gmailEmail){alert("Connecte ton Gmail dans les paramètres.");return}
+  if(isGmailExpired()){handleGmailExpired();return;}
   S.emailsLoading=true;S.emailsError="";render();
   try{
     const listRes=await fetch(
@@ -452,6 +464,7 @@ async function gmailFetchEmails(){
 
 async function gmailSendReply(emailId,threadId,messageId,from,subject,replyBody){
   if(!S.gmailEmail||!S.gmailAccessToken){showToast("⚠️ Gmail non connecté");return;}
+  if(isGmailExpired()){handleGmailExpired();return;}
   try{
     const cleanSubj=(subject||"")
       .replace(/[\u2018\u2019\u201A\u201B]/g,"'")
@@ -1341,9 +1354,18 @@ function renderApp(){
       <div>
         <p style="font-size:14px;font-weight:500;margin-bottom:8px;">📧 Connexion Gmail</p>
         ${S.gmailEmail?`
+          ${isGmailExpired()?`
+          <div style="background:rgba(245,167,66,.1);border:1px solid rgba(245,167,66,.3);border-radius:10px;padding:11px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:15px;">⚠️</span>
+            <span style="font-size:13px;color:#f5a742;font-weight:600;">Session expirée : ${esc(S.gmailEmail)}</span>
+          </div>
+          <a href="settings.html?tab=gmail" style="display:block;padding:11px;background:var(--amber);color:#080b14;border-radius:10px;text-decoration:none;font-size:13px;font-weight:700;text-align:center;margin-bottom:8px;">🔄 Reconnecter Gmail</a>
+          <button class="btn-small btn-gray" style="width:100%;" onclick="gmailDisconnect()">Déconnecter</button>
+          `:`
           <div style="background:var(--teal-dim);border:1px solid rgba(62,207,207,.2);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--teal)">✓ Connecté : ${esc(S.gmailEmail)}</div>
           <button class="btn-primary" onclick="gmailFetchEmails();set({showSettings:false,tab:'emails_gmail'})">Voir les emails</button>
           <button class="btn-small btn-gray" style="margin-top:8px;width:100%;" onclick="gmailDisconnect()">Déconnecter</button>
+          `}
         `:`
           <p style="font-size:12px;color:#888;margin-bottom:16px;">Gmail n'est pas encore connecté. Configure-le dans les paramètres.</p>
           <a href="settings.html?tab=gmail" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;font-family:var(--fh);text-align:center;box-shadow:0 0 24px var(--amber-glow)">Connecter Gmail →</a>
@@ -1526,7 +1548,15 @@ function renderEmail(){
 }
 
 function renderEmailsGmail(){
-  if(!S.gmailEmail){
+  if(!S.gmailEmail||isGmailExpired()){
+    if(S.gmailEmail&&isGmailExpired()){
+      return`<div class="card" style="text-align:center;padding:2rem;">
+        <p style="font-size:28px;margin-bottom:12px;">⚠️</p>
+        <p style="font-weight:500;margin-bottom:8px;color:#f5a742;">Session Gmail expirée</p>
+        <p style="font-size:13px;color:#888;margin-bottom:20px;">${esc(S.gmailEmail)} — ton accès a expiré, reconnecte-toi pour continuer.</p>
+        <a href="settings.html?tab=gmail" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;font-family:var(--fh);text-align:center;box-shadow:0 0 24px var(--amber-glow)">🔄 Reconnecter Gmail</a>
+      </div>`;
+    }
     return`<div class="card" style="text-align:center;padding:2rem;">
       <p style="font-size:20px;margin-bottom:12px;">📧</p>
       <p style="font-weight:500;margin-bottom:8px;">Connexion Gmail</p>
