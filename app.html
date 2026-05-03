@@ -437,40 +437,48 @@ async function gmailFetchEmails(){
       } else if(d.payload?.body?.data){
         body=decodeBase64Utf8(d.payload.body.data);
       }
-      return{id:m.id,from:get("From"),subject:get("Subject"),date:get("Date"),body:body.slice(0,2000),snippet:d.snippet};
+      return{id:m.id,threadId:d.threadId||m.id,messageId:get("Message-Id"),from:get("From"),subject:get("Subject"),date:get("Date"),body:body.slice(0,2000),snippet:d.snippet};
     }));
     S.emails=emails;
-    // Stockage des corps dans un objet global pour éviter l'injection HTML
+    // Stockage des corps et méta dans des objets globaux pour éviter l'injection HTML
     window.__emailBodies={};
-    emails.forEach(m=>{window.__emailBodies[m.id]=m.body||"";});
+    window.__emailMeta={};
+    emails.forEach(m=>{window.__emailBodies[m.id]=m.body||"";window.__emailMeta[m.id]={threadId:m.threadId,messageId:m.messageId};});
     S.emailsLoading=false;render();
   }catch(e){
     S.emailsError="Erreur : "+e.message;S.emailsLoading=false;render();
   }
 }
 
-async function gmailSendReply(emailId,from,subject,replyBody){
-  if(!S.gmailEmail){showToast("⚠️ Gmail non connecté");return;}
+async function gmailSendReply(emailId,threadId,messageId,from,subject,replyBody){
+  if(!S.gmailEmail||!S.gmailAccessToken){showToast("⚠️ Gmail non connecté");return;}
   try{
-    const{data:{session}}=await sb.auth.getSession();
-    if(!session){showToast("⚠️ Session expirée, reconnecte-toi");return;}
     const cleanSubj=(subject||"")
       .replace(/[\u2018\u2019\u201A\u201B]/g,"'")
       .replace(/[\u201C\u201D\u201E\u201F]/g,'"')
       .replace(/\u2026/g,"...");
     const subj=cleanSubj.startsWith("Re:")?cleanSubj:"Re: "+cleanSubj;
     showToast("📤 Envoi en cours…");
-    const res=await fetch(FUNCTIONS_URL+"/gmail-send",{
+    // Headers RFC 2822 avec In-Reply-To + References pour rester dans le fil
+    const inReplyTo=messageId?`\r\nIn-Reply-To: ${messageId}\r\nReferences: ${messageId}`:"";
+    const rawMsg=`To: ${from}\r\nSubject: ${subj}${inReplyTo}\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n${replyBody}`;
+    const encoded=btoa(unescape(encodeURIComponent(rawMsg))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+    // Envoi direct via Gmail API avec le token OAuth de l'utilisateur + threadId
+    const res=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send",{
       method:"POST",
-      headers:{"Authorization":"Bearer "+session.access_token,"apikey":SB_KEY,"Content-Type":"application/json"},
-      body:JSON.stringify({to:from,subject:subj,html:replyBody.replace(/\n/g,"<br/>")})
+      headers:{"Authorization":"Bearer "+S.gmailAccessToken,"Content-Type":"application/json"},
+      body:JSON.stringify({raw:encoded,threadId:threadId||emailId})
     });
-    const data=await res.json();
-    if(data.success){
-      showToast("✅ Email envoyé !");
+    if(res.status===401){
+      S.gmailEmail=null;S.gmailAccessToken=null;
+      showToast("⚠️ Session Gmail expirée, reconnecte-toi dans les paramètres");return;
+    }
+    if(res.ok){
+      showToast("✅ Email envoyé dans le fil !");
       gmailFetchEmails();
     }else{
-      showToast("❌ Erreur envoi : "+(data.error||"inconnue"));
+      const err=await res.json();
+      showToast("❌ Erreur Gmail : "+(err.error?.message||"inconnue"));
     }
   }catch(e){
     showToast("❌ Erreur : "+e.message);
@@ -1567,7 +1575,7 @@ function renderEmailsGmail(){
             return`<div style="margin-top:4px;">
               <textarea id="reply-${m.id}" style="width:100%;min-height:320px;font-size:13px;line-height:1.6;padding:12px;background:var(--surface-2);border:1px solid var(--amber);border-radius:10px;color:var(--text);font-family:var(--fb);resize:vertical;" oninput="S.emailReplyDraft['${m.id}'].text=this.value">${esc(draft.text)}</textarea>
               <div style="display:flex;gap:8px;margin-top:8px;">
-                <button class="btn-small btn-green" id="send-btn-${m.id}" onclick="(async(btn)=>{btn.disabled=true;btn.textContent='⏳ Envoi…';try{const t=document.getElementById('reply-${m.id}').value;await gmailSendReply('${m.id}','${safeFrom}','${safeSubj}',t);btn.textContent='✅ Envoyé !';await new Promise(r=>setTimeout(r,1200));S.emailReplyDraft['${m.id}']=null;render();}catch(e){btn.disabled=false;btn.textContent='📤 Envoyer';}})(this)">📤 Envoyer</button>
+                <button class="btn-small btn-green" id="send-btn-${m.id}" onclick="(async(btn)=>{btn.disabled=true;btn.textContent='⏳ Envoi…';try{const t=document.getElementById('reply-${m.id}').value;const meta=window.__emailMeta?.['${m.id}']||{};await gmailSendReply('${m.id}',meta.threadId,meta.messageId,'${safeFrom}','${safeSubj}',t);btn.textContent='✅ Envoyé !';await new Promise(r=>setTimeout(r,1200));S.emailReplyDraft['${m.id}']=null;render();}catch(e){btn.disabled=false;btn.textContent='📤 Envoyer';}})(this)">📤 Envoyer</button>
                 <button class="btn-small btn-gray" onclick="S.emailReplyDraft['${m.id}']=null;render()">✕ Annuler</button>
               </div>
             </div>`;
