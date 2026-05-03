@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Artio — Bienvenue</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg:        #080b14;
+  --surface:   #0e1220;
+  --surface-2: #141829;
+  --surface-3: #1a2035;
+  --border:    rgba(255,255,255,0.07);
+  --border-hi: rgba(255,255,255,0.14);
+  --text:      #e2e5f1;
+  --muted:     #6b7494;
+  --amber:     #f5a742;
+  --amber-dim: rgba(245,167,66,0.12);
+  --amber-glow:rgba(245,167,66,0.3);
+  --teal:      #3ecfcf;
+  --teal-dim:  rgba(62,207,207,0.11);
+  --green:     #4ade80;
+  --fh: 'Space Grotesk', sans-serif;
+  --fb: 'Plus Jakarta Sans', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--fb);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── BACKGROUND ── */
+.bg-orbs {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+}
+.orb {
+  position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.18;
+}
+.orb-1 { width: 500px; height: 500px; background: var(--amber); top: -150px; right: -100px; animation: drift1 12s ease-in-out infinite alternate; }
+.orb-2 { width: 400px; height: 400px; background: var(--teal); bottom: -100px; left: -80px; animation: drift2 10s ease-in-out infinite alternate; }
+@keyframes drift1 { from { transform: translate(0,0); } to { transform: translate(-40px, 40px); } }
+@keyframes drift2 { from { transform: translate(0,0); } to { transform: translate(30px, -30px); } }
+
+/* ── WRAPPER ── */
+.wrapper {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 520px;
+  padding: 20px 16px 40px;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* ── PROGRESS ── */
+.progress-track {
+  width: 100%; height: 3px;
+  background: var(--surface-3);
+  border-radius: 99px;
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--amber), #ffcd74);
+  border-radius: 99px;
+  transition: width 0.5s cubic-bezier(.4,0,.2,1);
+}
+.step-label {
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  letter-spacing: .08em; text-transform: uppercase;
+  margin-bottom: 28px; align-self: flex-start;
+}
+
+/* ── CARD ── */
+.card {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 24px;
+  padding: 36px 32px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,0.04);
+  animation: cardIn .4s cubic-bezier(.2,.8,.4,1) both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.card.exit {
+  animation: cardOut .3s cubic-bezier(.4,0,1,1) both;
+}
+@keyframes cardOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-16px); }
+}
+
+/* ── STEP ICON ── */
+.step-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; margin-bottom: 20px;
+  background: var(--amber-dim);
+  border: 1px solid rgba(245,167,66,.2);
+}
+.step-icon.teal { background: var(--teal-dim); border-color: rgba(62,207,207,.2); }
+.step-icon.green { background: rgba(74,222,128,.1); border-color: rgba(74,222,128,.2); }
+
+/* ── TYPOGRAPHY ── */
+h1 {
+  font-family: var(--fh); font-size: 26px; font-weight: 800;
+  letter-spacing: -.03em; margin-bottom: 8px; line-height: 1.15;
+}
+.subtitle {
+  font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 28px;
+}
+.subtitle a { color: var(--teal); text-decoration: none; }
+.subtitle a:hover { text-decoration: underline; }
+
+/* ── FORM ── */
+.field { margin-bottom: 14px; }
+.field:last-of-type { margin-bottom: 0; }
+.field label {
+  display: block; font-size: 11px; font-weight: 700;
+  color: var(--muted); letter-spacing: .06em;
+  text-transform: uppercase; margin-bottom: 7px;
+}
+.field input, .field select, .field textarea {
+  width: 100%; padding: 12px 14px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 12px; color: var(--text);
+  font-size: 14px; font-family: var(--fb);
+  outline: none; transition: border-color .2s, box-shadow .2s;
+  -webkit-appearance: none;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-dim);
+}
+.field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+.field select option { background: var(--surface-2); }
+.field textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+.fields-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── BUTTONS ── */
+.btn-next {
+  width: 100%; margin-top: 24px; padding: 15px;
+  background: var(--amber); border: none; border-radius: 14px;
+  color: #080b14; font-family: var(--fh); font-size: 15px; font-weight: 700;
+  cursor: pointer; box-shadow: 0 0 32px var(--amber-glow);
+  transition: transform .15s, box-shadow .15s, opacity .2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-next:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 40px var(--amber-glow); }
+.btn-next:disabled { opacity: .5; cursor: not-allowed; }
+.btn-skip {
+  width: 100%; margin-top: 10px; padding: 12px;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 14px; color: var(--muted); font-family: var(--fb);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: all .2s;
+}
+.btn-skip:hover { border-color: var(--border-hi); color: var(--text); }
+
+/* ── WELCOME ── */
+.welcome-logo {
+  font-family: var(--fh); font-size: 48px; font-weight: 800;
+  color: var(--amber); letter-spacing: -.04em;
+  margin-bottom: 6px; text-align: center;
+  animation: logoIn 0.7s cubic-bezier(.2,.8,.4,1) both;
+}
+@keyframes logoIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.welcome-tagline {
+  font-size: 15px; color: var(--muted); text-align: center;
+  margin-bottom: 36px; line-height: 1.6;
+  animation: fadeUp 0.7s .15s cubic-bezier(.2,.8,.4,1) both;
+}
+.welcome-features {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-bottom: 28px;
+  animation: fadeUp 0.7s .25s cubic-bezier(.2,.8,.4,1) both;
+}
+.welcome-feat {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 12px;
+  font-size: 13px;
+}
+.welcome-feat span.icon { font-size: 18px; flex-shrink: 0; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── ACTIVITY Q&A ── */
+.qa-block { margin-bottom: 20px; }
+.qa-q {
+  font-size: 13px; font-weight: 600; color: var(--amber);
+  margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+}
+.qa-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--amber-dim); border: 1px solid rgba(245,167,66,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+
+/* ── SYNTHÈSE ── */
+.synth-loading {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 12px;
+  font-size: 13px; color: var(--muted); margin-top: 16px;
+}
+.synth-dots span {
+  display: inline-block; width: 6px; height: 6px;
+  background: var(--amber); border-radius: 50%;
+  animation: bounce .9s infinite;
+}
+.synth-dots span:nth-child(2) { animation-delay: .15s; }
+.synth-dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+/* ── SUCCESS ── */
+.success-check {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(74,222,128,.12);
+  border: 2px solid rgba(74,222,128,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; margin: 0 auto 24px;
+  animation: popIn .5s cubic-bezier(.2,.8,.4,1) both;
+}
+@keyframes popIn {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.success-summary {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px 18px; margin-bottom: 4px;
+}
+.summary-row {
+  display: flex; justify-content: space-between;
+  font-size: 13px; padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.summary-row:last-child { border-bottom: none; }
+.summary-row span:first-child { color: var(--muted); }
+.summary-row span:last-child { font-weight: 600; color: var(--text); }
+
+/* ── ERROR ── */
+.error-msg {
+  background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.22);
+  border-radius: 10px; padding: 10px 14px;
+  font-size: 12px; color: #f87171; margin-top: 12px;
+}
+
+@media(max-width: 540px) {
+  .card { padding: 28px 20px; border-radius: 18px; }
+  .fields-2 { grid-template-columns: 1fr; }
+  h1 { font-size: 22px; }
+  .welcome-logo { font-size: 40px; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+</div>
+
+<div class="wrapper">
+  <div class="progress-track" id="progress-track" style="display:none">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+  <div class="step-label" id="step-label" style="display:none"></div>
+  <div id="step-container"></div>
+</div>
+
+<script>
+const SB_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co";
+const SB_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
+const { createClient } = supabase;
+const sb = createClient(SB_URL, SB_KEY);
+
+const SECTEURS = ["Artisan du bâtiment","Plomberie","Électricité","Peinture","Menuiserie","Maçonnerie","Jardinage / Paysagisme","Nettoyage","Lavage automobile","Photographie","Coaching","Consulting","Design / Graphisme","Développement web","Rédaction / Traduction","Livraison","Transport","Formation","Santé / Bien-être","Beauté / Esthétique","Restauration","Événementiel","Logiciel / SaaS","Autre"];
+
+let user = null;
+let saving = false;
+
+// Collected data
+const D = {
+  nom: "", secteur: "", siret: "", taux_horaire: "",
+  email: "", tel: "", adresse: "",
+  api_key: "",
+  q1: "", q2: "", q3: "",
+  contexte_ia: ""
+};
+
+// Steps: 0=welcome, 1=entreprise, 2=contact, 3=api, 4=activite, 5=succes
+let step = 0;
+const TOTAL_STEPS = 4; // steps 1-4
+
+function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function setProgress(current, total) {
+  const pct = Math.round((current / total) * 100);
+  document.getElementById("progress-fill").style.width = pct + "%";
+  document.getElementById("step-label").textContent = `Étape ${current} sur ${total}`;
+}
+
+function showProgress(show) {
+  document.getElementById("progress-track").style.display = show ? "block" : "none";
+  document.getElementById("step-label").style.display = show ? "block" : "none";
+}
+
+function render() {
+  const container = document.getElementById("step-container");
+  container.innerHTML = "";
+  const card = document.createElement("div");
+  card.className = "card";
+
+  if (step === 0) {
+    showProgress(false);
+    card.innerHTML = renderWelcome();
+  } else if (step === 1) {
+    showProgress(true); setProgress(1, TOTAL_STEPS);
+    card.innerHTML = renderEntreprise();
+  } else if (step === 2) {
+    showProgress(true); setProgress(2, TOTAL_STEPS);
+    card.innerHTML = renderContact();
+  } else if (step === 3) {
+    showProgress(true); setProgress(3, TOTAL_STEPS);
+    card.innerHTML = renderApiKey();
+  } else if (step === 4) {
+    showProgress(true); setProgress(4, TOTAL_STEPS);
+    card.innerHTML = renderActivite();
+  } else if (step === 5) {
+    showProgress(false);
+    card.innerHTML = renderSucces();
+  }
+
+  container.appendChild(card);
+}
+
+// ── STEP 0 : WELCOME ─────────────────────────────────────────────
+function renderWelcome() {
+  return `
+    <div style="text-align:center">
+      <div class="welcome-logo">Artio</div>
+      <div class="welcome-tagline">Votre assistant administratif intelligent.<br/>Configurons ensemble votre espace en 2 minutes.</div>
+    </div>
+    <div class="welcome-features">
+      <div class="welcome-feat"><span class="icon">🎙️</span><span>Générez vos devis et factures par dictée vocale</span></div>
+      <div class="welcome-feat"><span class="icon">🤖</span><span>Un assistant IA formé à votre activité</span></div>
+      <div class="welcome-feat"><span class="icon">✍️</span><span>Signature électronique et suivi client intégrés</span></div>
+    </div>
+    <button class="btn-next" onclick="nextStep()">Commencer la configuration →</button>
+  `;
+}
+
+// ── STEP 1 : ENTREPRISE ───────────────────────────────────────────
+function renderEntreprise() {
+  return `
+    <div class="step-icon">🏢</div>
+    <h1>Votre entreprise</h1>
+    <div class="subtitle">Ces informations apparaîtront sur vos devis et factures.</div>
+    <div class="field">
+      <label>Nom de l'entreprise *</label>
+      <input id="f-nom" type="text" value="${esc(D.nom)}" placeholder="Ex: Dupont Électricité" autofocus/>
+    </div>
+    <div class="field">
+      <label>Secteur d'activité</label>
+      <select id="f-secteur">
+        <option value="">-- Choisir --</option>
+        ${SECTEURS.map(s=>`<option value="${s}" ${D.secteur===s?"selected":""}>${s}</option>`).join("")}
+      </select>
+    </div>
+    <div class="fields-2">
+      <div class="field">
+        <label>SIRET *</label>
+        <input id="f-siret" type="text" value="${esc(D.siret)}" placeholder="123 456 789 00012"/>
+      </div>
+      <div class="field">
+        <label>Taux horaire (€ HT) *</label>
+        <input id="f-taux" type="number" value="${esc(D.taux_horaire)}" placeholder="50"/>
+      </div>
+    </div>
+    <div id="err-1" class="error-msg" style="display:none"></div>
+    <button class="btn-next" onclick="saveStep1()">Continuer →</button>
+  `;
+}
+
+function saveStep1() {
+  D.nom = document.getElementById("f-nom").value.trim();
+  D.secteur = document.getElementById("f-secteur").value;
+  D.siret = document.getElementById("f-siret").value.trim();
+  D.taux_horaire = document.getElementById("f-taux").value.trim();
+  const err = document.getElementById("err-1");
+  if (!D.nom || !D.siret || !D.taux_horaire) {
+    err.textContent = "Nom, SIRET et taux horaire sont obligatoires.";
+    err.style.display = "block"; return;
+  }
+  nextStep();
+}
+
+// ── STEP 2 : CONTACT ──────────────────────────────────────────────
+function renderContact() {
+  return `
+    <div class="step-icon">📬</div>
+    <h1>Vos coordonnées</h1>
+    <div class="subtitle">Utilisées dans vos documents et pour vous contacter.</div>
+    <div class="field">
+      <label>Email professionnel</label>
+      <input id="f-email" type="email" value="${esc(D.email)}" placeholder="contact@monentreprise.fr"/>
+    </div>
+    <div class="field">
+      <label>Téléphone</label>
+      <input id="f-tel" type="tel" value="${esc(D.tel)}" placeholder="06 12 34 56 78"/>
+    </div>
+    <div class="field">
+      <label>Adresse</label>
+      <input id="f-adresse" type="text" value="${esc(D.adresse)}" placeholder="12 rue de Paris, 75001 Paris"/>
+    </div>
+    <button class="btn-next" onclick="saveStep2()">Continuer →</button>
+    <button class="btn-skip" onclick="nextStep()">Passer cette étape</button>
+  `;
+}
+
+function saveStep2() {
+  D.email = document.getElementById("f-email").value.trim();
+  D.tel = document.getElementById("f-tel").value.trim();
+  D.adresse = document.getElementById("f-adresse").value.trim();
+  nextStep();
+}
+
+// ── STEP 3 : CLÉ API ──────────────────────────────────────────────
+function renderApiKey() {
+  return `
+    <div class="step-icon teal">🔑</div>
+    <h1>Votre clé API IA</h1>
+    <div class="subtitle">
+      Indispensable pour la dictée vocale et la génération intelligente.
+      <a href="https://console.anthropic.com/settings/keys" target="_blank">Obtenir une clé Anthropic →</a>
+    </div>
+    <div class="field">
+      <label>Clé API Anthropic</label>
+      <input id="f-api" type="password" value="${esc(D.api_key)}" placeholder="sk-ant-…"/>
+    </div>
+    <div style="padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;font-size:12px;color:var(--muted);line-height:1.6;">
+      🔒 Votre clé est chiffrée et stockée de façon sécurisée. Elle n'est jamais partagée.
+    </div>
+    <button class="btn-next" onclick="saveStep3()">Continuer →</button>
+    <button class="btn-skip" onclick="nextStep()">Passer pour l'instant</button>
+  `;
+}
+
+function saveStep3() {
+  D.api_key = document.getElementById("f-api").value.trim();
+  nextStep();
+}
+
+// ── STEP 4 : ACTIVITÉ ─────────────────────────────────────────────
+function renderActivite() {
+  return `
+    <div class="step-icon">🤖</div>
+    <h1>Votre activité</h1>
+    <div class="subtitle">Ces informations permettront à votre assistant IA de répondre à vos clients avec précision.</div>
+
+    <div class="qa-block">
+      <div class="qa-q"><div class="qa-num">1</div>Décrivez votre activité principale</div>
+      <div class="field" style="margin:0">
+        <textarea id="q1" placeholder="Ex: Je suis coach de vie indépendant, j'accompagne des personnes en reconversion professionnelle…">${esc(D.q1)}</textarea>
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q"><div class="qa-num">2</div>Vos offres et services principaux</div>
+      <div class="field" style="margin:0">
+        <textarea id="q2" placeholder="Ex: Séance individuelle 1h, forfait 5 séances, atelier collectif mensuel…">${esc(D.q2)}</textarea>
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q"><div class="qa-num">3</div>Tarifs, conditions ou infos importantes pour l'IA</div>
+      <div class="field" style="margin:0">
+        <textarea id="q3" placeholder="Ex: Tarif séance 80€, tarif non encore fixé pour les ateliers. Ne jamais promettre de délai sans me consulter d'abord…">${esc(D.q3)}</textarea>
+      </div>
+    </div>
+
+    <div id="synth-status"></div>
+    <div id="err-4" class="error-msg" style="display:none"></div>
+    <button class="btn-next" id="btn-step4" onclick="saveStep4()">Terminer la configuration ✓</button>
+    <button class="btn-skip" onclick="skipActivite()">Passer, je remplirai plus tard</button>
+  `;
+}
+
+async function saveStep4() {
+  D.q1 = (document.getElementById("q1").value||"").trim();
+  D.q2 = (document.getElementById("q2").value||"").trim();
+  D.q3 = (document.getElementById("q3").value||"").trim();
+
+  const btn = document.getElementById("btn-step4");
+  btn.disabled = true; btn.textContent = "Enregistrement…";
+
+  // Synthèse avec Claude si API key dispo
+  if (D.api_key && (D.q1 || D.q2 || D.q3)) {
+    const statusEl = document.getElementById("synth-status");
+    statusEl.innerHTML = `<div class="synth-loading">
+      <div class="synth-dots"><span></span><span></span><span></span></div>
+      <span>L'IA synthétise votre profil…</span>
+    </div>`;
+    try {
+      const prompt = `Tu es un assistant qui aide à configurer un profil entreprise pour un logiciel de gestion.
+À partir des réponses ci-dessous, rédige un texte de contexte professionnel, clair et concis (200-300 mots max), à la 3ème personne, que l'IA utilisera pour répondre aux clients.
+Inclure : description de l'activité, offres/services, tarifs si mentionnés, et toute info importante.
+Ne pas inventer d'informations. Si une info est manquante, l'omettre simplement.
+
+Entreprise : ${D.nom} (secteur : ${D.secteur||"non précisé"})
+Activité principale : ${D.q1||"non précisé"}
+Offres et services : ${D.q2||"non précisé"}
+Tarifs et conditions : ${D.q3||"non précisé"}
+
+Rédige uniquement le texte de contexte, sans titre ni commentaire.`;
+
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": D.api_key,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 600,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      const data = await res.json();
+      if (data.content?.[0]?.text) {
+        D.contexte_ia = data.content[0].text;
+      } else {
+        D.contexte_ia = buildFallbackContexte();
+      }
+      statusEl.innerHTML = "";
+    } catch(e) {
+      D.contexte_ia = buildFallbackContexte();
+      document.getElementById("synth-status").innerHTML = "";
+    }
+  } else {
+    D.contexte_ia = buildFallbackContexte();
+  }
+
+  await saveAndFinish();
+}
+
+function buildFallbackContexte() {
+  const parts = [];
+  if (D.nom) parts.push(`${D.nom} est une entreprise${D.secteur ? " dans le secteur : " + D.secteur : ""}.`);
+  if (D.q1) parts.push(D.q1);
+  if (D.q2) parts.push("Offres et services : " + D.q2);
+  if (D.q3) parts.push(D.q3);
+  return parts.join("\n\n");
+}
+
+async function skipActivite() {
+  D.contexte_ia = "";
+  await saveAndFinish();
+}
+
+// ── SAVE TO SUPABASE ──────────────────────────────────────────────
+async function saveAndFinish() {
+  try {
+    const upsertData = {
+      user_id: user.id,
+      nom: D.nom,
+      secteur: D.secteur,
+      siret: D.siret,
+      taux_horaire: D.taux_horaire,
+      email: D.email,
+      tel: D.tel,
+      adresse: D.adresse,
+      api_key: D.api_key,
+      contexte_ia: D.contexte_ia,
+      onboarding_done: true,
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await sb.from("profils").upsert(upsertData, { onConflict: "user_id" });
+    if (error) throw new Error(error.message);
+    step = 5;
+    render();
+  } catch(e) {
+    const errEl = document.getElementById("err-4");
+    if (errEl) { errEl.textContent = "Erreur : " + e.message; errEl.style.display = "block"; }
+    const btn = document.getElementById("btn-step4");
+    if (btn) { btn.disabled = false; btn.textContent = "Terminer la configuration ✓"; }
+  }
+}
+
+// ── STEP 5 : SUCCÈS ───────────────────────────────────────────────
+function renderSucces() {
+  return `
+    <div style="text-align:center">
+      <div class="success-check">✓</div>
+      <h1 style="text-align:center;margin-bottom:8px">Tout est prêt !</h1>
+      <div class="subtitle" style="text-align:center;margin-bottom:24px">
+        Votre espace Artio est configuré. Vous pouvez commencer à générer vos premiers devis.
+      </div>
+    </div>
+    <div class="success-summary">
+      ${D.nom ? `<div class="summary-row"><span>Entreprise</span><span>${esc(D.nom)}</span></div>` : ""}
+      ${D.secteur ? `<div class="summary-row"><span>Secteur</span><span>${esc(D.secteur)}</span></div>` : ""}
+      ${D.taux_horaire ? `<div class="summary-row"><span>Taux horaire</span><span>${esc(D.taux_horaire)} € / h</span></div>` : ""}
+      <div class="summary-row"><span>Clé API</span><span>${D.api_key ? "✓ Configurée" : "— À configurer"}</span></div>
+      <div class="summary-row"><span>Contexte IA</span><span>${D.contexte_ia ? "✓ Généré" : "— Non renseigné"}</span></div>
+    </div>
+    <button class="btn-next" onclick="location.href='home.html'" style="margin-top:20px">
+      Accéder à mon espace →
+    </button>
+    ${!D.api_key ? `<button class="btn-skip" onclick="location.href='settings.html'">Configurer ma clé API maintenant</button>` : ""}
+  `;
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────
+function nextStep() { step++; render(); window.scrollTo(0,0); }
+
+// ── INIT ──────────────────────────────────────────────────────────
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { location.href = "index.html"; return; }
+  user = session.user;
+
+  // Pré-remplir depuis le profil existant si dispo
+  const { data: p } = await sb.from("profils").select("*").eq("user_id", user.id).single();
+  if (p) {
+    // Si déjà configuré → home
+    if (p.onboarding_done && p.nom) { location.href = "home.html"; return; }
+    D.nom = p.nom||""; D.secteur = p.secteur||""; D.siret = p.siret||"";
+    D.taux_horaire = p.taux_horaire||""; D.email = p.email||"";
+    D.tel = p.tel||""; D.adresse = p.adresse||""; D.api_key = p.api_key||"";
+    D.contexte_ia = p.contexte_ia||"";
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

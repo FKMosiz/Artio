@@ -202,7 +202,9 @@ async function loadUserData(userId){
           decennale_assureur:profil.decennale_assureur||"",
           decennale_police:profil.decennale_police||"",
           certifications:profil.certifications||"",
-          nature_operation:profil.nature_operation||""
+          nature_operation:profil.nature_operation||"",
+          contexte_ia:profil.contexte_ia||"",
+          onboarding_done:profil.onboarding_done||false
       };
       S.profilSaved=!!profil.nom;
       S.gmailEmail=profil.gmail_email||null;
@@ -489,6 +491,10 @@ async function initAuth(){
   if(session?.user){
     S.user=session.user;
     await loadUserData(session.user.id);
+    // Rediriger vers l'onboarding si jamais configuré
+    if(!S.entreprise.nom || !S.entreprise.onboarding_done){
+      window.location.href="onboarding.html";return;
+    }
     setupSignatureListener(session.user.id);
     // Gérer les liens depuis autres pages : ?settings=profil ou ?settings=gmail
     const sp=new URLSearchParams(window.location.search).get("settings");
