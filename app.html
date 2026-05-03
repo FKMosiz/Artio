@@ -1544,7 +1544,7 @@ function renderEmailsGmail(){
             const safeFrom=esc(m.from).replace(/'/g,"\\'").replace(/"/g,'&quot;');
             const safeSubj=esc(m.subject||"").replace(/'/g,"\\'").replace(/"/g,'&quot;');
             return`<div style="margin-top:4px;">
-              <textarea id="reply-${m.id}" style="width:100%;min-height:140px;font-size:13px;line-height:1.6;padding:12px;background:var(--surface-2);border:1px solid var(--amber);border-radius:10px;color:var(--text);font-family:var(--fb);resize:vertical;" oninput="S.emailReplyDraft['${m.id}'].text=this.value">${esc(draft.text)}</textarea>
+              <textarea id="reply-${m.id}" style="width:100%;min-height:320px;font-size:13px;line-height:1.6;padding:12px;background:var(--surface-2);border:1px solid var(--amber);border-radius:10px;color:var(--text);font-family:var(--fb);resize:vertical;" oninput="S.emailReplyDraft['${m.id}'].text=this.value">${esc(draft.text)}</textarea>
               <div style="display:flex;gap:8px;margin-top:8px;">
                 <button class="btn-small btn-green" onclick="(async()=>{const t=document.getElementById('reply-${m.id}').value;await gmailSendReply('${m.id}','${safeFrom}','${safeSubj}',t);S.emailReplyDraft['${m.id}']=null;render();})()">📤 Envoyer</button>
                 <button class="btn-small btn-gray" onclick="S.emailReplyDraft['${m.id}']=null;render()">✕ Annuler</button>
