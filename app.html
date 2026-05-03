@@ -173,6 +173,8 @@ let S={
   previewDocNum:null,
   deleteConfirm:null,
   convertingId:null,
+  showDatePrestModal:false,
+  pendingConvert:null,
   emettreId:null,
   copied:false,
   entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:"",assujetti_tva:false,secteur:"",conditions_paiement:"",delai_paiement:"30"},
@@ -1008,22 +1010,39 @@ window.emettreFacture=async function(dosId,docNum){
   }catch(e){alert("❌ Erreur réseau : "+e.message);set({emettreId:null});}
 };
 // ────────────────────────────────────────────────────────────────────────────
+// Convertit YYYY-MM-DD -> dd/mm/yyyy (format interne des documents)
+function isoToFR(iso){
+  if(!iso)return todayFR();
+  const[y,m,d]=iso.split("-");
+  return d+"/"+m+"/"+y;
+}
+
 convertToFacture=async(dosId,docNum)=>{
+  const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
+  const devis=dos.documents.find(d=>d.docNumber===docNum);if(!devis)return;
+  // Option C : date prestation presente -> on l'utilise, sinon -> popup
+  if(!devis.date_prestation){
+    set({pendingConvert:{dosId,docNum},showDatePrestModal:true});
+    return;
+  }
+  await _doConvert(dosId,docNum,isoToFR(devis.date_prestation));
+};
+
+async function _doConvert(dosId,docNum,dateFacture){
   set({convertingId:docNum});
   const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
   const devis=dos.documents.find(d=>d.docNumber===docNum);if(!devis)return;
   const factNum=await getNextNum("facture",S.user.id);
-  const factDoc={...devis,type:"facture",docNumber:factNum,date:todayFR(),validUntil:null,accepte:false};
+  const factDoc={...devis,type:"facture",docNumber:factNum,date:dateFacture,validUntil:null,accepte:false};
   dos.statut="facture";
   dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,accepte:true}:d).concat([factDoc]);
   storeDoc(factDoc);
-  await upsertDossier(dos);set({convertingId:null});
-  // Émission électronique automatique si token configuré
+  await upsertDossier(dos);set({convertingId:null,pendingConvert:null,showDatePrestModal:false});
   if(S.entreprise?.factpulse_token&&S.entreprise?.siret){
     try{await window.emettreFacture(dosId,factNum);}
-    catch(e){console.warn("Auto-émission FactPulse échouée:",e.message);}
+    catch(e){console.warn("Auto-émission FactPulse échouee:",e.message);}
   }
-};
+}
 window.startRename=function(id){
   const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;
   set({renamingDossierId:id,renamingDossierVal:dos.nom||''});
@@ -1396,6 +1415,19 @@ function renderApp(){
     </div>
     `}
   </div></div>`:""}
+  ${S.showDatePrestModal?`
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;" onclick="if(event.target===this)set({showDatePrestModal:false,pendingConvert:null})">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:340px;max-width:90vw;">
+      <p style="font-size:16px;font-weight:600;margin-bottom:6px;">📅 Date de la prestation</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Ce devis ne contient pas de date de prestation. Renseignez la date de réalisation pour dater la facture correctement.</p>
+      <label style="font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px;">DATE DE RÉALISATION</label>
+      <input type="date" id="modal-date-prest" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:14px;margin-bottom:20px;" max="${new Date().toISOString().slice(0,10)}"/>
+      <div style="display:flex;gap:10px;">
+        <button onclick="set({showDatePrestModal:false,pendingConvert:null})" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:14px;">Annuler</button>
+        <button onclick="(async()=>{const v=document.getElementById('modal-date-prest').value;if(!v){return;}const[y,m,d]=v.split('-');const p=S.pendingConvert;await _doConvert(p.dosId,p.docNum,d+'/'+m+'/'+y);showToast('✅ Facture générée à la date de prestation');render();})()" style="flex:1;padding:11px;border-radius:10px;background:var(--amber);color:#080b14;border:none;cursor:pointer;font-size:14px;font-weight:700;">Confirmer</button>
+      </div>
+    </div>
+  </div>`:""}
   `;
 }
 
