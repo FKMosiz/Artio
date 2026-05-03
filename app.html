@@ -158,7 +158,7 @@ function getNextNum(type,entreprise){
 let S={
   user:null,
   tab:"devis",
-  emailMode:"reponse",emailTons:["vouvoiement"],voiceContextField:null,renamingDossierId:null,renamingDossierVal:"",showSettings:false,langue:"fr",darkMode:false,settingsPage:"main",gmailEmail:null,gmailAccessToken:null,emails:[],emailsLoading:false,emailsError:"",
+  emailMode:"reponse",emailTons:["vouvoiement"],voiceContextField:null,renamingDossierId:null,renamingDossierVal:"",showSettings:false,langue:"fr",darkMode:false,settingsPage:"main",gmailEmail:null,gmailAccessToken:null,emails:[],emailsLoading:false,emailsError:"",expandedEmail:null,
   showProfil:false,
   loading:false,
   voiceState:"idle",
@@ -367,6 +367,25 @@ function decodeBase64Utf8(str){
   }catch(e){
     return atob(str.replace(/-/g,"+").replace(/_/g,"/"));
   }
+}
+
+function cleanEmailSnippet(str){
+  return (str||"")
+    // Décoder les entités HTML courantes de Gmail
+    .replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">")
+    // Remplacer les \r\n littéraux et vrais sauts de ligne
+    .replace(/\\r\\n|\\r|\\n/g," ").replace(/\r\n|\r|\n/g," ")
+    // Re-échapper pour le HTML
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    // Tronquer à 200 caractères
+    .slice(0,200);
+}
+
+function cleanEmailBody(str){
+  return (str||"")
+    .replace(/\\r\\n|\\r|\\n/g,"\n").replace(/\r\n|\r/g,"\n")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/\n/g,"<br/>");
 }
 
 function gmailConnect(){
@@ -1499,7 +1518,15 @@ function renderEmailsGmail(){
           <span style="font-size:11px;color:#888;margin-left:8px;white-space:nowrap;">${esc((m.date||"").slice(0,16))}</span>
         </div>
         <p style="font-size:12px;color:#888;margin-bottom:8px;">${esc(m.from)}</p>
-        <p style="font-size:12px;color:#666;font-style:italic;margin-bottom:12px;">${esc(m.snippet||"").replace(/\\r\\n|\\n|\\r/g,"<br/>")}</p>
+        <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:12px;">${cleanEmailSnippet(m.snippet)}</p>
+        ${S.expandedEmail===m.id?`
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px;line-height:1.7;color:var(--text);max-height:300px;overflow-y:auto;">
+            ${cleanEmailBody(m.body)}
+          </div>
+          <button class="btn-small btn-gray" style="margin-bottom:10px;" onclick="set({expandedEmail:null})">▲ Réduire</button>
+        `:`
+          <button class="btn-small btn-gray" style="margin-bottom:10px;" onclick="set({expandedEmail:'${m.id}'})">👁 Voir le message</button>
+        `}
         <button class="btn-small btn-blue" onclick="generateEmailReply('${m.id}','${esc(m.from).replace(/'/g,"\'")}','${esc(m.subject||"").replace(/'/g,"\'")}',${JSON.stringify(m.body||"").replace(/'/g,"\'")})">
           🤖 Générer une réponse
         </button>
