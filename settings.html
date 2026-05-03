@@ -443,7 +443,10 @@ function renderAbonnement() {
           <div class="alert-box warning" style="margin:0">
             <div><div class="alert-title">Résiliation en cours</div>
             <div class="alert-sub">Accès Pro actif jusqu'au ${endDate||"fin de période"}.</div></div>
-          </div>` : `
+          </div>
+          <button class="btn-primary" onclick="reactivateSubscription()" ${checkoutLoading?"disabled":""} style="margin-top:8px;width:100%;">
+            ${checkoutLoading?"Redirection…":"⚡ Réactiver mon abonnement"}
+          </button>` : `
           <button class="btn-danger" onclick="requestCancellation()" ${cancelLoading?"disabled":""}>${cancelLoading?"Envoi…":"Demander l'annulation"}</button>
         `) : `
           <button class="btn-primary" onclick="startCheckout()" ${checkoutLoading?"disabled":""}>${checkoutLoading?"Redirection…":`Passer au Pro ${isAnnual?"(annuel)":"(mensuel)"}`}</button>
@@ -468,6 +471,26 @@ function renderAbonnement() {
         </tr>`).join("")}</tbody>
       </table>
     </div>` : ""}`;
+}
+
+async function reactivateSubscription(){
+  if(!confirm("Réactiver votre abonnement Pro ? Votre abonnement reprendra normalement sans nouvelle saisie de paiement."))return;
+  checkoutLoading=true;render();
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session){checkoutLoading=false;render();return;}
+    const ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bWV4a29lcWV5dWVxZ2Rra25pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDEzMzcsImV4cCI6MjA5MDk3NzMzN30.380jxCN_CpWqmnwraob5crwUeBpTQxrXsTe2YDF-Rk8';
+    const res=await fetch('https://mwmexkoeqeyueqgdkkni.supabase.co/functions/v1/reactivate-subscription',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+ANON,'apikey':ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({user_id:session.user.id})
+    });
+    const data=await res.json();
+    if(!res.ok){alert("Erreur : "+(data.error||'inconnu'));checkoutLoading=false;render();return;}
+    cancellationRequested=false;
+    toast("✅ Abonnement réactivé ! Votre accès Pro continue normalement.");
+  }catch(e){alert("Erreur : "+e.message);}
+  checkoutLoading=false;render();
 }
 
 async function startCheckout() {
