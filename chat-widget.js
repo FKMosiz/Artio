@@ -13,7 +13,7 @@
   const MAX_TOKENS    = 512;
   const INACTIVITY_MS = 10 * 60 * 1000; // 10 minutes
 
-  const SYSTEM_PROMPT = `Tu es l'assistant IA d'Artio, une application SaaS pour les professionnels indépendants français (freelancers, artisans, coaches, photographes, etc.).
+  const SYSTEM_PROMPT_BASE = `Tu es l'assistant IA d'Artio, une application SaaS pour les professionnels indépendants français (freelancers, artisans, coaches, photographes, etc.).
 
 Artio permet de :
 - Générer des devis et factures par dictée vocale (IA)
@@ -27,8 +27,14 @@ Tu aides les utilisateurs à naviguer dans l'application, comprendre ses fonctio
 
 RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue (tu as donné une réponse complète), termine NATURELLEMENT ta réponse en ajoutant "Y a-t-il autre chose que je puisse faire pour vous ?" ou "Est-ce que cela répond à votre question ?" — seulement si la réponse est vraiment complète. Ne le fais pas si l'utilisateur est encore en train d'expliquer. Si l'utilisateur dit "non merci", "c'est bon", "merci", "parfait", "ok merci" ou similaire, réponds chaleureusement en le remerciant de ta part, puis termine par [CONVERSATION_CLOSE].`;
 
+  function getSystemPrompt() {
+    if (!contexteIA) return SYSTEM_PROMPT_BASE;
+    return SYSTEM_PROMPT_BASE + `\n\nINFORMATIONS SUR L'ENTREPRISE DE L'UTILISATEUR :\n${contexteIA}\n\nUtilise ces informations pour répondre de façon personnalisée aux questions sur l'activité, les offres, les tarifs ou les services de cet utilisateur.`;
+  }
+
   // ── STATE ─────────────────────────────────────────────
   let apiKey          = null;
+  let contexteIA      = null; // contexte métier de l'utilisateur
   let userId          = null; // pour le logging des tokens
   let userEmail       = null;
   let isOpen          = false;
@@ -45,9 +51,10 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
       userEmail = session.user.email;
       userId    = session.user.id;
       const { data: profil } = await sbClient
-        .from("profils").select("api_key")
+        .from("profils").select("api_key, contexte_ia")
         .eq("user_id", session.user.id).single();
       if (profil?.api_key) apiKey = profil.api_key;
+      if (profil?.contexte_ia) contexteIA = profil.contexte_ia;
     } catch (e) { console.warn("Chat widget:", e.message); }
   }
 
@@ -248,7 +255,7 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
             "anthropic-version": "2023-06-01",
             "anthropic-dangerous-direct-browser-access": "true"
           },
-          body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, system: SYSTEM_PROMPT, messages })
+          body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, system: getSystemPrompt(), messages })
         });
         if (res.ok) {
           const d = await res.json();
