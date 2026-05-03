@@ -203,6 +203,7 @@ const GOOGLE_CLIENT_ID = "965910280816-t40167i3uq9n5sap4mc2nv67tj2f44cj.apps.goo
 let user = null, profil = {}, activeTab = "profil", syncing = false;
 let factures = [];
 let gmailEmail = null;
+let gmailTokenExpiry = null;
 let gmailConnecting = false;
 let subscriptionStatus = "free", subscriptionEndDate = null;
 let cancelLoading = false, checkoutLoading = false;
@@ -312,15 +313,23 @@ function renderProfil() {
 
 /* ── GMAIL TAB ── */
 function renderGmail() {
+  const tokenExpired = gmailTokenExpiry && new Date() > gmailTokenExpiry;
   return `<div class="card">
     <div class="card-title">Connexion Gmail</div>
     <div class="card-sub">Connecte ton compte Gmail pour envoyer tes devis et factures directement depuis ta propre adresse email.</div>
-    ${gmailEmail ? `
+    ${gmailEmail && !tokenExpired ? `
       <div class="gmail-connected">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
         <span>Connecté : ${esc(gmailEmail)}</span>
       </div>
       <button class="btn-danger" onclick="doGmailDisconnect()">Déconnecter Gmail</button>
+    ` : gmailEmail && tokenExpired ? `
+      <div style="background:rgba(245,167,66,.08);border:1px solid rgba(245,167,66,.25);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f5a742" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span style="font-size:13px;color:#f5a742;font-weight:600;">Session expirée : ${esc(gmailEmail)}</span>
+      </div>
+      <button class="btn-primary" onclick="doGmailConnect()">🔄 Reconnecter Gmail</button>
+      <button class="btn-danger" style="margin-top:8px" onclick="doGmailDisconnect()">Déconnecter</button>
     ` : `
       <button class="btn-primary" ${gmailConnecting?"disabled":""} onclick="doGmailConnect()">
         ${gmailConnecting ? "Connexion en cours…" : "Se connecter à Gmail"}
@@ -357,6 +366,10 @@ async function handleGmailCode(code) {
   gmailConnecting = true; render();
   try {
     const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      toast("⚠️ Session expirée. Reconnecte-toi à Artio d'abord.");
+      gmailConnecting = false; render(); return;
+    }
     const res = await fetch(FUNCTIONS_URL + "/gmail-oauth", {
       method: "POST",
       headers: {
@@ -366,9 +379,15 @@ async function handleGmailCode(code) {
       },
       body: JSON.stringify({ code })
     });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`Erreur serveur (${res.status}) : ${txt}`);
+    }
     const data = await res.json();
     if (data.success) {
       gmailEmail = data.gmail_email;
+      // Recalculer l'expiry côté client (1h par défaut pour access token)
+      gmailTokenExpiry = new Date(Date.now() + 3600 * 1000);
       toast("✓ Gmail connecté : " + gmailEmail);
       activeTab = "gmail";
     } else {
@@ -391,6 +410,7 @@ async function doGmailDisconnect() {
     gmail_email: null
   }).eq("user_id", session.user.id);
   gmailEmail = null;
+  gmailTokenExpiry = null;
   render();
   toast("Gmail déconnecté");
 }
@@ -605,6 +625,7 @@ document.getElementById("btn-logout").addEventListener("click", async () => { aw
     subscriptionEndDate = p.subscription_end_date || null;
     cancellationRequested = p.cancellation_requested || false;
     gmailEmail = p.gmail_email || null;
+    gmailTokenExpiry = p.gmail_token_expiry ? new Date(p.gmail_token_expiry) : null;
   }
   const { data: fdata } = await sb.from("factures").select("*").eq("user_id", user.id).order("date_emission", {ascending:false});
   if (fdata) factures = fdata;
