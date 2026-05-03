@@ -197,10 +197,13 @@ const SECTEURS = ["Artisan du bâtiment","Plomberie","Électricité","Peinture",
 const CONDITIONS = ["Paiement à réception","Paiement à 30 jours","Paiement à 60 jours","Paiement à 90 jours","Acompte 30% à la commande, solde à la livraison","Acompte 50% à la commande, solde à la livraison","Paiement en 3 fois","Paiement en 2 fois"];
 const LANG_LABELS = { fr:"🇫🇷 Français", en:"🇬🇧 English", es:"🇪🇸 Español", zh:"🇨🇳 中文" };
 
+// ⚠️ Remplace par ton Client ID Google OAuth 2.0
+const GOOGLE_CLIENT_ID = "965910280816-t40167i3uq9n5sap4mc2nv67tj2f44cj.apps.googleusercontent.com";
+
 let user = null, profil = {}, activeTab = "profil", syncing = false;
 let factures = [];
-let gmailClientId = localStorage.getItem("artio_gmail_client_id") || "";
-let gmailToken = sessionStorage.getItem("gmail_token") || null;
+let gmailEmail = null;
+let gmailConnecting = false;
 let subscriptionStatus = "free", subscriptionEndDate = null;
 let cancelLoading = false, checkoutLoading = false;
 let billingPeriod = "monthly", cancellationRequested = false;
@@ -302,39 +305,86 @@ function renderProfil() {
 function renderGmail() {
   return `<div class="card">
     <div class="card-title">Connexion Gmail</div>
-    <div class="card-sub">Connecte Gmail pour répondre directement depuis l'onglet Email de l'application. Nécessite un Client ID OAuth 2.0 Google.</div>
-    ${gmailToken ? `
+    <div class="card-sub">Connecte ton compte Gmail pour envoyer tes devis et factures directement depuis ta propre adresse email.</div>
+    ${gmailEmail ? `
       <div class="gmail-connected">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span>Gmail connecté</span>
+        <span>Connecté : ${esc(gmailEmail)}</span>
       </div>
       <button class="btn-danger" onclick="doGmailDisconnect()">Déconnecter Gmail</button>
     ` : `
-      <div class="field"><label class="field-label">Google Client ID OAuth 2.0</label>
-        <input type="text" class="field-input" id="gmail-client-id" value="${esc(gmailClientId)}" placeholder="xxxx.apps.googleusercontent.com" oninput="gmailClientId=this.value;localStorage.setItem('artio_gmail_client_id',this.value)"/>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6;">
-          <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--teal)">Créer un projet Google Cloud → Activer Gmail API → Créer un Client ID →</a>
-          Ajoute <code style="background:var(--surface-2);padding:1px 6px;border-radius:4px;font-size:10px">https://artio-sand.vercel.app/settings.html</code> comme URI de redirection.
-        </div>
-      </div>
-      <button class="btn-primary" onclick="doGmailConnect()">Se connecter à Gmail</button>
+      <button class="btn-primary" ${gmailConnecting?"disabled":""} onclick="doGmailConnect()">
+        ${gmailConnecting ? "Connexion en cours…" : "Se connecter à Gmail"}
+      </button>
     `}
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
       <div class="section-sep" style="margin-top:0">Comment ça marche ?</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.7">Une fois connecté, l'onglet Email de l'application peut lire vos emails non lus et générer des réponses via Claude. Les emails ne sont jamais stockés.</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7">
+        En cliquant sur le bouton, tu seras redirigé vers Google pour autoriser Artio à envoyer des emails en ton nom.
+        Tes tokens sont stockés de façon sécurisée et ne sont jamais partagés. Tu peux déconnecter à tout moment.
+      </div>
     </div>
   </div>`;
 }
 
 function doGmailConnect() {
-  const clientId = (document.getElementById("gmail-client-id")?.value || gmailClientId).trim();
-  if (!clientId) { alert("Entre ton Client ID Google OAuth 2.0."); return; }
-  localStorage.setItem("artio_gmail_client_id", clientId);
-  const scope = encodeURIComponent("https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send");
+  const scope = encodeURIComponent([
+    "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/userinfo.email"
+  ].join(" "));
   const redirect = encodeURIComponent(window.location.origin + "/settings.html");
-  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirect}&response_type=token&scope=${scope}&prompt=consent`;
+  const url = `https://accounts.google.com/o/oauth2/v2/auth`
+    + `?client_id=${GOOGLE_CLIENT_ID}`
+    + `&redirect_uri=${redirect}`
+    + `&response_type=code`
+    + `&scope=${scope}`
+    + `&access_type=offline`
+    + `&prompt=consent`;
+  window.location.href = url;
 }
-function doGmailDisconnect() { gmailToken = null; sessionStorage.removeItem("gmail_token"); render(); toast("Gmail déconnecté"); }
+
+async function handleGmailCode(code) {
+  gmailConnecting = true; render();
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(FUNCTIONS_URL + "/gmail-oauth", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + session.access_token,
+        "apikey": SB_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if (data.success) {
+      gmailEmail = data.gmail_email;
+      toast("✓ Gmail connecté : " + gmailEmail);
+      activeTab = "gmail";
+    } else {
+      toast("Erreur Gmail : " + (data.error || "inconnue"));
+    }
+  } catch(e) {
+    toast("Erreur : " + e.message);
+  }
+  gmailConnecting = false;
+  history.replaceState(null, "", location.pathname);
+  render();
+}
+
+async function doGmailDisconnect() {
+  const { data: { session } } = await sb.auth.getSession();
+  await sb.from("profils").update({
+    gmail_access_token: null,
+    gmail_refresh_token: null,
+    gmail_token_expiry: null,
+    gmail_email: null
+  }).eq("user_id", session.user.id);
+  gmailEmail = null;
+  render();
+  toast("Gmail déconnecté");
+}
 
 
 /* ── ABONNEMENT TAB ── */
@@ -507,11 +557,11 @@ function downloadFacture(index) {
 
 /* ── GMAIL OAUTH CALLBACK ── */
 (function checkGmailCallback() {
-  const hash = window.location.hash;
-  if (hash && hash.includes("access_token")) {
-    const params = new URLSearchParams(hash.substring(1));
-    const token = params.get("access_token");
-    if (token) { gmailToken = token; sessionStorage.setItem("gmail_token", token); history.replaceState(null,"",location.pathname); activeTab = "gmail"; }
+  const urlParams = new URLSearchParams(location.search);
+  const code = urlParams.get("code");
+  if (code) {
+    // On nettoie l'URL immédiatement, le code sera traité après l'init
+    history.replaceState(null, "", location.pathname + "?_gmailcode=" + encodeURIComponent(code));
   }
 })();
 
@@ -529,10 +579,22 @@ document.getElementById("btn-logout").addEventListener("click", async () => { aw
     subscriptionStatus = p.subscription_status || "free";
     subscriptionEndDate = p.subscription_end_date || null;
     cancellationRequested = p.cancellation_requested || false;
+    gmailEmail = p.gmail_email || null;
   }
   const { data: fdata } = await sb.from("factures").select("*").eq("user_id", user.id).order("date_emission", {ascending:false});
   if (fdata) factures = fdata;
+
+  // Gestion retour OAuth Gmail
   const urlParams = new URLSearchParams(location.search);
+  const gmailCode = urlParams.get("_gmailcode") || urlParams.get("code");
+  if (gmailCode) {
+    history.replaceState(null, "", location.pathname);
+    activeTab = "gmail";
+    render();
+    await handleGmailCode(gmailCode);
+    return;
+  }
+
   const subParam = urlParams.get("subscription");
   if (subParam === "success") { activeTab = "abonnement"; toast("✅ Abonnement activé ! Bienvenue dans le Plan Pro."); }
   else if (subParam === "cancelled") { activeTab = "abonnement"; }
