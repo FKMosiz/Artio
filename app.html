@@ -1709,13 +1709,13 @@ function renderHistorique(){
           <button class="btn-small" onclick="event.stopPropagation();if(window.confirm('Supprimer ce dossier définitivement ?'))confirmDeleteDossier('${dos.id}')" style="color:#A32D2D;border-color:#F09595;">🗑</button>
         </div>
       </div>
-      ${isOpen?`<div class="dossier-docs" style="padding:12px;border-top:0.5px solid #f0eeea;">
+      ${isOpen?`<div class="dossier-docs" style="padding:12px;border-top:0.5px solid var(--border);">
         ${(dos.documents||[]).map(doc=>{
           const hasF=(dos.documents||[]).some(d=>d.type==="facture");
-          return`<div style="background:#f9f8f6;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+          return`<div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
               <div>
-                <p style="font-size:13px;font-weight:500;">${doc.docNumber||""}</p>
+                <p style="font-size:13px;font-weight:500;color:var(--text);">${doc.docNumber||""}</p>
                 <p style="font-size:12px;color:#888;">${doc.date||""} · ${(doc.ttc||0).toFixed(2)} € TTC</p>
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;">
@@ -1765,7 +1765,7 @@ function renderDocPreview(doc){
       const delai=doc.entreprise?.delai_paiement||"30";
       const isBTP=BTP_SEC.includes(doc.entreprise?.secteur||"");
       const extras=(isBTP?" Garantie décennale applicable.":"")+(isBTP&&doc.entreprise?.certifications?" Certif. : "+doc.entreprise.certifications+".":"");
-      return`<div style="margin-top:12px;padding:10px;background:#f0eeea;border-radius:8px;font-size:11px;color:#888;">${cTxt} Devis valable ${delai} jours.${extras}</div>`;
+      return`<div style="margin-top:12px;padding:10px;background:var(--surface-3,var(--surface-2));border-radius:8px;font-size:11px;color:var(--muted);">${cTxt} Devis valable ${delai} jours.${extras}</div>`;
     })():""}
   </div>`;
 }
