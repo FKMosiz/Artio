@@ -297,8 +297,7 @@ function calcKPIs() {
   const caParMois = {};
   all.filter(d => d.type==="facture").forEach(d => { const dt=parseDateFR(d.date); const k=dt.getFullYear()+"-"+dt.getMonth(); caParMois[k]=(caParMois[k]||0)+(d.ttc||0); });
   const bars = buildBars(caParMois, now);
-  const caAnnuel = all.filter(d=>d.type==='facture').reduce((s,d)=>{const dt=parseDateFR(d.date);return dt.getFullYear()===now.getFullYear()?s+(d.ttc||0):s;},0);
-  return { caTotal, caHT, caAnnuel, tvaColl, tvaParTaux, caMois, caAttente, caAccepte, txConv, nbFactures:factures.length, nbDevis:devis.length, nbAttente:devisAtt.length, nbAccepte:devisAcc.length, bars, factures, devis };
+  return { caTotal, caHT, tvaColl, tvaParTaux, caMois, caAttente, caAccepte, txConv, nbFactures:factures.length, nbDevis:devis.length, nbAttente:devisAtt.length, nbAccepte:devisAcc.length, bars, factures, devis };
 }
 
 function currentTVAPeriod() {
@@ -374,11 +373,11 @@ function render() {
     <div class="kpi-grid">
       <div class="kpi-card kpi-amber">
         <div class="kpi-icon" style="background:var(--amber-dim)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
-        <div class="kpi-label">CA annuel</div>
-        <div class="kpi-value">${fmt(kpi.caAnnuel)}</div>
-        <div class="kpi-sub">${now.getFullYear()}</div>
+        <div class="kpi-label">CA facturé</div>
+        <div class="kpi-value">${fmt(kpi.caTotal)}</div>
+        <div class="kpi-sub">${kpi.nbFactures} facture${kpi.nbFactures>1?"s":""}</div>
       </div>
       <div class="kpi-card kpi-teal">
         <div class="kpi-icon" style="background:var(--teal-dim)">
@@ -388,17 +387,7 @@ function render() {
         <div class="kpi-value">${fmt(kpi.caMois)}</div>
         <div class="kpi-sub">${MOIS_LONG[now.getMonth()]} ${now.getFullYear()}</div>
       </div>
-      <div class="kpi-card kpi-orange">
-        <div class="kpi-icon" style="background:rgba(249,115,22,0.12)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        </div>
-        <div class="kpi-label">Taux de conversion</div>
-        <div class="kpi-value" style="color:${kpi.txConv>=60?'var(--green)':kpi.txConv>=30?'#f97316':'#f87171'}">${kpi.txConv}%</div>
-        <div style="margin-top:8px;background:var(--surface-2);border-radius:99px;height:6px;overflow:hidden;">
-          <div style="height:100%;width:${Math.min(kpi.txConv,100)}%;background:${kpi.txConv>=60?'var(--green)':kpi.txConv>=30?'#f97316':'#f87171'};border-radius:99px;transition:width .4s;"></div>
-        </div>
-        <div class="kpi-sub" style="margin-top:6px;">${kpi.txConv>=60?'✅ Au-dessus de la moyenne':kpi.txConv>=30?'⚠️ Peut être amélioré':'📉 À travailler'}</div>
-      </div>
+
       <div class="kpi-card kpi-green">
         <div class="kpi-icon" style="background:var(--green-dim)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
