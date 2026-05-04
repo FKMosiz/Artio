@@ -292,7 +292,10 @@ function calcKPIs() {
   const devisAcc = devis.filter(d => d.accepte);
   const caAttente  = devisAtt.reduce((s,d) => s+(d.ttc||0), 0);
   const caAccepte  = devisAcc.reduce((s,d) => s+(d.ttc||0), 0);
-  const txConv   = devis.length > 0 ? Math.round(devisAcc.length / devis.length*100) : 0;
+  // txConv calculé sur TOUTE l'année, pas sur la période filtrée
+  const allDevisAnnee = all.filter(d => d.type==='devis' && (()=>{const dt=parseDateFR(d.date);return dt.getFullYear()===now.getFullYear();})());
+  const allDevisAccAnnee = allDevisAnnee.filter(d => d.accepte);
+  const txConv = allDevisAnnee.length > 0 ? Math.round(allDevisAccAnnee.length / allDevisAnnee.length * 100) : 0;
   // Graphique : calcul selon chartFilter
   const caParMois = {};
   all.filter(d => d.type==="facture").forEach(d => { const dt=parseDateFR(d.date); const k=dt.getFullYear()+"-"+dt.getMonth(); caParMois[k]=(caParMois[k]||0)+(d.ttc||0); });
