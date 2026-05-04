@@ -254,11 +254,11 @@
           <div class="stat-val amber" id="stat-ca">–</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label" data-i18n="stat_devis">Devis en cours</div>
+          <div class="stat-label">CA cette année</div>
           <div class="stat-val teal" id="stat-devis">–</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label" data-i18n="stat_clients">Clients actifs</div>
+          <div class="stat-label">Taux de conversion</div>
           <div class="stat-val" id="stat-clients">–</div>
         </div>
       </div>
@@ -462,7 +462,7 @@ function updateGreeting() {
     const uid = session.user.id;
 
     // Vérifier onboarding avant tout
-    const { data: profil } = await sb.from('profils').select('nom, onboarding_done').eq('user_id', uid).single();
+    const { data: profil } = await sb.from('profils').select('nom, onboarding_done, pseudo').eq('user_id', uid).single();
     if (!profil?.nom || !profil?.onboarding_done) {
       window.location.href = 'onboarding.html'; return;
     }
@@ -471,17 +471,14 @@ function updateGreeting() {
     document.getElementById('user-initials').textContent = initials;
     document.getElementById('user-email').textContent = email;
     document.getElementById('user-chip').style.display = 'flex';
-    document.getElementById('greeting-name').textContent = email.split('@')[0];
+    document.getElementById('greeting-name').textContent = profil?.pseudo?.trim() || email.split('@')[0];
     document.getElementById('nav-auth').style.display = 'block';
 
     // Stats Supabase
     try {
       const now = new Date();
 
-      const [{ count: nbClients }, { data: dossiers }] = await Promise.all([
-        sb.from('clients').select('*', { count: 'exact', head: true }).eq('user_id', uid),
-        sb.from('dossiers').select('documents').eq('user_id', uid)
-      ]);
+      const { data: dossiers } = await sb.from('dossiers').select('documents').eq('user_id', uid);
 
       function parseDateFR(s) {
         if (!s) return new Date('');
@@ -490,30 +487,29 @@ function updateGreeting() {
         return new Date(s);
       }
 
-      // CA ce mois : factures dont la date est dans le mois courant
-      let caMois = 0;
-      let nbDevis = 0;
+      let caMois = 0, caAnnee = 0, nbDevis = 0, nbDevisTotal = 0;
       (dossiers || []).forEach(d => {
         (d.documents || []).forEach(doc => {
           if (doc.type === 'facture') {
             const dt = parseDateFR(doc.date);
-            if (dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear()) {
-              caMois += doc.ttc || 0;
-            }
+            if (dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear()) caMois += doc.ttc || 0;
+            if (dt.getFullYear() === now.getFullYear()) caAnnee += doc.ttc || 0;
           }
-          if (doc.type === 'devis' && !doc.accepte) nbDevis++;
+          if (doc.type === 'devis') { nbDevisTotal++; if (doc.accepte) nbDevis++; }
         });
       });
 
-      document.getElementById('stat-ca').textContent = caMois > 0
-        ? caMois.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
-        : '–';
-      document.getElementById('stat-devis').textContent = nbDevis || '–';
-      document.getElementById('stat-clients').textContent = nbClients || '–';
+      const txConv = nbDevisTotal > 0 ? Math.round((nbDevis / nbDevisTotal) * 100) : 0;
+      const fmt = v => v > 0 ? v.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }) : '–';
+
+      document.getElementById('stat-ca').textContent = fmt(caMois);
+      document.getElementById('stat-devis').textContent = fmt(caAnnee);
+      document.getElementById('stat-clients').textContent = nbDevisTotal > 0 ? txConv + '%' : '–';
     } catch {
       document.getElementById('stat-ca').textContent = '–';
       document.getElementById('stat-devis').textContent = '–';
       document.getElementById('stat-clients').textContent = '–';
+      // erreur silencieuse
     }
   } else {
     document.getElementById('nav-guest').style.display = 'block';
