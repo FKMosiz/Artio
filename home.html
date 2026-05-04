@@ -489,7 +489,9 @@ function updateGreeting() {
 
       let caMois = 0, caAnnee = 0, nbDevis = 0, nbDevisTotal = 0;
       (dossiers || []).forEach(d => {
-        const docs = d.documents || [];
+        const docs = Array.isArray(d.documents) ? d.documents
+                   : typeof d.documents === 'string' ? JSON.parse(d.documents || '[]')
+                   : [];
         const hasFacture = docs.some(doc => doc.type === 'facture');
         docs.forEach(doc => {
           if (doc.type === 'facture') {
@@ -515,6 +517,7 @@ function updateGreeting() {
       document.getElementById('stat-ca').textContent = '–';
       document.getElementById('stat-devis').textContent = '–';
       document.getElementById('stat-clients').textContent = '–';
+      // erreur silencieuse
     }
   } else {
     document.getElementById('nav-guest').style.display = 'block';
