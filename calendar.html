@@ -686,6 +686,34 @@ async function syncToGoogle(action, rdvId, googleEventId) {
   } catch(e) { console.warn("Google sync failed:", e); }
 }
 
+// ── Sync tous les events dossier vers Google au chargement ──────
+async function syncAllDossierEvents() {
+  if (!googleConnected || !userSession) return;
+  const token = userSession.access_token;
+  for (const dos of dossiers) {
+    for (const doc of (dos.documents || [])) {
+      if (!doc.date_prestation) continue;
+      const date = doc.date_prestation.slice(0, 10);
+      const titre = (doc.type === "devis" ? "Devis" : "Facture") + " — " + (dos.nom || dos.client || dos.id);
+      // Fire and forget — on ne bloque pas le rendu
+      fetch(FN + "/google-calendar-sync", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action:      "sync_dossier",
+          dossier_id:  dos.id,
+          doc_number:  doc.docNumber || doc.numero || "",
+          titre,
+          date,
+          heure:       doc.heure_prestation || "09:00",
+          heure_fin:   doc.heure_fin_prestation || "",
+          type:        doc.type || "devis",
+        })
+      }).catch(() => {});
+    }
+  }
+}
+
 window.addRdv = async function(dk) {
   const titre = document.getElementById("rdv-titre")?.value.trim();
   if (!titre) { document.getElementById("rdv-titre")?.focus(); return; }
@@ -814,6 +842,8 @@ function handleOAuthReturn() {
   handleOAuthReturn();
   render();
   renderGoogleBtn();
+  // Sync automatique des events dossier vers Google Calendar
+  syncAllDossierEvents();
 
   // Abonnement Realtime — MAJ automatique si Google webhook modifie des rdvs
   sb.channel("rdvs-changes")
