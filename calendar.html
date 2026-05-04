@@ -248,6 +248,42 @@ body {
 }
 .btn-panel-submit:hover { transform: translateY(-1px); }
 
+/* ── GOOGLE CALENDAR BADGE ── */
+.gcal-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border); cursor: pointer; font-family: var(--fb);
+  transition: all .2s; background: var(--surface);
+}
+.gcal-btn.disconnected { color: var(--muted); }
+.gcal-btn.disconnected:hover { border-color: var(--border-hi); color: var(--text); }
+.gcal-btn.connected { background: rgba(52,168,83,.1); border-color: rgba(52,168,83,.3); color: #34a853; }
+.gcal-sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #34a853; flex-shrink:0; }
+
+/* ── IA BOUTON ── */
+.ia-btn {
+  padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  background: linear-gradient(135deg, rgba(167,139,250,.13), rgba(62,207,207,.08));
+  border: 1px solid rgba(167,139,250,.28); color: #a78bfa;
+  cursor: pointer; font-family: var(--fb); transition: all .2s;
+}
+.ia-btn:hover { border-color: rgba(167,139,250,.5); }
+.ia-response {
+  background: var(--surface-2); border: 1px solid rgba(167,139,250,.18);
+  border-radius: 10px; padding: 14px; margin-top: 10px;
+  font-size: 12.5px; line-height: 1.65; white-space: pre-wrap; color: var(--text);
+}
+.ia-loading { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 7px; margin-top: 10px; }
+.ia-loading::before { content:""; width:12px;height:12px;border:2px solid rgba(167,139,250,.25);border-top-color:#a78bfa;border-radius:50%;animation:spin .7s linear infinite;display:block;flex-shrink:0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ia-slots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ia-slot {
+  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  background: rgba(167,139,250,.1); border: 1px solid rgba(167,139,250,.22); color: #a78bfa;
+  cursor: pointer; transition: all .15s;
+}
+.ia-slot:hover { background: rgba(167,139,250,.2); }
+
 /* scrollbar */
 .cal-body::-webkit-scrollbar { width: 5px; }
 .cal-body::-webkit-scrollbar-track { background: transparent; }
@@ -312,6 +348,8 @@ const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let user = null, dossiers = [], rdvs = [], viewMode = "week";
+let googleConnected = false, userSession = null;
+const FN = SUPABASE_URL + "/functions/v1";
 let viewDate = new Date();
 
 const JOURS_FR = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
@@ -474,7 +512,9 @@ function renderWeek() {
           <button class="view-btn ${viewMode==="month"?"active":""}" onclick="setView('month')">Mois</button>
         </div>
         <button class="btn-add-rdv" onclick="openPanel('${localKey(new Date())}',9)">+ RDV</button>
+        <button class="ia-btn" id="btn-ia-semaine" onclick="iaOptimiseSemaine()">✨ Optimiser la semaine</button>
       </div>
+      <div id="gcal-btn-wrap" style="margin-bottom:0"></div>
     </div>
     <div class="cal-wrap">
       <div class="cal-head-row">
@@ -532,7 +572,9 @@ function renderMonth() {
           <button class="view-btn ${viewMode==="month"?"active":""}" onclick="setView('month')">Mois</button>
         </div>
         <button class="btn-add-rdv" onclick="openPanel('${localKey(new Date())}',9)">+ RDV</button>
+        <button class="ia-btn" id="btn-ia-semaine" onclick="iaOptimiseSemaine()">✨ Optimiser la semaine</button>
       </div>
+      <div id="gcal-btn-wrap" style="margin-bottom:0"></div>
     </div>
     <div class="cal-wrap">
       <div class="month-days-hdr">
@@ -610,6 +652,10 @@ function openPanel(dk, h) {
           ${dossiers.map(d => `<option value="${d.id}">${esc(d.nom||d.client||d.id)}</option>`).join("")}
         </select>
       </div>
+      <div style="margin-bottom:10px;">
+        <button onclick="iaCreneaux('${dk}')" style="width:100%;padding:9px;border-radius:9px;font-size:12px;font-weight:600;background:linear-gradient(135deg,rgba(167,139,250,.1),rgba(62,207,207,.07));border:1px solid rgba(167,139,250,.25);color:#a78bfa;cursor:pointer;font-family:var(--fb);margin-bottom:8px;">✨ Suggérer des créneaux</button>
+        <div id="ia-creneau-result"></div>
+      </div>
       <button class="btn-panel-submit" onclick="addRdv('${dk}')">Ajouter le RDV</button>
     </div>`;
 
@@ -628,6 +674,18 @@ function closePanel() {
   document.getElementById("ov").classList.remove("open");
 }
 
+// ── Sync Google Calendar ─────────────────────────────────────────
+async function syncToGoogle(action, rdvId, googleEventId) {
+  if (!googleConnected || !userSession) return;
+  try {
+    await fetch(FN + "/google-calendar-sync", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + userSession.access_token, "Content-Type": "application/json" },
+      body: JSON.stringify({ action, rdv_id: rdvId, google_event_id: googleEventId || null })
+    });
+  } catch(e) { console.warn("Google sync failed:", e); }
+}
+
 window.addRdv = async function(dk) {
   const titre = document.getElementById("rdv-titre")?.value.trim();
   if (!titre) { document.getElementById("rdv-titre")?.focus(); return; }
@@ -638,17 +696,65 @@ window.addRdv = async function(dk) {
   const { error } = await sb.from("rdvs").upsert(rdv, { onConflict: "id" });
   if (error) { alert("Erreur : " + error.message); return; }
   rdvs.push(rdv);
+  syncToGoogle("create", rdv.id, null);
   closePanel();
   render();
   openPanel(dk, parseInt(heure)||9);
 };
 
 window.deleteRdv = async function(id, dk) {
+  const existing = rdvs.find(r => r.id === id);
+  const gId = existing ? existing.google_event_id : null;
   await sb.from("rdvs").delete().eq("id", id);
   rdvs = rdvs.filter(r => r.id !== id);
+  syncToGoogle("delete", id, gId);
   closePanel();
   render();
   if ((buildEvents()[dk]||[]).length > 0 || true) openPanel(dk, 9);
+};
+
+// ── IA : créneaux suggérés ───────────────────────────────────────
+window.iaCreneaux = async function(dk) {
+  const el = document.getElementById("ia-creneau-result");
+  if (!el) return;
+  el.innerHTML = "<div class=\"ia-loading\">Analyse des disponibilités…</div>";
+  const ev = buildEvents();
+  const occupes = (ev[dk]||[]).filter(e=>!e.isFerie).map(e=>e.hour||"?").join(", ")||"aucun";
+  const ws = getWeekStart(viewDate);
+  const planning = [];
+  for (let i=0;i<7;i++) { const d=new Date(ws); d.setDate(d.getDate()+i); const k=localKey(d); (ev[k]||[]).filter(e=>!e.isFerie).forEach(e=>planning.push(k+" "+e.hour+": "+e.label)); }
+  const prompt = "Tu es l'IA Artio. Suggère 3 créneaux optimaux pour un RDV le "+dk+".\nOccupés : "+occupes+"\nSemaine : "+planning.join(" | ")+". Réponds: HH:MM — raison courte (1 ligne chacun, 3 lignes max, en français).";
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:150, messages:[{role:"user",content:prompt}] }) });
+    const data = await res.json();
+    const texte = data.content?.[0]?.text || "";
+    const lignes = texte.split("\n").filter(l => l.match(/\d{2}:\d{2}/));
+    if (lignes.length > 0) {
+      el.innerHTML = "<div style=\"font-size:11px;color:var(--muted);margin-bottom:6px;\">✨ Cliquez pour sélectionner</div><div class=\"ia-slots\">" + lignes.map(l => { const h=l.match(/(\d{2}:\d{2})/)?.[1]||""; return "<div class=\"ia-slot\" onclick=\"document.getElementById('rdv-heure').value='"+h+"';document.getElementById('rdv-titre').focus()\">"+l.trim()+"</div>"; }).join("") + "</div>";
+    } else { el.innerHTML = "<div class=\"ia-response\">"+texte+"</div>"; }
+  } catch(e) { el.innerHTML = "<div style=\"font-size:11px;color:var(--muted);\">IA indisponible</div>"; }
+};
+
+// ── IA : optimisation semaine ────────────────────────────────────
+window.iaOptimiseSemaine = async function() {
+  const ev = buildEvents();
+  const ws = getWeekStart(viewDate);
+  const planning = [];
+  for (let i=0;i<7;i++) { const d=new Date(ws); d.setDate(d.getDate()+i); const k=localKey(d); const je=(ev[k]||[]).filter(e=>!e.isFerie); if(je.length>0) planning.push(k+": "+je.map(e=>(e.hour||"?")+e.label).join(" | ")); }
+  const btn = document.getElementById("btn-ia-semaine");
+  if (btn) btn.textContent = "✨ Analyse…";
+  const prompt = "Tu es l'IA Artio. Analyse ce planning et donne 3-4 conseils concrets pour l'optimiser (regrouper déplacements, équilibrer charge, créneaux creux). Planning:\n"+(planning.join("\n")||"Semaine vide")+"\nRéponds en bullet points courts, en français.";
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:400, messages:[{role:"user",content:prompt}] }) });
+    const data = await res.json();
+    const texte = data.content?.[0]?.text || "Aucune suggestion.";
+    const div = document.createElement("div");
+    div.style.cssText = "position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);padding:20px;";
+    div.innerHTML = "<div style=\"background:var(--surface);border:1px solid rgba(167,139,250,.3);border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;\"><div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;\"><div style=\"font-family:var(--fh);font-size:15px;font-weight:700;color:#a78bfa;\">✨ Optimisation IA — semaine</div><button onclick=\"this.closest(\\'div[style]\\').remove()\" style=\"width:28px;height:28px;border-radius:7px;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:14px;\">✕</button></div><div style=\"font-size:13px;line-height:1.65;white-space:pre-wrap;color:var(--text);\">"+texte+"</div></div>";
+    div.addEventListener("click", e => { if (e.target===div) div.remove(); });
+    document.body.appendChild(div);
+  } catch(e) { alert("IA indisponible"); }
+  finally { if (btn) btn.textContent = "✨ Optimiser la semaine"; }
 };
 
 /* ── INIT ── */
@@ -657,21 +763,72 @@ document.getElementById("btn-logout").addEventListener("click", async () => {
   window.location.href = "index.html";
 });
 
+// ── Rendu du bouton Google Calendar dans la toolbar ─────────────
+function renderGoogleBtn() {
+  const el = document.getElementById("gcal-btn-wrap");
+  if (!el) return;
+  if (googleConnected) {
+    el.innerHTML = '<div class="gcal-btn connected"><div class="gcal-sync-dot"></div>Google Calendar connecté</div>';
+  } else {
+    el.innerHTML = '<a class="gcal-btn disconnected" id="gcal-connect-btn" href="#">🔗 Connecter Google Calendar</a>';
+    document.getElementById("gcal-connect-btn")?.addEventListener("click", e => {
+      e.preventDefault();
+      const token = userSession?.access_token || "";
+      window.location.href = FN + "/google-calendar-auth?token=" + encodeURIComponent(token);
+    });
+  }
+}
+
+// ── Gestion du retour OAuth (paramètre URL) ──────────────────────
+function handleOAuthReturn() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get("google_connected") === "1") {
+    googleConnected = true;
+    window.history.replaceState({}, "", "calendar.html");
+  } else if (p.get("google_error")) {
+    console.warn("Google Calendar erreur:", p.get("google_error"));
+    window.history.replaceState({}, "", "calendar.html");
+  }
+}
+
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = "index.html"; return; }
   user = session.user;
-  const [{ data: dos }, { data: rv }] = await Promise.all([
+  userSession = session;
+
+  const [{ data: dos }, { data: rv }, { data: profil }] = await Promise.all([
     sb.from("dossiers").select("*").eq("user_id", user.id),
     sb.from("rdvs").select("*").eq("user_id", user.id),
+    sb.from("profils").select("google_connected").eq("user_id", user.id).single(),
   ]);
+
   dossiers = (dos||[]).map(d => {
     let docs = [];
     try { docs = typeof d.documents === "string" ? JSON.parse(d.documents) : (d.documents||[]); } catch(e) {}
     return { ...d, documents: docs };
   });
   rdvs = rv || [];
+  googleConnected = profil?.google_connected || false;
+
+  handleOAuthReturn();
   render();
+  renderGoogleBtn();
+
+  // Abonnement Realtime — MAJ automatique si Google webhook modifie des rdvs
+  sb.channel("rdvs-changes")
+    .on("postgres_changes", { event: "*", schema: "public", table: "rdvs", filter: "user_id=eq." + user.id }, payload => {
+      if (payload.eventType === "INSERT") {
+        const r = payload.new;
+        if (!rdvs.find(x => x.id === r.id)) rdvs.push(r);
+      } else if (payload.eventType === "UPDATE") {
+        rdvs = rdvs.map(x => x.id === payload.new.id ? payload.new : x);
+      } else if (payload.eventType === "DELETE") {
+        rdvs = rdvs.filter(x => x.id !== payload.old.id);
+      }
+      render();
+    })
+    .subscribe();
 })();
 </script>
 <script src="chat-widget.js"></script>

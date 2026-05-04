@@ -278,6 +278,11 @@ const LABELS = {
   back_login:     { fr:"← Retour à la connexion", en:"← Back to login", es:"← Volver al inicio de sesión", zh:"← 返回登录" },
   legal:          { fr:"Solution Compatible — réforme facturation électronique DGFiP 2026", en:"Compatible Solution — DGFiP 2026 e-invoicing reform", es:"Solución Compatible — DGFiP 2026", zh:"兼容解决方案 — DGFiP 2026" },
   err_required:   { fr:"Email et mot de passe requis.", en:"Email and password required.", es:"Email y contraseña requeridos.", zh:"请填写邮箱和密码。" },
+  err_pass_length:  { fr:"8 caractères minimum.", en:"Minimum 8 characters.", es:"Mínimo 8 caracteres.", zh:"最少8个字符。" },
+  err_pass_upper:   { fr:"Au moins une majuscule requise.", en:"At least one uppercase letter required.", es:"Se requiere al menos una mayúscula.", zh:"需要至少一个大写字母。" },
+  err_pass_lower:   { fr:"Au moins une minuscule requise.", en:"At least one lowercase letter required.", es:"Se requiere al menos una minúscula.", zh:"需要至少一个小写字母。" },
+  err_pass_digit:   { fr:"Au moins un chiffre requis.", en:"At least one number required.", es:"Se requiere al menos un número.", zh:"需要至少一个数字。" },
+  err_pass_special: { fr:"Au moins un caractère spécial requis (!@#$…).", en:"At least one special character required (!@#$…).", es:"Se requiere al menos un carácter especial (!@#$…).", zh:"需要至少一个特殊字符。" },
   err_credentials:{ fr:"Identifiants incorrects.",      en:"Incorrect credentials.",        es:"Credenciales incorrectas.",     zh:"账号或密码错误。" },
   suc_register:   { fr:"Compte créé ! Vérifiez votre email pour confirmer.", en:"Account created! Check your email.", es:"¡Cuenta creada! Verifica tu email.", zh:"账户已创建！请验证您的邮箱。" },
 };
@@ -295,6 +300,16 @@ function setLang(code) {
   render();
 }
 
+/* ── PASSWORD VALIDATION ── */
+function validatePassword(pass) {
+  if (pass.length < 8)           return L('err_pass_length');
+  if (!/[A-Z]/.test(pass))       return L('err_pass_upper');
+  if (!/[a-z]/.test(pass))       return L('err_pass_lower');
+  if (!/[0-9]/.test(pass))       return L('err_pass_digit');
+  if (!/[^A-Za-z0-9]/.test(pass))return L('err_pass_special');
+  return null;
+}
+
 /* ── AUTH HANDLERS ── */
 async function handleAuth() {
   const email = document.getElementById('auth-email')?.value.trim();
@@ -306,6 +321,8 @@ async function handleAuth() {
     if (error) set({ loading: false, error: L('err_credentials') });
     else window.location.href = 'home.html';
   } else {
+    const passErr = validatePassword(pass);
+    if (passErr) { set({ loading: false, error: passErr }); return; }
     const { data, error } = await sb.auth.signUp({ email, password: pass });
     if (error) set({ loading: false, error: error.message });
     else if (data.user && !data.session) set({ loading: false, success: L('suc_register') });
