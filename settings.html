@@ -547,7 +547,16 @@ function renderAbonnement() {
         </div>
         <ul class="plan-features">${features_solo.map(f=>`<li><span class="ck">✓</span><span>${f}</span></li>`).join("")}</ul>
         ${isSolo
-          ? `<div style="padding:10px;border-radius:9px;background:var(--surface-2);text-align:center;font-size:12px;color:var(--muted)">Plan actif</div>`
+          ? (cancellationRequested ? `
+            <div class="alert-box warning" style="margin:0">
+              <div><div class="alert-title">Résiliation en cours</div>
+              <div class="alert-sub">Votre accès Solo reste actif jusqu'au ${endDate}.</div></div>
+            </div>
+            <button class="btn-primary" onclick="reactivateSubscription()" ${checkoutLoading?"disabled":""} style="margin-top:8px;width:100%;">
+              ${checkoutLoading?"En cours…":"↩ Réactiver mon abonnement"}
+            </button>` : `
+            <button class="btn-danger" onclick="requestCancellation()" ${cancelLoading?"disabled":""}>${cancelLoading?"Envoi…":"Demander l'annulation"}</button>
+          `)
           : isPro
             ? `<div style="padding:10px;border-radius:9px;background:var(--surface-2);text-align:center;font-size:12px;color:var(--muted)">Disponible après expiration du Pro</div>`
             : `<button class="btn-ghost" onclick="startCheckout('solo')" ${checkoutLoading?"disabled":""}>${checkoutLoading?"Redirection…":`S'abonner en Solo ${isAnnual?"(annuel)":"(mensuel)"}`}</button>`
@@ -600,7 +609,8 @@ function renderAbonnement() {
 }
 
 async function reactivateSubscription(){
-  if(!confirm("Réactiver votre abonnement Pro ? Votre abonnement reprendra normalement sans nouvelle saisie de paiement."))return;
+  const _planName = subscriptionStatus === "solo" ? "Solo" : "Pro";
+  if(!confirm(`Réactiver votre abonnement ${_planName} ? Votre abonnement reprendra normalement sans nouvelle saisie de paiement.`))return;
   checkoutLoading=true;render();
   try{
     const{data:{session}}=await sb.auth.getSession();
@@ -614,7 +624,7 @@ async function reactivateSubscription(){
     const data=await res.json();
     if(!res.ok){alert("Erreur : "+(data.error||'inconnu'));checkoutLoading=false;render();return;}
     cancellationRequested=false;
-    toast("✅ Abonnement réactivé ! Votre accès Pro continue normalement.");
+    toast(`✅ Abonnement ${_planName} réactivé ! Votre accès continue normalement.`);
   }catch(e){alert("Erreur : "+e.message);}
   checkoutLoading=false;render();
 }
