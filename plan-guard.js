@@ -295,8 +295,12 @@ window.PlanGuard = (() => {
     }
 
     try {
-      const { createClient } = window.supabase;
-      const sb = createClient(SB_URL, SB_KEY);
+      // Réutilise le client Supabase de la page si disponible (évite le double GoTrueClient)
+      let sb = window.sb;
+      if (!sb) {
+        const { createClient } = window.supabase;
+        sb = createClient(SB_URL, SB_KEY);
+      }
       const { data: { session } } = await sb.auth.getSession();
 
       if (!session) {

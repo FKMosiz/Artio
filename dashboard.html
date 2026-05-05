@@ -214,7 +214,7 @@ body { font-family: var(--fb); background: var(--bg); color: var(--text); min-he
 const SUPABASE_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co";
 const SUPABASE_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window.sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let user = null, dossiers = [], filterType = "mois", filterFrom = "", filterTo = "", chartFilter = "6mois", assujetti_tva = false, tva_frequence = "trimestrielle", tva_regime = "encaissements";
 const now_ = new Date();
