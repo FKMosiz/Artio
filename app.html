@@ -179,7 +179,7 @@ let S={
   pendingConvert:null,
   emettreId:null,
   copied:false,
-  entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",assujetti_tva:false,secteur:"",conditions_paiement:"",delai_paiement:"30"},
+  entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:"",assujetti_tva:false,secteur:"",conditions_paiement:"",delai_paiement:"30"},
   dossiers:[],
   profilSaved:false,
   syncing:false,
@@ -197,7 +197,7 @@ async function loadUserData(userId){
       S.entreprise={
         nom:profil.nom||"",adresse:profil.adresse||"",tel:profil.tel||"",
         email:profil.email||"",siret:profil.siret||"",taux_horaire:profil.taux_horaire||"",
-        assujetti_tva:profil.assujetti_tva||false,
+        api_key:profil.api_key||"",assujetti_tva:profil.assujetti_tva||false,
         secteur:profil.secteur||"",
         conditions_paiement:profil.conditions_paiement||"",
         delai_paiement:profil.delai_paiement||"30",
@@ -238,6 +238,7 @@ async function saveProfil(){
   });
   const e=S.entreprise;
   if(!e.nom||!e.siret||!e.taux_horaire){alert("Nom, SIRET et taux horaire obligatoires.");return}
+  if(!e.api_key){alert("La clé API Anthropic est obligatoire.");return}
   set({syncing:true});
   const{error}=await sb.from("profils").upsert({user_id:S.user.id,...e,assujetti_tva:e.assujetti_tva||false,secteur:e.secteur||"",conditions_paiement:e.conditions_paiement||"",delai_paiement:e.delai_paiement||"30",updated_at:new Date().toISOString()},{onConflict:"user_id"});
   if(error){alert("Erreur sauvegarde : "+error.message)}
@@ -567,51 +568,44 @@ async function handleAuth(){
 
 async function handleLogout(){
   await sb.auth.signOut();
-  S.user=null;S.entreprise={nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:""};
+  S.user=null;S.entreprise={nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:""};
   S.dossiers=[];S.profilSaved=false;
   window.location.href="index.html";
 }
 
 // ——— API CLAUDE ———
-async function callClaude(prompt,maxTokens=400,retries=5,feature="app"){
-  // ── Plan Guard UI (double vérification côté serveur dans claude-proxy) ──
+async function callClaude(prompt,maxTokens=400,retries=5){
+  // ── Plan Guard : bloque l'IA pour les non-abonnés ──
   if(window.PlanGuard && window.PlanGuard.isFree()){
     _showReadonlyAlert("La génération par IA nécessite un abonnement actif.");
     throw new Error("plan_required");
   }
-  // Récupérer le JWT de la session courante
-  const{data:{session}}=await sb.auth.getSession();
-  if(!session?.access_token) throw new Error("Non authentifié");
-
+  // Models list: essayer Sonnet puis fallback Haiku si surchargé
   const models=["claude-sonnet-4-20250514","claude-haiku-4-5-20251001"];
   for(let attempt=1;attempt<=retries;attempt++){
-    const model=attempt>=3?models[1]:models[0];
+    const model=attempt>=3?models[1]:models[0]; // Fallback Haiku à partir de la 3ème tentative
     try{
-      const res=await fetch(FUNCTIONS_URL+"/claude-proxy",{
+      const res=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
-        headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},
-        body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:"user",content:prompt}],feature})
+        headers:{"Content-Type":"application/json","x-api-key":S.entreprise.api_key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
       });
       const d=await res.json();
-      if(d.code==="plan_required"){
-        _showReadonlyAlert("La génération par IA nécessite un abonnement actif.");
-        throw new Error("plan_required");
-      }
       if(d.error){
         if((d.error.type==="overloaded_error"||d.error.type==="rate_limit_error")&&attempt<retries){
           const wait=1500*Math.pow(1.5,attempt);
-          console.warn(`IA surchargée, retry ${attempt}/${retries} dans ${Math.round(wait)}ms`);
+          console.warn(`IA surchargée, retry ${attempt}/${retries} dans ${Math.round(wait)}ms (modèle: ${model})`);
           await new Promise(r=>setTimeout(r,wait));
           continue;
         }
-        throw new Error(d.error.message||d.error);
+        throw new Error(d.error.message);
       }
+      // Retourne texte ET usage pour le logging (usage invisible pour l'utilisateur)
       return {
         text: d.content?.map(b=>b.text||"").join("")||"",
         usage: d.usage||null
       };
     }catch(e){
-      if(e.message==="plan_required") throw e;
       if(attempt===retries){
         if(e.message&&(e.message.includes("overloaded")||e.message.includes("Overloaded"))){
           throw new Error("L'IA est momentanément surchargée. Réessayez dans quelques instants.");
@@ -625,7 +619,24 @@ async function callClaude(prompt,maxTokens=400,retries=5,feature="app"){
 
 // ——— LOG TOKENS (silencieux, invisible pour l'utilisateur) ———
 async function logTokens(feature, usage){
-  // Logging désormais géré par claude-proxy côté serveur
+  try{
+    if(!usage||!S.user?.id) return;
+    const input  = usage.input_tokens  || 0;
+    const output = usage.output_tokens || 0;
+    // Tarif claude-sonnet-4 : $3/M input, $15/M output
+    const cout = (input * 0.000003) + (output * 0.000015);
+    await S.sb.from("token_logs").insert({
+      user_id:       S.user.id,
+      feature,
+      input_tokens:  input,
+      output_tokens: output,
+      total_tokens:  input + output,
+      cout_estime:   cout
+    });
+  }catch(e){
+    // Silencieux — ne jamais bloquer l'UX pour un log raté
+    console.debug("logTokens:", e.message);
+  }
 }
 
 // ——— VOICE ———
@@ -817,6 +828,7 @@ window.handleGenerate=async()=>{
     if(!S.pieces[i])S.pieces[i]={};S.pieces[i][k]=el.value;
   });
   const e=S.entreprise,f=S.fields,tab=S.tab;
+  if(!e.api_key){alert("Configure d'abord ta clé API.");return}
   if(tab==="email"){
     const req=S.emailMode==="reponse"?["client_nom","message"]:["client_nom","avancement"];
     const miss=req.filter(id=>!(f[id]||"").trim());
@@ -1347,7 +1359,7 @@ function renderApp(){
     </div>
   </nav>
   <div class="app">
-    ${!apiOk?'<div class="warn-bar" onclick="set({showSettings:true,settingsPage:\'profil\'})">⚠️ Configure ton entreprise et ta clé API</div>':""}    <div class="tabs">
+    <div class="tabs">
       ${[["devis",L("devis")],["facture",L("facture")],["email",L("email")],["historique",L("historique")+(S.dossiers.length?" ("+S.dossiers.length+")":"")],["emails_gmail",S.gmailEmail?"📧 Emails"+(S.emails.length?" ("+S.emails.length+")":""):"📧 Gmail"]].map(([id,label])=>`<button class="tab-btn ${S.tab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}
     </div>
     ${S.tab==="emails_gmail"?renderEmailsGmail():S.tab==="historique"?renderHistorique():S.tab==="email"?renderEmail():renderDevisFacture()}

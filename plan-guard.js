@@ -25,6 +25,7 @@ window.PlanGuard = (() => {
   const PLAN_RANK = { free: 0, restricted: 0, solo: 1, pro: 2 };
 
   let _plan          = null;
+  let _isAdmin       = false;
   let _wasSubscribed = false; // a déjà eu un abonnement Stripe
   let _ready         = false;
   let _onReady       = [];
@@ -287,9 +288,11 @@ window.PlanGuard = (() => {
     injectStyles();
 
     // Lecture rapide depuis sessionStorage pour éviter le round-trip Supabase
+    const CACHE_VERSION = "v2"; // incrémenter pour invalider le cache
     const cached = sessionStorage.getItem("artio_plan");
     const cachedWas = sessionStorage.getItem("artio_was_subscribed");
-    if (cached) {
+    const cachedV = sessionStorage.getItem("artio_plan_v");
+    if (cached && cachedV === CACHE_VERSION) {
       _plan = cached;
       _wasSubscribed = cachedWas === "1";
     }
@@ -307,11 +310,12 @@ window.PlanGuard = (() => {
         _plan = "free"; _wasSubscribed = false;
       } else {
         const { data: p } = await sb.from("profils")
-          .select("subscription_status, stripe_customer_id")
+          .select("subscription_status, stripe_customer_id, is_admin")
           .eq("user_id", session.user.id)
           .single();
 
-        _plan          = p?.subscription_status || "free";
+        _isAdmin       = p?.is_admin === true;
+        _plan          = _isAdmin ? "pro" : (p?.subscription_status || "free");
         // A déjà été abonné = stripe_customer_id présent en DB
         _wasSubscribed = !!p?.stripe_customer_id;
       }
@@ -323,6 +327,7 @@ window.PlanGuard = (() => {
     try {
       sessionStorage.setItem("artio_plan", _plan);
       sessionStorage.setItem("artio_was_subscribed", _wasSubscribed ? "1" : "0");
+      sessionStorage.setItem("artio_plan_v", CACHE_VERSION);
     } catch(e) {}
 
     _ready = true;
@@ -353,9 +358,10 @@ window.PlanGuard = (() => {
     init,
     gate,
     showProModal,
-    isPro:          () => _plan === "pro",
-    isSolo:         () => _plan === "solo" || _plan === "pro",
-    isFree:         () => !_plan || _plan === "free" || _plan === "restricted",
+    isAdmin:        () => _isAdmin,
+    isPro:          () => _plan === "pro" || _isAdmin,
+    isSolo:         () => _isAdmin || _plan === "solo" || _plan === "pro",
+    isFree:         () => !_isAdmin && (!_plan || _plan === "free" || _plan === "restricted"),
     isReadOnly:     () => (_plan === "free" || _plan === "restricted") && _wasSubscribed,
     wasSubscribed:  () => _wasSubscribed,
     getPlan:        () => _plan,
