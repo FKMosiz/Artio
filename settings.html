@@ -618,30 +618,33 @@ async function reactivateSubscription(){
 }
 
 async function startCheckout(plan = 'pro') {
-  const PRICES = {
-    solo: { monthly: 'price_1TTheyI4BaghntovaT1ektYo', annual: 'price_1TThfII4Baghntovsgrh4g6N' },
-    pro:  { monthly: 'price_1TOLIcI4BaghntovT8EgAJEE', annual: 'price_1TONkXI4BaghntovJzmi9LAN' }
+  // Payment Links Stripe — aucune Edge Function nécessaire
+  const PAYMENT_LINKS = {
+    solo: {
+      monthly: 'https://buy.stripe.com/test_14AaEXazRguz0pd0Lycs801',
+      annual:  'https://buy.stripe.com/test_6oU14n4btdin5Jx0Lycs800'
+    },
+    pro: {
+      monthly: 'https://buy.stripe.com/test_cNi5kD37p7Y35Jxbqccs803',
+      annual:  'https://buy.stripe.com/test_9B6bJ137pfqv9ZNam8cs802'
+    }
   };
-  const priceId = PRICES[plan][billingPeriod === 'annual' ? 'annual' : 'monthly'];
+
   checkoutLoading = true; render();
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { alert("Session expirée, veuillez vous reconnecter."); checkoutLoading = false; render(); return; }
 
-    console.log("[checkout] Appel via sb.functions.invoke →", { price_id: priceId, plan, billing: billingPeriod });
+    const billing = billingPeriod === 'annual' ? 'annual' : 'monthly';
+    const baseUrl = PAYMENT_LINKS[plan][billing];
 
-    const { data, error } = await sb.functions.invoke('create-checkout', {
-      body: { price_id: priceId, plan, billing: billingPeriod, user_id: session.user.id }
-    });
+    // Passe l'ID utilisateur pour que le webhook puisse l'identifier
+    const url = baseUrl + '?client_reference_id=' + session.user.id
+              + '&prefilled_email=' + encodeURIComponent(session.user.email || '');
 
-    console.log("[checkout] Réponse →", data, error);
-
-    if (error) throw new Error(error.message || JSON.stringify(error));
-    if (data?.url) window.location.href = data.url;
-    else alert("Erreur Stripe : " + JSON.stringify(data));
+    window.location.href = url;
   } catch(e) {
-    console.error("[checkout] Erreur :", e);
-    alert("Erreur réseau : " + e.message);
+    alert("Erreur : " + e.message);
   }
   checkoutLoading = false; render();
 }
