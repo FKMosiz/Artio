@@ -540,7 +540,9 @@ function renderAbonnement() {
         <ul class="plan-features">${features_solo.map(f=>`<li><span class="ck">✓</span><span>${f}</span></li>`).join("")}</ul>
         ${!isPro&&!isRestricted
           ? `<div style="padding:10px;border-radius:9px;background:var(--surface-2);text-align:center;font-size:12px;color:var(--muted)">Plan actif</div>`
-          : `<button class="btn-secondary" onclick="startCheckout('solo')" ${checkoutLoading?"disabled":""}>${checkoutLoading?"Redirection…":"Passer en Solo"}</button>`
+          : isPro
+            ? `<div style="padding:10px;border-radius:9px;background:var(--surface-2);text-align:center;font-size:12px;color:var(--muted)">Disponible après expiration du Pro</div>`
+            : `<button class="btn-ghost" onclick="startCheckout('solo')" ${checkoutLoading?"disabled":""}>${checkoutLoading?"Redirection…":"Passer en Solo"}</button>`
         }
       </div>
 
@@ -549,7 +551,7 @@ function renderAbonnement() {
         ${isPro ? `<div class="plan-badge pro">PLAN ACTUEL</div>` : ""}
         <div>
           <div class="plan-name">Pro ⚡</div>
-          ${isPro ? `<div class="plan-price">—<span> / mois</span></div>` : isAnnual ? `
+          ${isAnnual ? `
             <div class="plan-price">390 €<span> / an</span></div>
             <div class="plan-price-note">✓ 2 mois offerts — 32,50 €/mois</div>
           ` : `<div class="plan-price">39 €<span> / mois</span></div>`}
