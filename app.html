@@ -296,7 +296,7 @@ async function deleteDossierDB(id){
 // ——— AUTH ———
 const LABELS={
   fr:{
-    devis:"📋 Devis",facture:"💶 Facture",email:"✉️ Email",historique:"🗂 Dossiers",
+    devis:"📋 Devis",facture:"💶 Facture",email:"✍️ Rédiger",historique:"🗂 Dossiers",
     mon_entreprise:"⚙️ Mon entreprise",configurer:"⚠️ Configurer",deconnexion:"Déconnexion",
     generer:"Générer",generer_email:"Générer l'email",chargement:"Chargement...",
     ph_client_nom:"Ex: M. Dupont",ph_client_adresse:"Ex: 12 rue de la Paix, 75001 Paris",
@@ -314,7 +314,7 @@ const LABELS={
     mon_entreprise_desc:"Infos, SIRET, taux horaire, clé API",
   },
   en:{
-    devis:"📋 Quote",facture:"💶 Invoice",email:"✉️ Email",historique:"🗂 Files",
+    devis:"📋 Quote",facture:"💶 Invoice",email:"✍️ Compose",historique:"🗂 Files",
     mon_entreprise:"⚙️ My company",configurer:"⚠️ Setup",deconnexion:"Log out",
     generer:"Generate",generer_email:"Generate email",chargement:"Loading...",
     ph_client_nom:"Ex: Mr. Smith",ph_client_adresse:"Ex: 12 Main Street, London",
@@ -332,7 +332,7 @@ const LABELS={
     mon_entreprise_desc:"Info, VAT, hourly rate, API key",
   },
   es:{
-    devis:"📋 Presupuesto",facture:"💶 Factura",email:"✉️ Email",historique:"🗂 Carpetas",
+    devis:"📋 Presupuesto",facture:"💶 Factura",email:"✍️ Redactar",historique:"🗂 Carpetas",
     mon_entreprise:"⚙️ Mi empresa",configurer:"⚠️ Configurar",deconnexion:"Cerrar sesión",
     generer:"Generar",generer_email:"Generar email",chargement:"Cargando...",
     ph_client_nom:"Ej: Sr. García",ph_client_adresse:"Ej: Calle Mayor 12, Madrid",
@@ -916,6 +916,42 @@ window.markAccepte=async(dosId,docNum)=>{
   dos.statut="devis_accepte";dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,accepte:true}:d);
   await upsertDossier(dos);set({});
 };
+window.markPaye=async(dosId,docNum)=>{
+  const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
+  const datePaye=new Date().toLocaleDateString("fr-FR");
+  dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,paye:true,date_paye:datePaye}:d);
+  dos.statut="termine";
+  await upsertDossier(dos);set({});
+  showArtioToast("✅ Facture marquée comme payée !");
+};
+
+async function genererRappelPaiement(dosId,docNum){
+  const dos=S.dossiers.find(d=>d.id===dosId);
+  const doc=dos?.documents?.find(d=>d.docNumber===docNum);
+  if(!doc){alert("Document introuvable.");return}
+  const e=S.entreprise;
+  const joursEcoules=doc.date?Math.floor((Date.now()-new Date(doc.date.split("/").reverse().join("-")))/86400000):30;
+  set({loading:true});
+  try{
+    const prompt=`Tu es un assistant pour ${e.nom||"un prestataire indépendant"} (secteur: ${e.secteur||"services"}).
+Rédige un email de rappel de paiement professionnel et courtois pour une facture impayée.
+Infos: Client: ${doc.client?.nom||dos.client||"le client"} | Facture N°${docNum} | Montant: ${(doc.ttc||0).toFixed(2)} € TTC | Émise il y a ${joursEcoules} jours | Prestation: ${doc.description||dos.nom||""}.
+Langue: ${{"fr":"français","en":"English","es":"español","zh":"中文"}[S.langue]||"français"}.
+Ton: ferme mais professionnel, rappelle les coordonnées de paiement si disponibles (IBAN: ${e.iban||"non renseigné"}).
+Signe au nom de "${e.nom||"l'entreprise"}". Écris directement l'email sans commentaire.`;
+    const {text:txt,usage:ur}=await callClaude(prompt,400,"rappel_paiement");
+    logTokens("email",ur);
+    set({loading:false,tab:"email",emailMode:"reponse",generatedText:txt});
+    S.fields.client_nom=doc.client?.nom||dos.client||"";
+    S.fields.client_email=doc.client?.email||"";
+    render();
+    showArtioToast("💶 Email de rappel de paiement généré !");
+  }catch(err){
+    set({loading:false});
+    if(err.message!=="plan_required")alert("Erreur : "+err.message);
+  }
+}
+
 async function genererRelance(dosId,docNum){
   const dos=S.dossiers.find(d=>d.id===dosId);
   const doc=dos?.documents?.find(d=>d.docNumber===docNum);
@@ -1374,7 +1410,7 @@ function renderApp(){
   </nav>
   <div class="app">
     <div class="tabs">
-      ${[["devis",L("devis")],["facture",L("facture")],["email",L("email")],["historique",L("historique")+(S.dossiers.length?" ("+S.dossiers.length+")":"")],["emails_gmail",S.gmailEmail?"📧 Emails"+(S.emails.length?" ("+S.emails.length+")":""):"📧 Gmail"]].map(([id,label])=>`<button class="tab-btn ${S.tab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}
+      ${[["devis",L("devis")],["facture",L("facture")],["email",L("email")],["historique",L("historique")+(S.dossiers.length?" ("+S.dossiers.length+")":"")],["emails_gmail",S.gmailEmail?"📬 Messagerie"+(S.emails.length?" ("+S.emails.length+")":""):"📬 Messagerie"]].map(([id,label])=>`<button class="tab-btn ${S.tab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}
     </div>
     ${S.tab==="emails_gmail"?renderEmailsGmail():S.tab==="historique"?renderHistorique():S.tab==="email"?renderEmail():renderDevisFacture()}
   </div>
@@ -1593,7 +1629,7 @@ function renderEmail(){
   return`<div class="card">
     <div class="section-head" style="margin-top:0">
       <div class="section-icon">✉️</div>
-      <span class="section-title">Répondre à un message</span>
+      <span class="section-title">Rédiger une réponse</span>
       <div class="section-line"></div>
     </div>
     <div style="margin-bottom:16px;">
@@ -1714,18 +1750,23 @@ function renderHistorique(){
     const jours=Math.floor((Date.now()-new Date(parts[2],parts[1]-1,parts[0]))/86400000);
     return jours>=14;
   }).length;
-  const statsBar=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem;">
+  const facturesImpayees=S.dossiers.reduce((n,d)=>(d.documents||[]).filter(doc=>doc.type==="facture"&&!doc.paye).length+n,0);
+  const statsBar=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem;">
     <div class="card" style="padding:12px;text-align:center;">
-      <div style="font-size:11px;color:#888;margin-bottom:4px;">CA ce mois</div>
-      <div style="font-size:18px;font-weight:700;color:#534AB7;">${caMois.toLocaleString("fr-FR",{minimumFractionDigits:0})} €</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">CA ce mois</div>
+      <div style="font-size:18px;font-weight:700;color:var(--amber);">${caMois.toLocaleString("fr-FR",{minimumFractionDigits:0})} €</div>
     </div>
     <div class="card" style="padding:12px;text-align:center;">
-      <div style="font-size:11px;color:#888;margin-bottom:4px;">Devis en attente</div>
-      <div style="font-size:18px;font-weight:700;color:#E65100;">${devisEnAttente}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Devis en attente</div>
+      <div style="font-size:18px;font-weight:700;color:var(--amber);">${devisEnAttente}</div>
     </div>
-    <div class="card" style="padding:12px;text-align:center;${relancesNecessaires>0?"background:#FFF8E1;border-color:#FFB74D;":""}">
-      <div style="font-size:11px;color:#888;margin-bottom:4px;">À relancer</div>
-      <div style="font-size:18px;font-weight:700;color:${relancesNecessaires>0?"#E65100":"#2E7D32"};">${relancesNecessaires}</div>
+    <div class="card" style="padding:12px;text-align:center;${relancesNecessaires>0?"border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.05);":""}">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">À relancer</div>
+      <div style="font-size:18px;font-weight:700;color:${relancesNecessaires>0?"#f59e0b":"var(--green)"};">${relancesNecessaires}</div>
+    </div>
+    <div class="card" style="padding:12px;text-align:center;${facturesImpayees>0?"border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.05);":""}">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Factures impayées</div>
+      <div style="font-size:18px;font-weight:700;color:${facturesImpayees>0?"var(--red)":"var(--green)"};">${facturesImpayees}</div>
     </div>
   </div>`;
   if(!S.dossiers.length)return statsBar+`<div class="card" style="text-align:center;padding:2rem;"><p style="color:#888;font-size:13px;">Aucun dossier pour l'instant.</p></div>`;
@@ -1770,7 +1811,14 @@ function renderHistorique(){
                 ${doc.type==="devis"&&doc.accepte?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);font-size:11px;" onclick="downloadSignedProof('${doc.docNumber}')">📄 Preuve signée</button>`:""}\n                ${doc.type==="devis"&&doc.accepte&&!hasF?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:""}
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:""}
-                ${doc.type==="facture"?`<button class="btn-small" style="background:${doc.factpulse_id?'#f0fff4':'#f0eeff'};color:${doc.factpulse_id?'#276749':'#534AB7'};border-color:${doc.factpulse_id?'#68D391':'#7F77DD'};" onclick="emettreFacture('${dos.id}','${doc.docNumber}')">${S.emettreId===doc.docNumber?'⏳ Envoi...':(doc.factpulse_id?'✅ Émise':'⚡ Émettre')}</button>`:""}
+                ${doc.type==="facture"?`
+                  ${doc.paye
+                    ?`<span class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;">✓ Payée le ${doc.date_paye}</span>`
+                    :`<button class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border-color:rgba(74,222,128,.3);" onclick="markPaye('${dos.id}','${doc.docNumber}')">💶 Marquer payée</button>`
+                  }
+                  ${!doc.paye?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);" onclick="genererRappelPaiement('${dos.id}','${doc.docNumber}')">📨 Rappel</button>`:""}
+                  <button class="btn-small" style="background:${doc.factpulse_id?'rgba(74,222,128,.12)':'rgba(83,74,183,.15)'};color:${doc.factpulse_id?'var(--green)':'#9d95f5'};border-color:${doc.factpulse_id?'rgba(74,222,128,.3)':'rgba(83,74,183,.3)'};" onclick="emettreFacture('${dos.id}','${doc.docNumber}')">${S.emettreId===doc.docNumber?'⏳ Envoi...':(doc.factpulse_id?'✅ Émise':'⚡ Émettre')}</button>
+                `:""  }
                 ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button>`:`<button class="btn-small" style="color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
               </div>
             </div>
