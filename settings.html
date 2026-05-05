@@ -618,7 +618,6 @@ async function reactivateSubscription(){
 }
 
 async function startCheckout(plan = 'pro') {
-  // ── PRICE IDs Stripe — remplacer par les vrais price_xxx du dashboard ──
   const PRICES = {
     solo: { monthly: 'price_1TTheyI4BaghntovaT1ektYo', annual: 'price_1TThfII4Baghntovsgrh4g6N' },
     pro:  { monthly: 'price_1TOLIcI4BaghntovT8EgAJEE', annual: 'price_1TONkXI4BaghntovJzmi9LAN' }
@@ -627,11 +626,35 @@ async function startCheckout(plan = 'pro') {
   checkoutLoading = true; render();
   try {
     const { data: { session } } = await sb.auth.getSession();
-    const res = await fetch(FUNCTIONS_URL + "/create-checkout", { method:"POST", headers:{"Authorization":"Bearer "+SB_KEY,"apikey":SB_KEY,"Content-Type":"application/json"}, body: JSON.stringify({price_id: priceId, plan, billing: billingPeriod, user_id:session.user.id}) });
+    if (!session) { alert("Session expirée, veuillez vous reconnecter."); checkoutLoading = false; render(); return; }
+
+    // Utilise le JWT de l'utilisateur (pas la clé anon) pour invoquer la fonction
+    const token = session.access_token;
+    const url   = FUNCTIONS_URL + "/create-checkout";
+    const body  = JSON.stringify({ price_id: priceId, plan, billing: billingPeriod, user_id: session.user.id });
+
+    console.log("[checkout] Appel →", url, { price_id: priceId, plan, billing: billingPeriod });
+
+    const res  = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + token,
+        "apikey": SB_KEY,
+        "Content-Type": "application/json"
+      },
+      body
+    });
+
+    console.log("[checkout] Status →", res.status, res.statusText);
     const data = await res.json();
+    console.log("[checkout] Réponse →", data);
+
     if (data?.url) window.location.href = data.url;
-    else alert("Erreur : " + JSON.stringify(data));
-  } catch(e) { alert("Erreur réseau : " + e.message); }
+    else alert("Erreur Stripe : " + (data?.error || JSON.stringify(data)));
+  } catch(e) {
+    console.error("[checkout] Erreur :", e);
+    alert("Erreur réseau : " + e.message);
+  }
   checkoutLoading = false; render();
 }
 
