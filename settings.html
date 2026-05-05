@@ -284,8 +284,7 @@ function renderProfil() {
 
     <div class="card">
       <div class="card-title">Clé API Anthropic *</div>
-      <div class="card-sub">Nécessaire pour la dictée vocale et la génération automatique. <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--teal)">Obtenir une clé →</a></div>
-      <div class="field"><input class="pi field-input" data-k="api_key" type="password" value="${esc(e.api_key||"")}" placeholder="sk-ant-…"/></div>
+
     </div>
 
     <div class="card" style="border-color:rgba(167,139,250,.22)">
@@ -701,7 +700,6 @@ async function saveProfil() {
     else profil[el.dataset.k] = el.value;
   });
   if (!profil.nom || !profil.siret || !profil.taux_horaire) { toast("⚠ Nom, SIRET et taux horaire obligatoires."); return; }
-  if (!profil.api_key) { toast("⚠ La clé API Anthropic est obligatoire."); return; }
   syncing = true; render();
   const { error } = await sb.from("profils").upsert({ user_id: user.id, ...profil, assujetti_tva: profil.assujetti_tva||false, tva_frequence: profil.tva_frequence||"trimestrielle", tva_regime: profil.tva_regime||"encaissements", contexte_ia: profil.contexte_ia||"", updated_at: new Date().toISOString() }, { onConflict: "user_id" });
   syncing = false;
@@ -776,7 +774,7 @@ document.getElementById("btn-logout").addEventListener("click", async () => { aw
   user = session.user;
   const { data: p } = await sb.from("profils").select("*").eq("user_id", user.id).single();
   if (p) {
-    profil = { nom:p.nom||"", adresse:p.adresse||"", tel:p.tel||"", email:p.email||"", siret:p.siret||"", taux_horaire:p.taux_horaire||"", api_key:p.api_key||"", assujetti_tva:p.assujetti_tva||false, tva_frequence:p.tva_frequence||"trimestrielle", tva_regime:p.tva_regime||"encaissements", secteur:p.secteur||"", conditions_paiement:p.conditions_paiement||"", delai_paiement:p.delai_paiement||"30", iban:p.iban||"", contexte_ia:p.contexte_ia||"" };
+    profil = { nom:p.nom||"", adresse:p.adresse||"", tel:p.tel||"", email:p.email||"", siret:p.siret||"", taux_horaire:p.taux_horaire||"", assujetti_tva:p.assujetti_tva||false, tva_frequence:p.tva_frequence||"trimestrielle", tva_regime:p.tva_regime||"encaissements", secteur:p.secteur||"", conditions_paiement:p.conditions_paiement||"", delai_paiement:p.delai_paiement||"30", iban:p.iban||"", contexte_ia:p.contexte_ia||"" };
     subscriptionStatus = p.subscription_status || "free";
     subscriptionEndDate = p.subscription_end_date || null;
     cancellationRequested = p.cancellation_requested || false;

@@ -630,9 +630,10 @@
 // ── SUPABASE ─────────────────────────────────────────
 const SUPABASE_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bWV4a29lcWV5dWVxZ2Rra25pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTAyNDEyNDksImV4cCI6MTk5NjAwMTI0OX0.AQQT5V6YfPVBKqxfQzKVRqV0k2O-TjlBV9zC8NQwUcE";
+const FUNCTIONS_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co/functions/v1";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let userApiKey = null;
+let userToken = null;
 let currentUser = null;
 
 // Charger la clé API de l'utilisateur
@@ -641,9 +642,8 @@ let currentUser = null;
     const { data: { session } } = await sb.auth.getSession();
     if (session) {
       currentUser = session.user;
-      const { data: profil } = await sb.from("profils").select("api_key").eq("user_id", session.user.id).single();
-      if (profil?.api_key) {
-        userApiKey = profil.api_key;
+      userToken = session.access_token;
+      {
       }
     }
   } catch(e) {
@@ -757,18 +757,17 @@ async function sendMessage() {
   let answer;
   
   // Si clé API disponible, appeler Claude
-  if (userApiKey) {
+  if (userToken) {
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(FUNCTIONS_URL + "/claude-proxy", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": userApiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
+          "Authorization": "Bearer " + userToken
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
+          feature: "aide",
           max_tokens: 512,
           messages: [{
             role: "user",

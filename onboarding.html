@@ -291,6 +291,7 @@ h1 {
 const SB_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co";
 const SB_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
 const { createClient } = supabase;
+const FUNCTIONS_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co/functions/v1";
 const sb = createClient(SB_URL, SB_KEY);
 
 const SECTEURS = ["Artisan du bâtiment","Plomberie","Électricité","Peinture","Menuiserie","Maçonnerie","Jardinage / Paysagisme","Nettoyage","Lavage automobile","Photographie","Coaching","Consulting","Design / Graphisme","Développement web","Rédaction / Traduction","Livraison","Transport","Formation","Santé / Bien-être","Beauté / Esthétique","Restauration","Événementiel","Logiciel / SaaS","Autre"];
@@ -302,7 +303,6 @@ let saving = false;
 const D = {
   nom: "", secteur: "", siret: "", taux_horaire: "",
   email: "", tel: "", adresse: "",
-  api_key: "",
   q1: "", q2: "", q3: "",
   contexte_ia: ""
 };
@@ -376,86 +376,6 @@ function renderEntreprise() {
     <h1>Votre entreprise</h1>
     <div class="subtitle">Ces informations apparaîtront sur vos devis et factures.</div>
     <div class="field">
-      <label>Nom de l'entreprise *</label>
-      <input id="f-nom" type="text" value="${esc(D.nom)}" placeholder="Ex: Dupont Électricité" autofocus/>
-    </div>
-    <div class="field">
-      <label>Secteur d'activité</label>
-      <select id="f-secteur">
-        <option value="">-- Choisir --</option>
-        ${SECTEURS.map(s=>`<option value="${s}" ${D.secteur===s?"selected":""}>${s}</option>`).join("")}
-      </select>
-    </div>
-    <div class="fields-2">
-      <div class="field">
-        <label>SIRET *</label>
-        <input id="f-siret" type="text" value="${esc(D.siret)}" placeholder="123 456 789 00012"/>
-      </div>
-      <div class="field">
-        <label>Taux horaire (€ HT) *</label>
-        <input id="f-taux" type="number" value="${esc(D.taux_horaire)}" placeholder="50"/>
-      </div>
-    </div>
-    <div id="err-1" class="error-msg" style="display:none"></div>
-    <button class="btn-next" onclick="saveStep1()">Continuer →</button>
-  `;
-}
-
-function saveStep1() {
-  D.nom = document.getElementById("f-nom").value.trim();
-  D.secteur = document.getElementById("f-secteur").value;
-  D.siret = document.getElementById("f-siret").value.trim();
-  D.taux_horaire = document.getElementById("f-taux").value.trim();
-  const err = document.getElementById("err-1");
-  if (!D.nom || !D.siret || !D.taux_horaire) {
-    err.textContent = "Nom, SIRET et taux horaire sont obligatoires.";
-    err.style.display = "block"; return;
-  }
-  nextStep();
-}
-
-// ── STEP 2 : CONTACT ──────────────────────────────────────────────
-function renderContact() {
-  return `
-    <div class="step-icon">📬</div>
-    <h1>Vos coordonnées</h1>
-    <div class="subtitle">Utilisées dans vos documents et pour vous contacter.</div>
-    <div class="field">
-      <label>Email professionnel</label>
-      <input id="f-email" type="email" value="${esc(D.email)}" placeholder="contact@monentreprise.fr"/>
-    </div>
-    <div class="field">
-      <label>Téléphone</label>
-      <input id="f-tel" type="tel" value="${esc(D.tel)}" placeholder="06 12 34 56 78"/>
-    </div>
-    <div class="field">
-      <label>Adresse</label>
-      <input id="f-adresse" type="text" value="${esc(D.adresse)}" placeholder="12 rue de Paris, 75001 Paris"/>
-    </div>
-    <button class="btn-next" onclick="saveStep2()">Continuer →</button>
-    <button class="btn-skip" onclick="nextStep()">Passer cette étape</button>
-  `;
-}
-
-function saveStep2() {
-  D.email = document.getElementById("f-email").value.trim();
-  D.tel = document.getElementById("f-tel").value.trim();
-  D.adresse = document.getElementById("f-adresse").value.trim();
-  nextStep();
-}
-
-// ── STEP 3 : CLÉ API ──────────────────────────────────────────────
-function renderApiKey() {
-  return `
-    <div class="step-icon teal">🔑</div>
-    <h1>Votre clé API IA</h1>
-    <div class="subtitle">
-      Indispensable pour la dictée vocale et la génération intelligente.
-      <a href="https://console.anthropic.com/settings/keys" target="_blank">Obtenir une clé Anthropic →</a>
-    </div>
-    <div class="field">
-      <label>Clé API Anthropic</label>
-      <input id="f-api" type="password" value="${esc(D.api_key)}" placeholder="sk-ant-…"/>
     </div>
     <div style="padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;font-size:12px;color:var(--muted);line-height:1.6;">
       🔒 Votre clé est chiffrée et stockée de façon sécurisée. Elle n'est jamais partagée.
@@ -466,7 +386,6 @@ function renderApiKey() {
 }
 
 function saveStep3() {
-  D.api_key = document.getElementById("f-api").value.trim();
   nextStep();
 }
 
@@ -514,7 +433,7 @@ async function saveStep4() {
   btn.disabled = true; btn.textContent = "Enregistrement…";
 
   // Synthèse avec Claude si API key dispo
-  if (D.api_key && (D.q1 || D.q2 || D.q3)) {
+  if (D.q1 || D.q2 || D.q3) {
     const statusEl = document.getElementById("synth-status");
     statusEl.innerHTML = `<div class="synth-loading">
       <div class="synth-dots"><span></span><span></span><span></span></div>
@@ -533,14 +452,16 @@ Tarifs et conditions : ${D.q3||"non précisé"}
 
 Rédige uniquement le texte de contexte, sans titre ni commentaire.`;
 
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const { data: { session: _sess } } = await sb.auth.getSession();
+      const _token = _sess?.access_token;
+      if (!_token) { renderStep(); return; }
+      const res = await fetch(FUNCTIONS_URL + "/claude-proxy", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": D.api_key,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
+          "Authorization": "Bearer " + _token
         },
+        feature: "onboarding",
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 600,
@@ -591,7 +512,6 @@ async function saveAndFinish() {
       email: D.email,
       tel: D.tel,
       adresse: D.adresse,
-      api_key: D.api_key,
       contexte_ia: D.contexte_ia,
       onboarding_done: true,
       updated_at: new Date().toISOString()
@@ -622,13 +542,11 @@ function renderSucces() {
       ${D.nom ? `<div class="summary-row"><span>Entreprise</span><span>${esc(D.nom)}</span></div>` : ""}
       ${D.secteur ? `<div class="summary-row"><span>Secteur</span><span>${esc(D.secteur)}</span></div>` : ""}
       ${D.taux_horaire ? `<div class="summary-row"><span>Taux horaire</span><span>${esc(D.taux_horaire)} € / h</span></div>` : ""}
-      <div class="summary-row"><span>Clé API</span><span>${D.api_key ? "✓ Configurée" : "— À configurer"}</span></div>
-      <div class="summary-row"><span>Contexte IA</span><span>${D.contexte_ia ? "✓ Généré" : "— Non renseigné"}</span></div>
+        <div class="summary-row"><span>Contexte IA</span><span>${D.contexte_ia ? "✓ Généré" : "— Non renseigné"}</span></div>
     </div>
     <button class="btn-next" onclick="location.href='home.html'" style="margin-top:20px">
       Accéder à mon espace →
     </button>
-    ${!D.api_key ? `<button class="btn-skip" onclick="location.href='settings.html'">Configurer ma clé API maintenant</button>` : ""}
   `;
 }
 
@@ -648,7 +566,7 @@ function nextStep() { step++; render(); window.scrollTo(0,0); }
     if (p.onboarding_done && p.nom) { location.href = "home.html"; return; }
     D.nom = p.nom||""; D.secteur = p.secteur||""; D.siret = p.siret||"";
     D.taux_horaire = p.taux_horaire||""; D.email = p.email||"";
-    D.tel = p.tel||""; D.adresse = p.adresse||""; D.api_key = p.api_key||"";
+    D.tel = p.tel||""; D.adresse = p.adresse||"";
     D.contexte_ia = p.contexte_ia||"";
   }
 

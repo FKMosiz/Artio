@@ -8,6 +8,7 @@
   // ── CONFIG ────────────────────────────────────────────
   const SUPABASE_URL  = "https://mwmexkoeqeyueqgdkkni.supabase.co";
   const SUPABASE_KEY  = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
+  const FUNCTIONS_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co/functions/v1";
   const STORAGE_KEY   = "artio_chat_history";
   const MODEL         = "claude-sonnet-4-20250514";
   const MAX_TOKENS    = 512;
@@ -50,10 +51,10 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
       if (!session) return;
       userEmail = session.user.email;
       userId    = session.user.id;
+      accessToken = session.access_token;
       const { data: profil } = await sbClient
-        .from("profils").select("api_key, contexte_ia")
+        .from("profils").select("contexte_ia")
         .eq("user_id", session.user.id).single();
-      if (profil?.api_key) apiKey = profil.api_key;
       if (profil?.contexte_ia) contexteIA = profil.contexte_ia;
     } catch (e) { console.warn("Chat widget:", e.message); }
   }
@@ -241,26 +242,23 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
 
     let reply;
 
-    if (apiKey) {
+    if (accessToken) {
       try {
         const messages = history.slice(-20).map(m => ({
           role: m.role === "assistant" ? "assistant" : "user",
           content: m.content
         }));
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
+        const res = await fetch(FUNCTIONS_URL + "/claude-proxy", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-api-key": apiKey,
-            "anthropic-version": "2023-06-01",
-            "anthropic-dangerous-direct-browser-access": "true"
+            "Authorization": "Bearer " + accessToken
           },
-          body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, system: getSystemPrompt(), messages })
+          body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, system: getSystemPrompt(), messages, feature: "chat-widget" })
         });
         if (res.ok) {
           const d = await res.json();
           reply = d.content?.[0]?.text || fallback(text);
-          logTokens(d.usage); // silencieux
         } else {
           reply = fallback(text);
         }
