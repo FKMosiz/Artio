@@ -840,36 +840,61 @@
 <section id="pricing" class="reveal">
   <div class="section-tag" data-fr="Tarifs" data-en="Pricing">Tarifs</div>
   <div class="section-title" data-fr="Simple, transparent, sans surprise" data-en="Simple, transparent, no surprises">Simple, transparent, sans surprise</div>
-  <p class="section-sub" style="margin:0 auto 0" data-fr="Un accompagnement humain à l'onboarding, puis un abonnement mensuel sans engagement." data-en="Personalized onboarding support, then a no-commitment monthly subscription.">Un accompagnement humain à l'onboarding, puis un abonnement mensuel sans engagement.</p>
+  <p class="section-sub" style="margin:0 auto 0" data-fr="Sans engagement. Résiliable à tout moment. 2 mois offerts avec l'abonnement annuel." data-en="No commitment. Cancel anytime. 2 months free with annual billing.">Sans engagement. Résiliable à tout moment. 2 mois offerts avec l'abonnement annuel.</p>
+
+  <!-- Toggle mensuel / annuel -->
+  <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:32px auto 0;">
+    <span id="lbl-mensuel" style="font-size:14px;font-weight:600;color:var(--text)" data-fr="Mensuel" data-en="Monthly">Mensuel</span>
+    <div id="billing-toggle" onclick="toggleBilling()" style="width:48px;height:26px;border-radius:100px;background:var(--amber);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;">
+      <div id="billing-knob" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#080b14;transition:transform .2s;"></div>
+    </div>
+    <span id="lbl-annuel" style="font-size:14px;font-weight:400;color:var(--muted)" data-fr="Annuel" data-en="Annual">Annuel</span>
+    <span id="badge-annuel" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;background:var(--teal-dim);color:var(--teal);border:1px solid rgba(62,207,207,.25)" data-fr="2 mois offerts" data-en="2 months free">2 mois offerts</span>
+  </div>
+
   <div class="pricing-grid">
+    <!-- SOLO -->
     <div class="pc">
       <div class="p-name">Solo</div>
-      <div class="p-desc" data-fr="Pour démarrer et automatiser votre administratif" data-en="To get started and automate your admin">Pour démarrer et automatiser votre administratif</div>
-      <div class="p-price"><span class="p-amount">€490</span><span class="p-suf" data-fr="onboarding" data-en="onboarding">onboarding</span></div>
-      <div class="p-monthly" data-fr="puis <strong>€49 / mois</strong> — sans engagement" data-en="then <strong>€49 / month</strong> — no commitment">puis <strong>€49 / mois</strong> — sans engagement</div>
+      <div class="p-desc" data-fr="Pour travailler vite et bien, dès le premier jour" data-en="To work fast and well, from day one">Pour travailler vite et bien, dès le premier jour</div>
+      <div class="p-price">
+        <span class="p-amount" id="price-solo">19 €</span>
+        <span class="p-suf" data-fr="/ mois" data-en="/ mo">/ mois</span>
+      </div>
+      <div class="p-monthly" id="note-solo" data-fr="facturation mensuelle" data-en="billed monthly">facturation mensuelle</div>
       <div class="p-div"></div>
       <ul class="p-feats">
-        <li><span class="ck">✓</span><span data-fr="Génération voix → devis / factures" data-en="Voice → quote / invoice generation">Génération voix → devis / factures</span></li>
-        <li><span class="ck">✓</span><span data-fr="Gestion clients & historique" data-en="Client management & history">Gestion clients & historique</span></li>
-        <li><span class="ck">✓</span><span data-fr="Signature électronique" data-en="E-signature">Signature électronique</span></li>
-        <li><span class="ck">✓</span><span data-fr="Calendrier & planification" data-en="Calendar & scheduling">Calendrier & planification</span></li>
+        <li><span class="ck">✓</span><span data-fr="Génération devis & factures par la voix" data-en="Voice-generated quotes & invoices">Génération devis & factures par la voix</span></li>
+        <li><span class="ck">✓</span><span data-fr="IA illimitée — aucun quota" data-en="Unlimited AI — no quota">IA illimitée — aucun quota</span></li>
+        <li><span class="ck">✓</span><span data-fr="Facturation électronique (DGFIP 2026)" data-en="E-invoicing (DGFIP 2026)">Facturation électronique (DGFIP 2026)</span></li>
+        <li><span class="ck">✓</span><span data-fr="Agenda & annuaire clients" data-en="Calendar & client directory">Agenda & annuaire clients</span></li>
+        <li><span class="ck">✓</span><span data-fr="Dashboard financier complet" data-en="Full financial dashboard">Dashboard financier complet</span></li>
         <li><span class="ck">✓</span><span data-fr="Multilingue FR / EN / ES / ZH" data-en="Multilingual FR / EN / ES / ZH">Multilingue FR / EN / ES / ZH</span></li>
       </ul>
-      <button class="btn-plan out" onclick="window.location='/login'" data-fr="Démarrer" data-en="Get started">Démarrer</button>
+      <button class="btn-plan out" onclick="window.location='/login'" data-fr="Démarrer en Solo" data-en="Start with Solo">Démarrer en Solo</button>
     </div>
+
+    <!-- PRO -->
     <div class="pc pop">
-      <div class="pop-label" data-fr="Le plus populaire" data-en="Most popular">Le plus populaire</div>
+      <div class="pop-label" data-fr="Recommandé" data-en="Recommended">Recommandé</div>
       <div class="p-name">Pro</div>
-      <div class="p-desc" data-fr="Pour les indépendants qui veulent aller plus loin" data-en="For independents ready to scale">Pour les indépendants qui veulent aller plus loin</div>
-      <div class="p-price"><span class="p-amount">€890</span><span class="p-suf" data-fr="onboarding" data-en="onboarding">onboarding</span></div>
-      <div class="p-monthly" data-fr="puis <strong>€89 / mois</strong> — sans engagement" data-en="then <strong>€89 / month</strong> — no commitment">puis <strong>€89 / mois</strong> — sans engagement</div>
+      <div class="p-desc" data-fr="Pour piloter et développer votre activité" data-en="To manage and grow your business">Pour piloter et développer votre activité</div>
+      <div class="p-price">
+        <span class="p-amount" id="price-pro">39 €</span>
+        <span class="p-suf" data-fr="/ mois" data-en="/ mo">/ mois</span>
+      </div>
+      <div class="p-monthly" id="note-pro" data-fr="facturation mensuelle" data-en="billed monthly">facturation mensuelle</div>
       <div class="p-div"></div>
       <ul class="p-feats">
-        <li><span class="ck">✓</span><span data-fr="Tout Solo, plus :" data-en="Everything in Solo, plus:">Tout Solo, plus :</span></li>
-        <li><span class="ck">✓</span><span data-fr="Sync Gmail avancé" data-en="Advanced Gmail sync">Sync Gmail avancé</span></li>
-        <li><span class="ck">✓</span><span data-fr="KPIs & rapports avancés" data-en="Advanced KPIs & reports">KPIs & rapports avancés</span></li>
-        <li><span class="ck">✓</span><span data-fr="Support prioritaire 7j/7" data-en="Priority support 7/7">Support prioritaire 7j/7</span></li>
-        <li><span class="ck">✓</span><span data-fr="Multi-utilisateurs (jusqu'à 3)" data-en="Multi-user (up to 3)">Multi-utilisateurs (jusqu'à 3)</span></li>
+        <li><span class="ck">✓</span><span data-fr="Tout Solo, plus :" data-en="Everything in Solo, plus:"><strong data-fr="Tout Solo, plus :" data-en="Everything in Solo, plus:">Tout Solo, plus :</strong></span></li>
+        <li><span class="ck">✓</span><span data-fr="Signature électronique" data-en="E-signature">Signature électronique</span></li>
+        <li><span class="ck">✓</span><span data-fr="Connexion Gmail directe" data-en="Direct Gmail integration">Connexion Gmail directe</span></li>
+        <li><span class="ck">✓</span><span data-fr="Agenda synchronisé Google Calendar" data-en="Google Calendar sync">Agenda synchronisé Google Calendar</span></li>
+        <li><span class="ck">✓</span><span data-fr="Branding PDF personnalisé (logo & couleurs)" data-en="Custom PDF branding (logo & colors)">Branding PDF personnalisé (logo & couleurs)</span></li>
+        <li><span class="ck">✓</span><span data-fr="Relances & emails IA automatiques" data-en="Automated AI follow-ups & emails">Relances & emails IA automatiques</span></li>
+        <li><span class="ck">✓</span><span data-fr="Export comptable CSV" data-en="Accountant CSV export">Export comptable CSV</span></li>
+        <li><span class="ck">✓</span><span data-fr="Statistiques de conversion" data-en="Conversion analytics">Statistiques de conversion</span></li>
+        <li><span class="ck">✓</span><span data-fr="Templates de devis sauvegardés" data-en="Saved quote templates">Templates de devis sauvegardés</span></li>
       </ul>
       <button class="btn-plan prim" onclick="window.location='/login'" data-fr="Choisir Pro" data-en="Choose Pro">Choisir Pro</button>
     </div>
@@ -935,7 +960,8 @@
     lang = l;
     document.querySelectorAll('[data-' + l + ']').forEach(el => el.innerHTML = el.getAttribute('data-' + l));
     document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('.lang-btn[onclick="setLang(\'' + l + '\')"]').classList.add('active');
+    const activeBtn = document.querySelector('.lang-btn[onclick="setLang(\'' + l + '\')"]');
+    if (activeBtn) activeBtn.classList.add('active');
     document.documentElement.lang = l;
   }
 
@@ -1023,6 +1049,35 @@
 
   const tsSection = document.querySelector('#time-savings');
   if (tsSection) counterObs.observe(tsSection);
+
+  /* ── BILLING TOGGLE ── */
+  let isAnnual = false;
+  function toggleBilling() {
+    isAnnual = !isAnnual;
+    const knob = document.getElementById('billing-knob');
+    const lblM = document.getElementById('lbl-mensuel');
+    const lblA = document.getElementById('lbl-annuel');
+    knob.style.transform = isAnnual ? 'translateX(22px)' : 'translateX(0)';
+    lblM.style.fontWeight = isAnnual ? '400' : '600';
+    lblM.style.color = isAnnual ? 'var(--muted)' : 'var(--text)';
+    lblA.style.fontWeight = isAnnual ? '600' : '400';
+    lblA.style.color = isAnnual ? 'var(--text)' : 'var(--muted)';
+    const notesSolo = document.getElementById('note-solo');
+    const notesPro  = document.getElementById('note-pro');
+    if (isAnnual) {
+      document.getElementById('price-solo').textContent = '190 €';
+      document.getElementById('price-pro').textContent  = '390 €';
+      notesSolo.textContent = lang === 'en' ? '/ year — 15.83 €/mo · 2 months free' : '/ an — soit 15,83 €/mois · 2 mois offerts';
+      notesPro.textContent  = lang === 'en' ? '/ year — 32.50 €/mo · 2 months free' : '/ an — soit 32,50 €/mois · 2 mois offerts';
+    } else {
+      document.getElementById('price-solo').textContent = '19 €';
+      document.getElementById('price-pro').textContent  = '39 €';
+      notesSolo.textContent = lang === 'en' ? 'billed monthly' : 'facturation mensuelle';
+      notesPro.textContent  = lang === 'en' ? 'billed monthly' : 'facturation mensuelle';
+    }
+    // Rafraîchit les autres éléments data-fr/data-en sans toucher aux lang-btn
+    document.querySelectorAll('[data-' + lang + ']').forEach(el => el.innerHTML = el.getAttribute('data-' + lang));
+  }
 </script>
 </body>
 </html>
