@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="plan-guard.js"></script>
+<script>const PAGE_PLAN_REQUIRED = "solo";</script>
 <style>
 :root {
   --bg:        #080b14;
@@ -869,5 +871,31 @@ function handleOAuthReturn() {
 <div class="artio-legal-footer">
   <a href="cgv.html">CGV</a> · <a href="cgu.html">CGU</a> · <a href="confidentialite.html">Politique de confidentialité</a>
 </div>
+
+<script>
+document.addEventListener("pg:readonly", () => {
+  // Désactiver création RDV et optimisation IA en mode lecture
+  const disable = (sel, label) => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    el.disabled = true;
+    el.style.opacity = "0.4";
+    el.style.cursor = "not-allowed";
+    el.title = label || "Disponible avec un abonnement actif";
+  };
+  // Les boutons sont rendus dynamiquement — on patch les fonctions
+  window._pgReadOnly = true;
+});
+// Patch openPanel pour bloquer la création en readonly
+const _origOpenPanel = window.openPanel;
+window.openPanel = function(...args) {
+  if (window._pgReadOnly) {
+    PlanGuard.showProModal && PlanGuard.showProModal("Créer un RDV");
+    return;
+  }
+  if (_origOpenPanel) _origOpenPanel(...args);
+};
+</script>
+
 </body>
 </html>

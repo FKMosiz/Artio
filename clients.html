@@ -9,6 +9,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="plan-guard.js"></script>
+<script>const PAGE_PLAN_REQUIRED = "solo";</script>
 <style>
 :root {
   --bg:        #080b14;
@@ -739,5 +741,34 @@ document.getElementById("btn-logout").addEventListener("click", async () => {
 <div class="artio-legal-footer">
   <a href="cgv.html">CGV</a> · <a href="cgu.html">CGU</a> · <a href="confidentialite.html">Politique de confidentialité</a>
 </div>
+
+<script>
+document.addEventListener("pg:readonly", () => {
+  window._pgReadOnly = true;
+});
+// Patch openForm pour bloquer la création en readonly
+const _origOpenForm = window.openForm;
+window.openForm = function(...args) {
+  if (window._pgReadOnly) {
+    if (window.PlanGuard) {
+      const modal = document.createElement("div");
+      modal.id = "pg-modal-overlay";
+      modal.style.cssText = "position:fixed;inset:0;z-index:9100;display:flex;align-items:center;justify-content:center;background:rgba(8,11,20,0.75);backdrop-filter:blur(8px);";
+      modal.innerHTML = `<div style="background:#0e1220;border:1px solid rgba(245,167,66,0.25);border-radius:22px;padding:32px 28px;max-width:380px;width:90%;text-align:center;font-family:'Plus Jakarta Sans',sans-serif;">
+        <div style="font-size:36px;margin-bottom:12px;">📂</div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#e2e5f1;margin-bottom:8px;">Mode lecture</div>
+        <div style="font-size:13px;color:#6b7494;line-height:1.65;margin-bottom:22px;">La création de nouveaux clients nécessite un abonnement actif.</div>
+        <a href="settings.html?tab=abonnement" style="display:block;width:100%;padding:12px;background:#f5a742;border-radius:12px;color:#080b14;font-size:14px;font-weight:700;font-family:'Space Grotesk',sans-serif;text-decoration:none;">↩ Se réabonner</a>
+        <button onclick="this.closest('#pg-modal-overlay').remove()" style="display:block;margin-top:10px;font-size:12px;color:#6b7494;cursor:pointer;background:none;border:none;width:100%;">Fermer</button>
+      </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener("click", e => { if (e.target === modal) modal.remove(); });
+    }
+    return;
+  }
+  if (_origOpenForm) _origOpenForm(...args);
+};
+</script>
+
 </body>
 </html>
