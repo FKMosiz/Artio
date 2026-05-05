@@ -487,11 +487,12 @@ async function doGmailDisconnect() {
 
 /* ── ABONNEMENT TAB ── */
 function renderAbonnement() {
-  const isPro = subscriptionStatus === "pro";
-  const isRestricted = subscriptionStatus === "restricted";
-  const isAnnual = billingPeriod === "annual";
-  const endDate = subscriptionEndDate ? new Date(subscriptionEndDate).toLocaleDateString("fr-FR") : null;
-  const isSolo = subscriptionStatus === "solo";
+  const isPro       = subscriptionStatus === "pro";
+  const isSolo      = subscriptionStatus === "solo";
+  const isRestricted= subscriptionStatus === "restricted";
+  const isFree      = !isPro && !isSolo && !isRestricted;
+  const isAnnual    = billingPeriod === "annual";
+  const endDate     = subscriptionEndDate ? new Date(subscriptionEndDate).toLocaleDateString("fr-FR") : null;
   const features_solo = [
     "Génération devis & factures par la voix",
     "IA illimitée — aucun quota",
@@ -518,6 +519,11 @@ function renderAbonnement() {
       <div><div class="alert-title">Accès restreint — paiement en attente</div>
       <div class="alert-sub">${endDate ? `Merci de régulariser avant le ${endDate} pour éviter la suspension.` : "Merci de régulariser votre paiement."}</div></div>
     </div>` : ""}
+    ${isFree ? `<div class="alert-box" style="background:rgba(62,207,207,.08);border:1px solid rgba(62,207,207,.2);border-radius:12px;padding:14px 16px;margin-bottom:4px;display:flex;gap:12px;align-items:flex-start;">
+      <div style="font-size:18px">👋</div>
+      <div><div style="font-size:13px;font-weight:600;color:var(--teal);margin-bottom:3px;">Aucun abonnement actif</div>
+      <div style="font-size:12px;color:var(--muted);">Choisissez un plan pour accéder à toutes les fonctionnalités d'Artio.</div></div>
+    </div>` : ""}
 
     ${!isPro ? `<div class="billing-toggle">
       <button class="billing-btn ${!isAnnual?"on":""}" onclick="billingPeriod='monthly';render()">Mensuel</button>
@@ -528,21 +534,21 @@ function renderAbonnement() {
 
     <div class="plans-grid">
       <!-- SOLO -->
-      <div class="plan-card ${!isPro&&!isRestricted?"current":""}">
-        ${!isPro&&!isRestricted ? `<div class="plan-badge">PLAN ACTUEL</div>` : ""}
+      <div class="plan-card ${isSolo?"current":""}">
+        ${isSolo ? `<div class="plan-badge">PLAN ACTUEL</div>` : ""}
         <div>
           <div class="plan-name">Solo</div>
-          ${!isPro ? (isAnnual ? `
+          ${isAnnual ? `
             <div class="plan-price">190 €<span> / an</span></div>
             <div class="plan-price-note">✓ 2 mois offerts — 15,83 €/mois</div>
-          ` : `<div class="plan-price">19 €<span> / mois</span></div>`) : `<div class="plan-price">19 €<span> / mois</span></div>`}
+          ` : `<div class="plan-price">19 €<span> / mois</span></div>`}
         </div>
         <ul class="plan-features">${features_solo.map(f=>`<li><span class="ck">✓</span><span>${f}</span></li>`).join("")}</ul>
-        ${!isPro&&!isRestricted
+        ${isSolo
           ? `<div style="padding:10px;border-radius:9px;background:var(--surface-2);text-align:center;font-size:12px;color:var(--muted)">Plan actif</div>`
           : isPro
             ? `<div style="padding:10px;border-radius:9px;background:var(--surface-2);text-align:center;font-size:12px;color:var(--muted)">Disponible après expiration du Pro</div>`
-            : `<button class="btn-ghost" onclick="startCheckout('solo')" ${checkoutLoading?"disabled":""}>${checkoutLoading?"Redirection…":"Passer en Solo"}</button>`
+            : `<button class="btn-ghost" onclick="startCheckout('solo')" ${checkoutLoading?"disabled":""}>${checkoutLoading?"Redirection…":`S'abonner en Solo ${isAnnual?"(annuel)":"(mensuel)"}`}</button>`
         }
       </div>
 
@@ -567,7 +573,7 @@ function renderAbonnement() {
           </button>` : `
           <button class="btn-danger" onclick="requestCancellation()" ${cancelLoading?"disabled":""}>${cancelLoading?"Envoi…":"Demander l'annulation"}</button>
         `) : `
-          <button class="btn-primary" onclick="startCheckout('pro')" ${checkoutLoading?"disabled":""}>${checkoutLoading?"Redirection…":`Passer au Pro ${isAnnual?"(annuel)":"(mensuel)"}`}</button>
+          <button class="btn-primary" onclick="startCheckout('pro')" ${checkoutLoading?"disabled":""}>${checkoutLoading?"Redirection…":`${isSolo?"Passer au Pro":"S'abonner en Pro"} ${isAnnual?"(annuel)":"(mensuel)"}`}</button>
         `}
       </div>
     </div>
