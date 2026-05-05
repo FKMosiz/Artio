@@ -282,11 +282,6 @@ function renderProfil() {
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-title">Clé API Anthropic *</div>
-
-    </div>
-
     <div class="card" style="border-color:rgba(167,139,250,.22)">
       <div class="card-title">🤖 Contexte IA</div>
       <div class="card-sub">Décris ton activité, tes offres, tes tarifs et ce que tu veux que l'IA sache pour répondre à tes clients. Plus c'est précis, plus les réponses seront adaptées.</div>
@@ -315,28 +310,9 @@ function renderCompte() {
     </div>
 
     <div class="card">
-      <div class="card-title">Changer l'adresse email</div>
-      <div class="card-sub">Un email de confirmation sera envoyé à la nouvelle adresse.</div>
-      <div class="field">
-        <label class="field-label">Nouvelle adresse email</label>
-        <input id="new-email-input" class="field-input" type="email" placeholder="nouvelle@email.com"/>
-      </div>
-      <button class="btn-primary" style="margin-top:4px;" onclick="changeEmail()">Changer l'email</button>
-      <div id="email-msg" style="font-size:13px;margin-top:10px;"></div>
-    </div>
-
-    <div class="card">
       <div class="card-title">Changer le mot de passe</div>
-      <div class="card-sub">8 caractères minimum · 1 majuscule · 1 minuscule · 1 chiffre · 1 caractère spécial.</div>
-      <div class="field">
-        <label class="field-label">Nouveau mot de passe</label>
-        <input id="new-pass-input" class="field-input" type="password" placeholder="••••••••"/>
-      </div>
-      <div class="field">
-        <label class="field-label">Confirmer le mot de passe</label>
-        <input id="confirm-pass-input" class="field-input" type="password" placeholder="••••••••"/>
-      </div>
-      <button class="btn-primary" style="margin-top:4px;" onclick="changePassword()">Changer le mot de passe</button>
+      <div class="card-sub">Un lien de réinitialisation sera envoyé à votre adresse email.</div>
+      <button class="btn-primary" style="margin-top:4px;" onclick="requestPasswordReset()">Envoyer le lien par email</button>
       <div id="pass-msg" style="font-size:13px;margin-top:10px;"></div>
     </div>
   `;
@@ -351,33 +327,32 @@ async function savePseudo() {
   else toast('❌ Erreur : ' + error.message);
 }
 
-async function changeEmail() {
-  const newEmail = document.getElementById('new-email-input')?.value?.trim();
-  const msg = document.getElementById('email-msg');
-  if (!newEmail || !newEmail.includes('@')) { msg.textContent = '⚠️ Email invalide.'; msg.style.color = '#f87171'; return; }
-  const { error } = await sb.auth.updateUser({ email: newEmail });
-  if (!error) { msg.textContent = '✅ Email de confirmation envoyé à ' + newEmail + '. Vérifie ta boîte mail.'; msg.style.color = '#4ade80'; }
-  else { msg.textContent = '❌ ' + error.message; msg.style.color = '#f87171'; }
-}
 
-async function changePassword() {
-  const newPass = document.getElementById('new-pass-input')?.value;
-  const confirm = document.getElementById('confirm-pass-input')?.value;
+async function requestPasswordReset() {
   const msg = document.getElementById('pass-msg');
-  const rules = [
-    [/.{8,}/,            '⚠️ 8 caractères minimum.'],
-    [/[A-Z]/,            '⚠️ Au moins une majuscule requise.'],
-    [/[a-z]/,            '⚠️ Au moins une minuscule requise.'],
-    [/[0-9]/,            '⚠️ Au moins un chiffre requis.'],
-    [/[^A-Za-z0-9]/,    '⚠️ Au moins un caractère spécial requis (!@#$…).'],
-  ];
-  for (const [regex, errMsg] of rules) {
-    if (!regex.test(newPass)) { msg.textContent = errMsg; msg.style.color = '#f87171'; return; }
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Envoi en cours…';
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session?.user?.email) { msg.textContent = '❌ Session introuvable.'; msg.style.color = '#f87171'; return; }
+    const { error } = await sb.auth.resetPasswordForEmail(session.user.email, {
+      redirectTo: 'https://www.monartio.fr/reset-password.html'
+    });
+    if (!error) {
+      msg.textContent = '✅ Lien envoyé à ' + session.user.email + ' — vérifie ta boîte mail.';
+      msg.style.color = '#4ade80';
+    } else {
+      msg.textContent = '❌ ' + error.message;
+      msg.style.color = '#f87171';
+    }
+  } catch(e) {
+    msg.textContent = '❌ Erreur : ' + e.message;
+    msg.style.color = '#f87171';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Envoyer le lien par email';
   }
-  if (newPass !== confirm) { msg.textContent = '⚠️ Les mots de passe ne correspondent pas.'; msg.style.color = '#f87171'; return; }
-  const { error } = await sb.auth.updateUser({ password: newPass });
-  if (!error) { msg.textContent = '✅ Mot de passe mis à jour !'; msg.style.color = '#4ade80'; document.getElementById('new-pass-input').value = ''; document.getElementById('confirm-pass-input').value = ''; }
-  else { msg.textContent = '❌ ' + error.message; msg.style.color = '#f87171'; }
 }
 
 /* ── GMAIL TAB ── */
