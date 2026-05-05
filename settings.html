@@ -628,29 +628,17 @@ async function startCheckout(plan = 'pro') {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { alert("Session expirée, veuillez vous reconnecter."); checkoutLoading = false; render(); return; }
 
-    // Utilise le JWT de l'utilisateur (pas la clé anon) pour invoquer la fonction
-    const token = session.access_token;
-    const url   = FUNCTIONS_URL + "/create-checkout";
-    const body  = JSON.stringify({ price_id: priceId, plan, billing: billingPeriod, user_id: session.user.id });
+    console.log("[checkout] Appel via sb.functions.invoke →", { price_id: priceId, plan, billing: billingPeriod });
 
-    console.log("[checkout] Appel →", url, { price_id: priceId, plan, billing: billingPeriod });
-
-    const res  = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + token,
-        "apikey": SB_KEY,
-        "Content-Type": "application/json"
-      },
-      body
+    const { data, error } = await sb.functions.invoke('create-checkout', {
+      body: { price_id: priceId, plan, billing: billingPeriod, user_id: session.user.id }
     });
 
-    console.log("[checkout] Status →", res.status, res.statusText);
-    const data = await res.json();
-    console.log("[checkout] Réponse →", data);
+    console.log("[checkout] Réponse →", data, error);
 
+    if (error) throw new Error(error.message || JSON.stringify(error));
     if (data?.url) window.location.href = data.url;
-    else alert("Erreur Stripe : " + (data?.error || JSON.stringify(data)));
+    else alert("Erreur Stripe : " + JSON.stringify(data));
   } catch(e) {
     console.error("[checkout] Erreur :", e);
     alert("Erreur réseau : " + e.message);
