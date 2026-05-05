@@ -46,7 +46,7 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
   // ── SUPABASE ──────────────────────────────────────────
   async function initUser() {
     try {
-      const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      const sbClient = window.sb || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       const { data: { session } } = await sbClient.auth.getSession();
       if (!session) return;
       userEmail = session.user.email;
@@ -77,7 +77,7 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
   async function logTokens(usage) {
     try {
       if (!usage || !userId) return;
-      const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      const sbClient = window.sb || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       const input  = usage.input_tokens  || 0;
       const output = usage.output_tokens || 0;
       const cout   = (input * 0.000003) + (output * 0.000015);
