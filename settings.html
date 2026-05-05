@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="plan-guard.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
@@ -188,7 +189,7 @@ const SB_URL  = "https://mwmexkoeqeyueqgdkkni.supabase.co";
 const SB_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bWV4a29lcWV5dWVxZ2Rra25pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDEzMzcsImV4cCI6MjA5MDk3NzMzN30.380jxCN_CpWqmnwraob5crwUeBpTQxrXsTe2YDF-Rk8";
 const FUNCTIONS_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co/functions/v1";
 const { createClient } = supabase;
-const sb = createClient(SB_URL, SB_KEY);
+const sb = window.sb = createClient(SB_URL, SB_KEY);
 
 const SECTEURS = ["Artisan du bâtiment","Plomberie","Électricité","Peinture","Menuiserie","Maçonnerie","Jardinage / Paysagisme","Nettoyage","Lavage automobile","Photographie","Coaching","Consulting","Design / Graphisme","Développement web","Rédaction / Traduction","Livraison","Transport","Formation","Santé / Bien-être","Beauté / Esthétique","Restauration","Événementiel","Autre"];
 const CONDITIONS = ["Paiement à réception","Paiement à 30 jours","Paiement à 60 jours","Paiement à 90 jours","Acompte 30% à la commande, solde à la livraison","Acompte 50% à la commande, solde à la livraison","Paiement en 3 fois","Paiement en 2 fois"];
@@ -383,6 +384,19 @@ async function changePassword() {
 /* ── GMAIL TAB ── */
 function renderGmail() {
   const tokenExpired = gmailTokenExpiry && new Date() > gmailTokenExpiry;
+  // ── Plan Guard : Gmail = fonctionnalité Pro ──
+  if (window.PlanGuard && !window.PlanGuard.isPro()) {
+    return `<div class="card">
+      <div class="card-title">Connexion Gmail</div>
+      <div class="card-sub">Connecte ton compte Gmail pour envoyer tes devis et factures directement depuis ta propre adresse email.</div>
+      <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.25);border-radius:14px;padding:24px;text-align:center;margin-bottom:14px;">
+        <div style="font-size:32px;margin-bottom:10px;">⚡</div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#a78bfa;margin-bottom:8px;">Fonctionnalité Pro</div>
+        <div style="font-size:13px;color:#6b7494;line-height:1.6;margin-bottom:18px;">La connexion Gmail est disponible avec le plan Pro. Envoyez vos devis et factures directement depuis votre adresse personnelle.</div>
+        <a href="settings.html?tab=abonnement" style="display:inline-block;padding:11px 24px;background:#a78bfa;border-radius:10px;color:#fff;font-size:13px;font-weight:700;font-family:'Space Grotesk',sans-serif;text-decoration:none;">⚡ Passer au Pro — 39 €/mois</a>
+      </div>
+    </div>`;
+  }
   return `<div class="card">
     <div class="card-title">Connexion Gmail</div>
     <div class="card-sub">Connecte ton compte Gmail pour envoyer tes devis et factures directement depuis ta propre adresse email.</div>
