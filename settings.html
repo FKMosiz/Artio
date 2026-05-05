@@ -315,6 +315,27 @@ function renderCompte() {
       <button class="btn-primary" style="margin-top:4px;" onclick="requestPasswordReset()">Envoyer le lien par email</button>
       <div id="pass-msg" style="font-size:13px;margin-top:10px;"></div>
     </div>
+
+    <div class="card" style="border-color:rgba(248,113,113,0.2);margin-top:28px;">
+      <div class="card-title" style="color:var(--red)">⚠️ Supprimer mon compte</div>
+      <div class="card-sub" style="margin-bottom:16px;">Cette action est irréversible. Toutes vos données seront supprimées (dossiers, clients, agenda). Vos factures sont conservées conformément à la loi. Votre abonnement Stripe sera annulé automatiquement.</div>
+      ${!deleteConfirm ? `
+        <button class="btn-danger" onclick="set({deleteConfirm:true})">Supprimer mon compte</button>
+      ` : `
+        <div style="background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15);border-radius:10px;padding:16px;margin-bottom:12px;">
+          <p style="font-size:13px;color:var(--red);font-weight:700;margin-bottom:10px;">⚠️ Confirmer la suppression définitive ?</p>
+          <p style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:8px;">Toutes vos données seront <strong style="color:var(--text)">définitivement supprimées</strong> : dossiers, devis, factures clients, agenda, carnet de contacts.</p>
+          <p style="font-size:12px;color:var(--muted);line-height:1.7;">Assurez-vous d'avoir <strong style="color:var(--text)">sauvegardé vos documents importants</strong> avant de continuer.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="btn-secondary" onclick="set({deleteConfirm:false})">Annuler</button>
+          <button class="btn-danger" onclick="deleteAccount()" ${deleteLoading?"disabled":""}>
+            ${deleteLoading?"Suppression...":"Oui, supprimer"}
+          </button>
+        </div>
+      `}
+      <div id="delete-msg" style="font-size:13px;margin-top:10px;"></div>
+    </div>
   `;
 }
 
