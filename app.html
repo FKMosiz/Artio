@@ -107,6 +107,20 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
       transition: color 0.2s;
     }
     .artio-legal-footer a:hover { color: var(--amber, #f5a742); }
+/* ── REDESIGN FORMULAIRE ── */
+.section-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;margin-top:20px}
+.section-head:first-of-type{margin-top:0}
+.section-icon{width:26px;height:26px;border-radius:8px;background:var(--amber-dim);border:1px solid rgba(245,167,66,0.18);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.section-title{font-family:var(--fh);font-size:10px;font-weight:700;color:var(--amber);letter-spacing:0.07em;text-transform:uppercase}
+.section-line{flex:1;height:1px;background:var(--border)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+/* ── VOICE BTN AMBER FAB style ── */
+.voice-btn-fab{width:48px;height:48px;border-radius:50%;border:none;color:#080b14;font-size:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:transform .15s;box-shadow:0 0 0 7px rgba(245,167,66,0.12)}
+.voice-btn-fab:hover{transform:scale(1.07)}
+.voice-btn-fab.recording{background:#E24B4A;box-shadow:0 0 0 7px rgba(226,75,74,0.15)}
+.voice-btn-fab.processing{background:#1D9E75;box-shadow:0 0 0 7px rgba(29,158,117,0.15)}
+
 </style>
 </head>
 <body>
@@ -1449,16 +1463,17 @@ function renderApp(){
 function renderVoice(mode){
   const vs=S.voiceState;
   const bg=vs==="recording"?"recording":vs==="processing"?"processing":"";
-  const btnBg=vs==="recording"?"#E24B4A":vs==="processing"?"#1D9E75":"#378ADD";
+  const fabCls=vs==="recording"?"recording":vs==="processing"?"processing":"";
+  const fabBg=vs==="recording"?"#E24B4A":vs==="processing"?"#1D9E75":"var(--amber)";
   const icon=vs==="recording"?"⏹":vs==="processing"?"⏳":"🎙";
   const fn=mode==="suivi"?"startVoiceSuivi()":"startVoice()";
   let txt="";
-  if(vs==="idle"&&!S.voiceTranscript)txt=`<p style="font-size:14px;font-weight:500;margin-bottom:2px;">${mode==="suivi"?"Dicter le suivi":"Dicter le document"}</p><p style="font-size:12px;color:#888;">Parle naturellement — appuie sur ⏹ pour analyser</p>`;
-  else if(vs==="recording")txt=`<p style="font-size:14px;font-weight:500;color:#A32D2D;">Enregistrement en cours...</p><p style="font-size:12px;color:#A32D2D;">Appuie sur ⏹ quand tu as fini</p>`;
-  else if(vs==="processing")txt=`<p style="font-size:14px;font-weight:500;color:#085041;">Analyse en cours...</p>${S.voiceTranscript?`<p style="font-size:12px;color:#085041;font-style:italic;">"${S.voiceTranscript}"</p>`:""}`;
-  else txt=`<p style="font-size:12px;color:#888;font-style:italic;">✓ "${S.voiceTranscript}"</p>`;
+  if(vs==="idle"&&!S.voiceTranscript)txt=`<div style="font-size:13px;font-weight:600;margin-bottom:3px;color:var(--text)">${mode==="suivi"?"Dicter le suivi":"Dicter le document"}</div><div style="font-size:11px;color:var(--muted)">Parle naturellement — appuie sur ⏹ pour analyser</div>`;
+  else if(vs==="recording")txt=`<div style="font-size:13px;font-weight:600;margin-bottom:3px;color:var(--red)">Enregistrement en cours...</div><div style="font-size:11px;color:var(--red);opacity:.7">Appuie sur ⏹ quand tu as fini</div>`;
+  else if(vs==="processing")txt=`<div style="font-size:13px;font-weight:600;margin-bottom:3px;color:var(--teal)">Analyse en cours...</div>${S.voiceTranscript?`<div style="font-size:11px;color:var(--teal);font-style:italic;opacity:.8">"${S.voiceTranscript}"</div>`:""}`;
+  else txt=`<div style="font-size:11px;color:var(--muted);font-style:italic">✓ "${S.voiceTranscript}"</div>`;
   return`<div class="voice-box ${bg}" onclick="${vs==="idle"?fn:""}">
-    <button class="voice-btn" style="background:${btnBg};" onclick="event.stopPropagation();${vs==="recording"?"stopVoice()":fn};">${icon}</button>
+    <button class="voice-btn-fab ${fabCls}" style="background:${fabBg};" onclick="event.stopPropagation();${vs==="recording"?"stopVoice()":fn};">${icon}</button>
     <div style="flex:1;">${txt}</div>
   </div>`;
 }
@@ -1502,90 +1517,107 @@ function updateTotaux(){
 }
 function renderDevisFacture(){
   const f=S.fields,tab=S.tab,e=S.entreprise;
-  const fields=[
-    ["client_nom","Nom du client",L("ph_client_nom"),"text",false],
-    ["client_adresse","Adresse du client",L("ph_client_adresse"),"text",true],
-    ["client_tel","Téléphone client",L("ph_client_tel"),"text",true],
-    ["client_email","Email client",L("ph_client_email"),"text",true],
-    ["date_prestation",tab==="devis"?"Date prévue de la prestation":"Date de la prestation","","date",true],
-    ["heure_prestation",tab==="devis"?"Heure prévue":"Heure de la prestation","","select_heure",true],
-    ["heure_fin_prestation",tab==="devis"?"Heure de fin estimée":"Heure de fin","","select_heure",true],
-    ["travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false],
-    ["nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true],
-    S.entreprise.assujetti_tva?["tva","TVA (%)","","select",false]:null,
-  ];
+  const heureOpts=(id)=>{
+    let opts='<option value="">-- Optionnel --</option>';
+    for(let h=6;h<=21;h++){
+      for(let m=0;m<60;m+=15){
+        const hh=String(h).padStart(2,"0"),mm=String(m).padStart(2,"0");
+        const val=hh+":"+mm,sel=(S.fields[id]||"")==val?"selected":"";
+        opts+=`<option value="${val}" ${sel}>${h}h${m>0?m:""}</option>`;
+      }
+    }
+    return opts;
+  };
+  const inp=(id,type,ph)=>type==="textarea"
+    ?`<textarea placeholder="${ph}" data-fid="${id}">${esc(S.fields[id]||"")}</textarea>`
+    :type==="select_heure"
+      ?`<select data-fid="${id}" style="width:100%;padding:10px 12px;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);" onchange="S.fields['${id}']=this.value">${heureOpts(id)}</select>`
+      :type==="date"
+        ?`<input type="date" value="${S.fields[id]||""}" data-fid="${id}" style="width:100%;padding:10px 12px;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);color-scheme:dark;" oninput="S.fields['${id}']=this.value"/>`
+        :type==="select"
+          ?`<select data-fid="${id}" style="width:100%;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--fb);" onchange="S.fields['${id}']=this.value;updateTotaux()">
+              <option value="">-- Choisir le taux --</option>
+              <option value="10" ${S.fields[id]==="10"?"selected":""}>10 % — Taux réduit</option>
+              <option value="20" ${S.fields[id]==="20"?"selected":""}>20 % — Taux normal</option>
+            </select>`
+          :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'updateTotaux()':''}"/>`;
+  const fld=(id,label,ph,type,opt)=>`<div class="field">
+    <label class="label">${label}${opt?`<span class="opt">(optionnel)</span>`:""}</label>
+    ${inp(id,type,ph)}
+  </div>`;
   return`<div class="card">
     ${renderVoice("devis")}
-    ${fields.filter(f=>f!==null).map(([id,label,ph,type,opt])=>{
-      const heureOpts=(()=>{
-        let opts='<option value="">-- Optionnel --</option>';
-        for(let h=6;h<=21;h++){
-          for(let m=0;m<60;m+=15){
-            const hh=String(h).padStart(2,"0"),mm=String(m).padStart(2,"0");
-            const val=hh+":"+mm,sel=(S.fields[id]||"")==val?"selected":"";
-            opts+=`<option value="${val}" ${sel}>${h}h${m>0?m:""}</option>`;
-          }
-        }
-        return opts;
-      })();
-      const input=type==="textarea"
-        ?`<textarea placeholder="${ph}" data-fid="${id}">${esc(S.fields[id]||"")}</textarea>`
-        :type==="select_heure"
-          ?`<select data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;" onchange="S.fields['${id}']=this.value">${heureOpts}</select>`
-          :type==="date"
-            ?`<input type="date" value="${S.fields[id]||""}" data-fid="${id}" class="artio-field" style="width:100%;padding:10px;font-size:14px;border:0.5px solid #d0d0cc;border-radius:8px;font-family:inherit;" oninput="S.fields['${id}']=this.value"/>`
-            :type==="select"
-      ?`<select data-fid="${id}" style="width:100%;padding:9px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;cursor:pointer;" onchange="S.fields['${id}']=this.value;updateTotaux()">
-          <option value="">-- Choisir le taux --</option>
-          <option value="10" ${S.fields[id]==="10"?"selected":""}>10 % — Taux réduit</option>
-          <option value="20" ${S.fields[id]==="20"?"selected":""}>20 % — Taux normal</option>
-        </select>`
-      :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'updateTotaux()':''}"/>`;
-      return`<div class="field">
-      <label class="label">${label}${opt?`<span class="opt">(optionnel)</span>`:""}</label>
-      ${input}
-    </div>`;
-    }).join("")}
+    <div class="section-head">
+      <div class="section-icon">👤</div>
+      <span class="section-title">Client</span>
+      <div class="section-line"></div>
+    </div>
+    ${fld("client_nom","Nom du client",L("ph_client_nom"),"text",false)}
+    <div class="grid2">
+      ${fld("client_tel","Téléphone",L("ph_client_tel"),"text",true)}
+      ${fld("client_email","Email",L("ph_client_email"),"text",true)}
+    </div>
+    ${fld("client_adresse","Adresse","Ex: 12 rue de la Paix, 75001 Paris","text",true)}
+    <div class="section-head">
+      <div class="section-icon">📋</div>
+      <span class="section-title">Prestation</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="grid3">
+      ${fld("date_prestation",tab==="devis"?"Date prévue":"Date de la prestation","","date",true)}
+      ${fld("heure_prestation",tab==="devis"?"Heure début":"Heure début","","select_heure",true)}
+      ${fld("heure_fin_prestation","Heure fin","","select_heure",true)}
+    </div>
+    ${fld("travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false)}
+    ${fld("nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true)}
+    ${e.assujetti_tva?fld("tva","TVA (%)","","select",false):""}
+    <div class="section-head">
+      <div class="section-icon">🔩</div>
+      <span class="section-title">Articles / Fournitures</span>
+      <div class="section-line"></div>
+    </div>
     ${renderPieces()}
     <div id="totaux-container">${renderTotaux()}</div>
-    <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":"Générer"}</button>
+    <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":tab==="devis"?"Générer le devis":"Générer la facture"}</button>
   </div>
   ${S.generatedDoc?`<div class="card">${renderDocPreview(S.generatedDoc)}</div>`:""}`;
 }
 
 function renderEmail(){
-  const f=S.fields,m=S.emailMode;
-  const reponseF=[["client_nom","Nom du client","Ex: M. Martin","text",false],["message","Message reçu du client","Colle ici le message...","textarea",false],["contexte","Contexte 🎙","Ex: infos que le client ne connaît pas encore, contexte particulier...","textarea",true,"voice"]];
-  const suiviF=[["client_nom","Nom du client",L("ph_client_nom"),"text",false],["adresse_travaux","Adresse du chantier","Ex: 12 rue de la Paix","text",true],["avancement","Où en sont les travaux","Ex: installation terminée, il reste la mise en service demain...","textarea",false],["suite","Prochaine étape","Ex: retour jeudi matin","text",true],["contexte","Contexte","Ex: retard dû à une livraison, attente validation client...","textarea",true]];
-  const activeF=m==="reponse"?reponseF:suiviF;
+  const f=S.fields;
+  const fields=[
+    ["client_nom","Nom du client","Ex: M. Martin","text",false],
+    ["message","Message reçu du client","Colle ici le message du client...","textarea",false],
+    ["contexte","Contexte","Ex: infos que le client ne connaît pas encore, contexte particulier...","textarea",true,"voice"]
+  ];
   return`<div class="card">
-    <div class="mode-tabs">
-      <button class="mode-btn ${m==="reponse"?"active":""}" onclick="setEmailMode('reponse')">💬 Répondre à un message</button>
-      <button class="mode-btn ${m==="suivi"?"active":""}" onclick="setEmailMode('suivi')">🔧 Mise à jour chantier</button>
+    <div class="section-head" style="margin-top:0">
+      <div class="section-icon">✉️</div>
+      <span class="section-title">Répondre à un message</span>
+      <div class="section-line"></div>
     </div>
     <div style="margin-bottom:16px;">
-      <label class="label" style="margin-bottom:8px;">Ton de la réponse <span style="font-weight:400;font-size:11px;color:#999;">(plusieurs choix possibles)</span></label>
+      <label class="label" style="margin-bottom:8px;">Ton de la réponse <span style="font-weight:400;font-size:10px;color:var(--muted);">(plusieurs choix possibles)</span></label>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         ${["vouvoiement","tutoiement","amical","institutionnel","ferme"].map(ton=>{
           const active=(S.emailTons||[]).includes(ton);
-          return`<button onclick="toggleTon('${ton}')" style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${active?"#378ADD":"#d0d0cc"};background:${active?"#E6F1FB":"transparent"};color:${active?"#185FA5":"#666"};font-weight:${active?"500":"400"};">
+          return`<button onclick="toggleTon('${ton}')" style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${active?"var(--amber)":"var(--border-hi)"};background:${active?"var(--amber-dim)":"transparent"};color:${active?"var(--amber)":"var(--muted)"};font-weight:${active?"600":"400"};font-family:var(--fb);transition:all .2s;">
             ${active?"✓ ":""}${ton.charAt(0).toUpperCase()+ton.slice(1)}
           </button>`;
         }).join("")}
       </div>
     </div>
-    ${m==="suivi"?renderVoice("suivi"):""}
-    ${activeF.map(([id,label,ph,type,opt,extra])=>`<div class="field">
+    ${fields.map(([id,label,ph,type,opt,extra])=>`<div class="field">
       <label class="label" style="display:flex;align-items:center;gap:6px;">
         ${label}${opt?`<span class="opt">(optionnel)</span>`:""}
-        ${extra==="voice"?`<button onclick="startVoiceContexte('${id}')" style="background:${S.voiceContextField===id?"#E24B4A":"#378ADD"};border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Dicter le contexte">${S.voiceContextField===id?"⏹":"🎙"}</button>`:""}
+        ${extra==="voice"?`<button onclick="startVoiceContexte('${id}')" style="background:${S.voiceContextField===id?"#E24B4A":"var(--amber)"};border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#080b14;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Dicter le contexte">${S.voiceContextField===id?"⏹":"🎙"}</button>`:""}
       </label>
       ${type==="textarea"?`<textarea placeholder="${ph}" data-fid="${id}">${esc(f[id]||"")}</textarea>`:`<input type="${type}" value="${esc(f[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value" />`}
     </div>`).join("")}
     <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":"Générer l'email"}</button>
     ${S.generatedText?`<div class="result-box">
       <div class="result-header">
-        <span style="font-size:13px;font-weight:500;color:#666;">Email généré — copie et envoie depuis ta messagerie</span>
+        <span style="font-size:13px;font-weight:500;color:var(--muted);">Email généré</span>
         <button class="btn-small ${S.copied?"btn-green":"btn-gray"}" onclick="copyText(${JSON.stringify(S.generatedText)})">${S.copied?"Copié ✓":"Copier"}</button>
       </div>
       <pre>${esc(S.generatedText)}</pre>
