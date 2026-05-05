@@ -492,7 +492,9 @@ function renderAbonnement() {
   const isRestricted= subscriptionStatus === "restricted";
   const isFree      = !isPro && !isSolo && !isRestricted;
   const isAnnual    = billingPeriod === "annual";
-  const endDate     = subscriptionEndDate ? new Date(subscriptionEndDate).toLocaleDateString("fr-FR") : null;
+  const endDateRaw = subscriptionEndDate ? new Date(subscriptionEndDate) : null;
+  const endDateFallback = (() => { const d = new Date(); d.setMonth(d.getMonth() + 1, 0); return d; })();
+  const endDate = (endDateRaw || endDateFallback).toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric" });
   const features_solo = [
     "Génération devis & factures par la voix",
     "IA illimitée — aucun quota",
@@ -545,16 +547,7 @@ function renderAbonnement() {
         </div>
         <ul class="plan-features">${features_solo.map(f=>`<li><span class="ck">✓</span><span>${f}</span></li>`).join("")}</ul>
         ${isSolo
-          ? (cancellationRequested ? `
-            <div class="alert-box warning" style="margin:0">
-              <div><div class="alert-title">Résiliation en cours</div>
-              <div class="alert-sub">Accès Solo actif jusqu'au ${endDate||"fin de période"}.</div></div>
-            </div>
-            <button class="btn-primary" onclick="reactivateSubscription()" ${checkoutLoading?"disabled":""} style="margin-top:8px;width:100%;">
-              ${checkoutLoading?"En cours…":"↩ Réactiver mon abonnement"}
-            </button>` : `
-            <button class="btn-danger" onclick="requestCancellation()" ${cancelLoading?"disabled":""}>${cancelLoading?"Envoi…":"Demander l'annulation"}</button>
-          `)
+          ? `<div style="padding:10px;border-radius:9px;background:var(--surface-2);text-align:center;font-size:12px;color:var(--muted)">Plan actif</div>`
           : isPro
             ? `<div style="padding:10px;border-radius:9px;background:var(--surface-2);text-align:center;font-size:12px;color:var(--muted)">Disponible après expiration du Pro</div>`
             : `<button class="btn-ghost" onclick="startCheckout('solo')" ${checkoutLoading?"disabled":""}>${checkoutLoading?"Redirection…":`S'abonner en Solo ${isAnnual?"(annuel)":"(mensuel)"}`}</button>`
@@ -575,7 +568,7 @@ function renderAbonnement() {
         ${isPro ? (cancellationRequested ? `
           <div class="alert-box warning" style="margin:0">
             <div><div class="alert-title">Résiliation en cours</div>
-            <div class="alert-sub">Accès Pro actif jusqu'au ${endDate||"fin de période"}.</div></div>
+            <div class="alert-sub">Votre accès Pro reste actif jusqu'au ${endDate}.</div></div>
           </div>
           <button class="btn-primary" onclick="reactivateSubscription()" ${checkoutLoading?"disabled":""} style="margin-top:8px;width:100%;">
             ${checkoutLoading?"Redirection…":"⚡ Réactiver mon abonnement"}
@@ -607,8 +600,7 @@ function renderAbonnement() {
 }
 
 async function reactivateSubscription(){
-  const planLabel = subscriptionStatus === "solo" ? "Solo" : "Pro";
-  if(!confirm(`Réactiver votre abonnement ${planLabel} ? Votre abonnement reprendra normalement sans nouvelle saisie de paiement.`))return;
+  if(!confirm("Réactiver votre abonnement Pro ? Votre abonnement reprendra normalement sans nouvelle saisie de paiement."))return;
   checkoutLoading=true;render();
   try{
     const{data:{session}}=await sb.auth.getSession();
@@ -660,7 +652,10 @@ async function startCheckout(plan = 'pro') {
 }
 
 async function requestCancellation() {
-  if (!confirm("Confirmer la demande d'annulation ? Vous conserverez l'accès jusqu'à la fin du mois payé.")) return;
+  const planName = subscriptionStatus === "solo" ? "Solo" : "Pro";
+  const _endRaw = subscriptionEndDate ? new Date(subscriptionEndDate) : (() => { const d = new Date(); d.setMonth(d.getMonth()+1,0); return d; })();
+  const _endStr = _endRaw.toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric" });
+  if (!confirm(`Confirmer la résiliation du plan ${planName} ?\n\nVotre accès reste actif jusqu'au ${_endStr}, puis sera automatiquement désactivé.`)) return;
   cancelLoading = true; render();
   try {
     const { data: { session } } = await sb.auth.getSession();
@@ -669,7 +664,7 @@ async function requestCancellation() {
     if (data?.success) {
       cancellationRequested = true;
       await sb.from("profils").update({cancellation_requested:true}).eq("user_id", session.user.id);
-      toast("✓ Demande envoyée. Accès Pro actif jusqu'à la fin de la période payée.");
+      toast("✓ Résiliation enregistrée. Votre accès reste actif jusqu'à la fin de la période.");
     } else { alert("Erreur : " + (data?.error||"inconnu")); }
   } catch(e) { alert("Erreur : " + e.message); }
   cancelLoading = false; render();
