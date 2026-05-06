@@ -984,14 +984,29 @@ async function genererRappelPaiement(dosId,docNum){
   if(!doc){alert("Document introuvable.");return}
   const e=S.entreprise;
   const joursEcoules=doc.date?Math.floor((Date.now()-new Date(doc.date.split("/").reverse().join("-")))/86400000):30;
+  const dateFacture=doc.date||"date inconnue";
+  const contexte=e.contexte_ia?"\n\nContexte entreprise : "+e.contexte_ia:"";
+  const ibanInfo=e.iban?"Virement bancaire — IBAN : "+e.iban:"(IBAN non renseigné — à ajouter dans Paramètres)";
   set({loading:true});
   try{
-    const prompt=`Tu es un assistant pour ${e.nom||"un prestataire indépendant"} (secteur: ${e.secteur||"services"}).
-Rédige un email de rappel de paiement professionnel et courtois pour une facture impayée.
-Infos: Client: ${doc.client?.nom||dos.client||"le client"} | Facture N°${docNum} | Montant: ${(doc.ttc||0).toFixed(2)} € TTC | Émise il y a ${joursEcoules} jours | Prestation: ${doc.description||dos.nom||""}.
-Langue: ${{"fr":"français","en":"English","es":"español","zh":"中文"}[S.langue]||"français"}.
-Ton: ferme mais professionnel, rappelle les coordonnées de paiement si disponibles (IBAN: ${e.iban||"non renseigné"}).
-Signe au nom de "${e.nom||"l'entreprise"}". Écris directement l'email sans commentaire.`;
+    const prompt="Tu es l'assistant de "+(e.nom||"un prestataire indépendant")+" (secteur: "+(e.secteur||"services")+")."+contexte
+      +"\n\nRédige un email de rappel de paiement, professionnel mais direct."
+      +"\n\nDonnées :"
+      +"\n- Client : "+(doc.client?.nom||dos.client||"le client")
+      +"\n- Facture N° : "+docNum
+      +"\n- Date d'émission : "+dateFacture
+      +"\n- Montant : "+(doc.ttc||0).toFixed(2)+" € TTC"
+      +"\n- Impayée depuis : "+joursEcoules+" jour"+(joursEcoules>1?"s":"")
+      +"\n- Prestation : "+(doc.description||dos.nom||"")
+      +"\n- Coordonnées de paiement : "+ibanInfo
+      +"\n- Conditions : "+(e.conditions_paiement||"paiement à réception")
+      +"\n\nInstructions :"
+      +"\n- Mentionne le numéro de facture, le montant TTC et la date d'émission"
+      +"\n- Inclus DIRECTEMENT les coordonnées de paiement dans le corps du mail"
+      +"\n- Ton : "+(joursEcoules<15?"courtois, premier rappel":joursEcoules<30?"ferme, deuxième rappel":"très ferme, dernier rappel avant relance")
+      +"\n- Signe UNIQUEMENT avec le nom \""+( e.nom||"l'entreprise")+"\". Interdit d'ajouter un titre, un service ou une fonction après la signature."
+      +"\n- Langue : "+({"fr":"français","en":"English","es":"español","zh":"中文"}[S.langue]||"français")
+      +"\n- Écris directement l'email, sans commentaire";
     const {text:txt,usage:ur}=await callClaude(prompt,400);
     logTokens("email",ur);
     window.__emailBody=txt;
