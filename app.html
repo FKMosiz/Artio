@@ -234,6 +234,8 @@ async function loadUserData(userId){
           nature_operation:profil.nature_operation||"",
           contexte_ia:profil.contexte_ia||"",
           iban:profil.iban||"",
+          logo_base64:profil.logo_base64||null,
+          couleur_pdf:profil.couleur_pdf||"#378ADD",
           onboarding_done:profil.onboarding_done||false
       };
       S.profilSaved=!!profil.nom;
@@ -1248,7 +1250,19 @@ function generatePDF(doc){
   const{jsPDF}=window.jspdf;
   const pdf=new jsPDF({unit:"mm",format:"a4"});
   const W=210,m=18,cW=W-2*m,rX=W-m;let y=m;
-  pdf.setFontSize(16).setFont(undefined,"bold").text(doc.entreprise.nom,m,y);y+=6;
+  // ── En-tête : logo ou nom texte ──────────────────────────────
+  const pdfColor = doc.entreprise.couleur_pdf || "#378ADD";
+  const rgb = pdfColor.match(/[0-9a-f]{2}/gi).map(h=>parseInt(h,16));
+  if(doc.entreprise.logo_base64){
+    try{
+      pdf.addImage(doc.entreprise.logo_base64,"PNG",m,y-4,0,12); // hauteur 12mm, largeur auto
+    }catch(e){
+      pdf.setFontSize(16).setFont(undefined,"bold").text(doc.entreprise.nom,m,y);
+    }
+  } else {
+    pdf.setFontSize(16).setFont(undefined,"bold").text(doc.entreprise.nom,m,y);
+  }
+  y+=6;
   pdf.setFontSize(9).setFont(undefined,"normal").text(doc.entreprise.adresse,m,y);y+=5;
   pdf.text("Tél : "+doc.entreprise.tel,m,y);y+=4;
   pdf.text("Email : "+doc.entreprise.email,m,y);y+=4;
@@ -1270,7 +1284,7 @@ function generatePDF(doc){
     const hp=doc.heure_prestation?" à "+doc.heure_prestation+(doc.heure_fin_prestation?" → "+doc.heure_fin_prestation:""):"";
     pdf.text((doc.type==="devis"?"Prestation prévue : ":"Prestation réalisée : ")+dp+hp,rX,m+yOff,{align:"right"});
   }
-  y=58;pdf.setDrawColor(220,220,220).line(m,y,W-m,y);y+=8;
+  y=58;pdf.setDrawColor(...rgb).setLineWidth(0.5).line(m,y,W-m,y);pdf.setLineWidth(0.2);y+=8;
   pdf.setFontSize(9).setFont(undefined,"bold").text("CLIENT",m,y);y+=5;
   pdf.setFont(undefined,"normal").text(doc.client.nom,m,y);y+=4;
   pdf.text(doc.client.adresse,m,y);y+=4;
@@ -1283,7 +1297,7 @@ function generatePDF(doc){
   pdf.text(dl,m,y);y+=dl.length*4.5+6;
   const moRow=doc.nb_heures&&parseFloat(doc.nb_heures)>0?["Main d'\u0153uvre ("+doc.nb_heures+"h \u00d7 "+doc.entreprise.taux_horaire+"\u20ac/h)",doc.nb_heures,parseFloat(doc.entreprise.taux_horaire).toFixed(2)+" \u20ac",doc.moHT.toFixed(2)+" \u20ac"]:null;
   const tb=[...(moRow?[moRow]:[]),...doc.pieces.filter(p=>p.description&&p.quantite&&p.prix_unitaire).map(p=>[p.description,p.quantite,parseFloat(p.prix_unitaire).toFixed(2)+" \u20ac",(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)+" \u20ac"])];
-  pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tb,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3,overflow:"linebreak",valign:"top"},headStyles:{fillColor:[55,138,221],textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85,overflow:"linebreak"},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});
+  pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tb,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3,overflow:"linebreak",valign:"top"},headStyles:{fillColor:rgb,textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85,overflow:"linebreak"},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});
   y=pdf.lastAutoTable.finalY+6;
   pdf.setFontSize(9).setFont(undefined,"normal");
   pdf.text("Total HT :",135,y);pdf.text(doc.totalHT.toFixed(2)+" €",rX,y,{align:"right"});y+=5;
