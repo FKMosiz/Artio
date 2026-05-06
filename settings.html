@@ -204,6 +204,7 @@ let gmailEmail = null;
 let gmailTokenExpiry = null;
 let gmailConnecting = false;
 let subscriptionStatus = "free", subscriptionEndDate = null;
+let isAdmin = false;
 let cancelLoading = false, checkoutLoading = false;
 let deleteConfirm = false, deleteLoading = false;
 let billingPeriod = "monthly", cancellationRequested = false;
@@ -292,7 +293,7 @@ function renderProfil() {
       <div style="font-size:11px;color:var(--muted);margin-top:2px">Ce texte est injecté dans chaque génération de réponse email. Il n'apparaît jamais dans tes documents.</div>
     </div>
 
-    ${subscriptionStatus === "pro" ? `
+    ${(subscriptionStatus === "pro" || isAdmin) ? `
     <div class="card" style="border-color:rgba(167,139,250,0.25);">
       <div class="card-title" style="display:flex;align-items:center;gap:8px;">
         <span style="background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;color:#a78bfa;letter-spacing:.05em;">PRO</span>
@@ -857,7 +858,9 @@ document.getElementById("btn-logout").addEventListener("click", async () => { aw
   user = session.user;
   const { data: p } = await sb.from("profils").select("*").eq("user_id", user.id).single();
   if (p) {
-    profil = { nom:p.nom||"", adresse:p.adresse||"", tel:p.tel||"", email:p.email||"", siret:p.siret||"", taux_horaire:p.taux_horaire||"", assujetti_tva:p.assujetti_tva||false, tva_frequence:p.tva_frequence||"trimestrielle", tva_regime:p.tva_regime||"encaissements", secteur:p.secteur||"", conditions_paiement:p.conditions_paiement||"", delai_paiement:p.delai_paiement||"30", iban:p.iban||"", contexte_ia:p.contexte_ia||"" };
+    profil = { nom:p.nom||"", adresse:p.adresse||"", tel:p.tel||"", email:p.email||"", siret:p.siret||"", taux_horaire:p.taux_horaire||"", assujetti_tva:p.assujetti_tva||false, tva_frequence:p.tva_frequence||"trimestrielle", tva_regime:p.tva_regime||"encaissements", secteur:p.secteur||"", conditions_paiement:p.conditions_paiement||"", delai_paiement:p.delai_paiement||"30", iban:p.iban||"", contexte_ia:p.contexte_ia||"", couleur_pdf:p.couleur_pdf||"#378ADD" };
+    logoBase64 = p.logo_base64 || null;
+    isAdmin = p.is_admin === true;
     subscriptionStatus = p.subscription_status || "free";
     subscriptionEndDate = p.subscription_end_date || null;
     cancellationRequested = p.cancellation_requested || false;
