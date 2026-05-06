@@ -61,6 +61,13 @@ input[type="date"]{color-scheme:dark}
 .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
 .mode-btn{padding:11px;border-radius:10px;font-size:13px;font-weight:500;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);cursor:pointer;font-family:var(--fb);transition:all .2s}
 .mode-btn.active{background:var(--amber-dim);border-color:rgba(245,167,66,.35);color:var(--amber)}
+.tpl-bar{display:flex;gap:8px;align-items:center;margin-bottom:16px;padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;}
+.tpl-select{flex:1;padding:7px 10px;font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--fb);cursor:pointer;}
+.tpl-btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:var(--fb);white-space:nowrap;transition:all .2s;}
+.tpl-btn-load{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,167,66,.3);}
+.tpl-btn-load:hover{background:rgba(245,167,66,.2);}
+.tpl-btn-save{background:var(--surface-3);color:var(--muted);border:1px solid var(--border);}
+.tpl-btn-save:hover{color:var(--text);border-color:var(--border-hi);}
 .voice-box{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:14px;border:1px solid var(--border);background:var(--surface-2);cursor:pointer;margin-bottom:18px;transition:all .2s}
 .voice-box.recording{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.3)}
 .voice-box.processing{background:var(--teal-dim);border-color:rgba(62,207,207,.3)}
@@ -195,6 +202,9 @@ let S={
   copied:false,
   entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:"",assujetti_tva:false,secteur:"",conditions_paiement:"",delai_paiement:"30"},
   dossiers:[],
+  templates:[],
+  savingTemplate:false,
+  templateNom:"",
   profilSaved:false,
   syncing:false,
 };
@@ -229,6 +239,9 @@ async function loadUserData(userId){
       S.gmailAccessToken=profil.gmail_access_token||null;
       S.gmailTokenExpiry=profil.gmail_token_expiry?new Date(profil.gmail_token_expiry):null;
     }
+    // Charger les templates
+    const{data:tpls}=await sb.from("templates").select("*").eq("user_id",userId).order("created_at",{ascending:false});
+    if(tpls) S.templates=tpls;
     // Charger les dossiers
     const{data:dossiers,error:de}=await sb.from("dossiers").select("*").eq("user_id",userId).order("updated_at",{ascending:false});
     if(de) console.error("Erreur dossiers:",de.message);
@@ -907,6 +920,45 @@ const nom=civStr+(travStr?" — "+travStr:"");
 // ——— DOSSIERS ACTIONS ———
 window.toggleDossier=id=>set({openDossier:S.openDossier===id?null:id});
 window.togglePreview=num=>set({previewDocNum:S.previewDocNum===num?null:num});
+// ── TEMPLATES ────────────────────────────────────────────────
+async function saveTemplate(){
+  const nom = (S.templateNom||"").trim();
+  if(!nom){ alert("Donnez un nom au template."); return; }
+  if(!S.user?.id) return;
+  set({savingTemplate:true});
+  const payload={
+    user_id: S.user.id,
+    nom,
+    tab:   S.tab,
+    fields: {...S.fields},
+    pieces: S.pieces.map(p=>({...p})),
+  };
+  const{data,error}=await sb.from("templates").insert(payload).select().single();
+  if(error){ alert("Erreur : "+error.message); set({savingTemplate:false}); return; }
+  S.templates=[data,...S.templates];
+  set({savingTemplate:false, templateNom:""});
+  showArtioToast("✅ Template \""+nom+"\" sauvegardé !");
+}
+
+async function deleteTemplate(id){
+  if(!confirm("Supprimer ce template ?")) return;
+  await sb.from("templates").delete().eq("id",id).eq("user_id",S.user.id);
+  S.templates=S.templates.filter(t=>t.id!==id);
+  set({});
+  showArtioToast("🗑 Template supprimé");
+}
+
+function loadTemplate(id){
+  const tpl=S.templates.find(t=>t.id===id);
+  if(!tpl) return;
+  // Ne pas écraser les infos client — seulement prestation + articles
+  const keep={client_nom:S.fields.client_nom,client_adresse:S.fields.client_adresse,client_tel:S.fields.client_tel,client_email:S.fields.client_email};
+  S.fields={...keep,...tpl.fields};
+  S.pieces=(tpl.pieces||[]).map(p=>({...p}));
+  set({tab:tpl.tab});
+  showArtioToast('📋 Template "'+tpl.nom+'" chargé !');
+}
+
 window.markTermine=async id=>{
   const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;
   dos.statut="termine";await upsertDossier(dos);set({});
@@ -1559,29 +1611,48 @@ function renderDevisFacture(){
       for(let m=0;m<60;m+=15){
         const hh=String(h).padStart(2,"0"),mm=String(m).padStart(2,"0");
         const val=hh+":"+mm,sel=(S.fields[id]||"")==val?"selected":"";
-        opts+=`<option value="${val}" ${sel}>${h}h${m>0?m:""}</option>`;
+        opts+='<option value="'+val+'" '+sel+'>'+h+'h'+(m>0?m:"")+'</option>';
       }
     }
     return opts;
   };
-  const inp=(id,type,ph)=>type==="textarea"
-    ?`<textarea placeholder="${ph}" data-fid="${id}">${esc(S.fields[id]||"")}</textarea>`
-    :type==="select_heure"
-      ?`<select data-fid="${id}" style="width:100%;padding:10px 12px;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);" onchange="S.fields['${id}']=this.value">${heureOpts(id)}</select>`
-      :type==="date"
-        ?`<input type="date" value="${S.fields[id]||""}" data-fid="${id}" style="width:100%;padding:10px 12px;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);color-scheme:dark;" oninput="S.fields['${id}']=this.value"/>`
-        :type==="select"
-          ?`<select data-fid="${id}" style="width:100%;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--fb);" onchange="S.fields['${id}']=this.value;updateTotaux()">
-              <option value="">-- Choisir le taux --</option>
-              <option value="10" ${S.fields[id]==="10"?"selected":""}>10 % — Taux réduit</option>
-              <option value="20" ${S.fields[id]==="20"?"selected":""}>20 % — Taux normal</option>
-            </select>`
-          :`<input type="${type}" value="${esc(S.fields[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value;${id==='nb_heures'||id==='tva'?'updateTotaux()':''}"/>`;
-  const fld=(id,label,ph,type,opt)=>`<div class="field">
-    <label class="label">${label}${opt?`<span class="opt">(optionnel)</span>`:""}</label>
-    ${inp(id,type,ph)}
-  </div>`;
+  const inp=(id,type,ph)=>{
+    if(type==="textarea") return '<textarea placeholder="'+ph+'" data-fid="'+id+'">'+esc(S.fields[id]||"")+'</textarea>';
+    if(type==="select_heure") return '<select data-fid="'+id+'" style="width:100%;padding:10px 12px;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);" onchange="S.fields[\''+id+'\']=this.value">'+heureOpts(id)+'</select>';
+    if(type==="date") return '<input type="date" value="'+(S.fields[id]||"")+'" data-fid="'+id+'" style="width:100%;padding:10px 12px;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);color-scheme:dark;" oninput="S.fields[\''+id+'\']=this.value"/>';
+    if(type==="select") return '<select data-fid="'+id+'" style="width:100%;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--fb);" onchange="S.fields[\''+id+'\']=this.value;updateTotaux()">'
+      +'<option value="">-- Choisir le taux --</option>'
+      +'<option value="10" '+(S.fields[id]==="10"?"selected":"")+'>10 % — Taux réduit</option>'
+      +'<option value="20" '+(S.fields[id]==="20"?"selected":"")+'>20 % — Taux normal</option>'
+      +'</select>';
+    return '<input type="'+type+'" value="'+esc(S.fields[id]||"")+'" placeholder="'+ph+'" data-fid="'+id+'" oninput="S.fields[\''+id+'\']=this.value;'+(id==='nb_heures'||id==='tva'?'updateTotaux()':'')+'" />';
+  };
+  const fld=(id,label,ph,type,opt)=>'<div class="field"><label class="label">'+label+(opt?'<span class="opt">(optionnel)</span>':'')+' </label>'+inp(id,type,ph)+'</div>';
+
+  // ── Barre templates (Pro) ── précomputée sans template literal imbriqué
+  let tplBar = "";
+  if(window.PlanGuard && window.PlanGuard.isPro() && S.templates.filter(t=>t.tab===tab).length > 0){
+    const opts = S.templates.filter(t=>t.tab===tab).map(t=>'<option value="'+t.id+'">'+esc(t.nom)+'</option>').join("");
+    tplBar = '<div class="tpl-bar">'
+      +'<select class="tpl-select" id="tpl-select"><option value="">&#128203; Charger un template...</option>'+opts+'</select>'
+      +'<button class="tpl-btn tpl-btn-load" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)loadTemplate(v)">Charger</button>'
+      +'<button class="tpl-btn" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,.2);" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)deleteTemplate(v)">&#128465;</button>'
+      +'</div>';
+  }
+
+  // ── Section sauvegarder template (Pro) ── précomputée
+  let tplSave = "";
+  if(window.PlanGuard && window.PlanGuard.isPro()){
+    tplSave = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">'
+      +'<input type="text" placeholder="Nom du template (ex: Installation \xe9lectrique)" value="'+esc(S.templateNom||"")+'"'
+      +' style="flex:1;padding:9px 12px;font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);"'
+      +' oninput="S.templateNom=this.value"/>'
+      +'<button class="tpl-btn tpl-btn-save" onclick="saveTemplate()"'+(S.savingTemplate?' disabled':'')+'>&#128190; '+(S.savingTemplate?'...':'Sauvegarder')+'</button>'
+      +'</div>';
+  }
+
   return`<div class="card">
+    ${tplBar}
     ${renderVoice("devis")}
     <div class="section-head">
       <div class="section-icon">👤</div>
@@ -1614,10 +1685,12 @@ function renderDevisFacture(){
     </div>
     ${renderPieces()}
     <div id="totaux-container">${renderTotaux()}</div>
+    ${tplSave}
     <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":tab==="devis"?"Générer le devis":"Générer la facture"}</button>
   </div>
   ${S.generatedDoc?`<div class="card">${renderDocPreview(S.generatedDoc)}</div>`:""}`;
 }
+
 
 function renderEmail(){
   const f=S.fields;
