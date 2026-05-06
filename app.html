@@ -234,6 +234,8 @@ async function loadUserData(userId){
           nature_operation:profil.nature_operation||"",
           contexte_ia:profil.contexte_ia||"",
           iban:profil.iban||"",
+          logo_base64:profil.logo_base64||null,
+          couleur_pdf:profil.couleur_pdf||"#378ADD",
           onboarding_done:profil.onboarding_done||false
       };
       S.profilSaved=!!profil.nom;
