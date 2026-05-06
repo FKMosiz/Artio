@@ -234,8 +234,6 @@ async function loadUserData(userId){
           nature_operation:profil.nature_operation||"",
           contexte_ia:profil.contexte_ia||"",
           iban:profil.iban||"",
-          logo_base64:profil.logo_base64||null,
-          couleur_pdf:profil.couleur_pdf||"#378ADD",
           onboarding_done:profil.onboarding_done||false
       };
       S.profilSaved=!!profil.nom;
@@ -1250,19 +1248,29 @@ function generatePDF(doc){
   const{jsPDF}=window.jspdf;
   const pdf=new jsPDF({unit:"mm",format:"a4"});
   const W=210,m=18,cW=W-2*m,rX=W-m;let y=m;
-  // ── En-tête : logo ou nom texte ──────────────────────────────
-  const pdfColor = doc.entreprise.couleur_pdf || "#378ADD";
-  const rgb = pdfColor.match(/[0-9a-f]{2}/gi).map(h=>parseInt(h,16));
+  // ── En-tête : logo ou nom + couleur personnalisée ─────────────
+  const pdfColor   = doc.entreprise.couleur_pdf || "#378ADD";
+  const rgb        = (pdfColor.match(/[0-9a-f]{2}/gi)||["37","8a","dd"]).map(h=>parseInt(h,16));
+  const LOGO_H     = 14; // hauteur logo en mm
+  let   logoW      = 0;  // largeur calculée automatiquement par jsPDF
+
   if(doc.entreprise.logo_base64){
     try{
-      pdf.addImage(doc.entreprise.logo_base64,"PNG",m,y-4,0,12); // hauteur 12mm, largeur auto
+      // Calculer la largeur proportionnelle via un canvas temporaire
+      const img = new Image();
+      img.src = doc.entreprise.logo_base64;
+      const ratio = img.naturalWidth && img.naturalHeight ? img.naturalWidth/img.naturalHeight : 3;
+      logoW = Math.min(LOGO_H * ratio, 60); // max 60mm de large
+      pdf.addImage(doc.entreprise.logo_base64, "PNG", m, y-2, logoW, LOGO_H);
+      y += LOGO_H + 2; // espace sous le logo
     }catch(e){
       pdf.setFontSize(16).setFont(undefined,"bold").text(doc.entreprise.nom,m,y);
+      y += 6;
     }
   } else {
     pdf.setFontSize(16).setFont(undefined,"bold").text(doc.entreprise.nom,m,y);
+    y += 6;
   }
-  y+=6;
   pdf.setFontSize(9).setFont(undefined,"normal").text(doc.entreprise.adresse,m,y);y+=5;
   pdf.text("Tél : "+doc.entreprise.tel,m,y);y+=4;
   pdf.text("Email : "+doc.entreprise.email,m,y);y+=4;
@@ -1284,7 +1292,7 @@ function generatePDF(doc){
     const hp=doc.heure_prestation?" à "+doc.heure_prestation+(doc.heure_fin_prestation?" → "+doc.heure_fin_prestation:""):"";
     pdf.text((doc.type==="devis"?"Prestation prévue : ":"Prestation réalisée : ")+dp+hp,rX,m+yOff,{align:"right"});
   }
-  y=58;pdf.setDrawColor(...rgb).setLineWidth(0.5).line(m,y,W-m,y);pdf.setLineWidth(0.2);y+=8;
+  y=58;pdf.setDrawColor(...rgb).setLineWidth(0.4).line(m,y,W-m,y);pdf.setLineWidth(0.2);y+=8;
   pdf.setFontSize(9).setFont(undefined,"bold").text("CLIENT",m,y);y+=5;
   pdf.setFont(undefined,"normal").text(doc.client.nom,m,y);y+=4;
   pdf.text(doc.client.adresse,m,y);y+=4;
