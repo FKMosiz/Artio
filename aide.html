@@ -594,7 +594,7 @@
         </a>
         <a class="doc-item" href="#" onclick="openArticle('gmail');return false;">
           <span class="doc-item-icon">📬</span>
-          <span class="doc-item-title">Messagerie Gmail</span>
+          <span class="doc-item-title">Connexion Gmail & Calendrier</span>
           <span class="doc-arrow">›</span>
         </a>
         <a class="doc-item" href="#" onclick="openArticle('tableau-bord');return false;">
@@ -676,7 +676,7 @@ const ARTICLES = [
   { icon: '🏢', title: 'Configurer votre profil entreprise', cat: 'Démarrage rapide', id: 'profil-entreprise' },
   { icon: '💳', title: 'Abonnement Solo & Pro', cat: 'Démarrage rapide', id: 'abonnement' },
   { icon: '✍️', title: 'Signature électronique', cat: 'Fonctionnalités', id: 'signature' },
-  { icon: '📬', title: 'Messagerie Gmail', cat: 'Fonctionnalités', id: 'gmail' },
+  { icon: '📬', title: 'Connexion Gmail & Calendrier', cat: 'Fonctionnalités', id: 'gmail' },
   { icon: '📊', title: 'Tableau de bord & KPIs', cat: 'Fonctionnalités', id: 'tableau-bord' },
   { icon: '💶', title: 'Marquer une facture payée & rappels', cat: 'Fonctionnalités', id: 'paiement' },
   { icon: '🎙️', title: 'Utiliser la dictée vocale', cat: 'Fonctionnalités', id: 'dictee-vocale' },
@@ -961,18 +961,27 @@ const ARTICLE_CONTENT = {
       <div class="article-warn"><strong>⚠ Expiration :</strong> Le lien expire après 72h. Générez un nouveau lien depuis le dossier si nécessaire.</div>`
   },
   'gmail': {
-    title: '📬 Messagerie Gmail',
+    title: '📬 Connexion Gmail & Calendrier',
     body: `
-      <h2>Ce que permet la Messagerie</h2>
-      <p>Consultez vos emails non lus et générez des réponses professionnelles directement depuis Artio, sans quitter l'application. Fonctionnalité <strong>réservée au plan Pro</strong>.</p>
+      <h2>Deux intégrations Google en une</h2>
+      <p>La connexion Google relie Artio à votre compte Gmail pour deux usages distincts : la <strong>lecture de vos emails</strong> et la <strong>synchronisation avec votre agenda</strong>. Fonctionnalité <strong>réservée au plan Pro</strong>.</p>
+
       <h2>Connecter Gmail</h2>
       <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Allez dans Paramètres → Gmail</strong><span>Ou cliquez sur l'onglet "Messagerie" dans l'Application.</span></div></div>
-      <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Cliquez "Connecter Gmail"</strong><span>Vous êtes redirigé vers Google pour autoriser Artio à lire vos emails.</span></div></div>
-      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Autorisez l'accès</strong><span>Artio accède uniquement en lecture à vos emails non lus. Aucun email n'est envoyé sans votre action.</span></div></div>
-      <h2>Répondre avec l'IA</h2>
-      <p>Depuis l'onglet <strong>Rédiger</strong>, collez le message de votre client. L'IA génère une réponse professionnelle adaptée à votre secteur et au ton choisi.</p>
-      <div class="article-tip"><strong>💡 Conseil :</strong> Remplissez le champ "Contexte IA" dans vos paramètres pour que les réponses soient encore plus personnalisées.</div>
-      <div class="article-warn"><strong>⚠ Déconnexion :</strong> La session Gmail expire périodiquement. Reconnectez depuis Paramètres → Gmail si nécessaire.</div>`
+      <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Cliquez "Connecter Gmail"</strong><span>Vous êtes redirigé vers Google pour autoriser Artio.</span></div></div>
+      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Autorisez l'accès</strong><span>Une seule connexion suffit pour activer les deux fonctionnalités.</span></div></div>
+
+      <h2>📧 Messagerie — Lire & répondre</h2>
+      <p>Depuis l'onglet <strong>Messagerie</strong> dans l'Application, consultez vos emails non lus directement dans Artio sans changer d'onglet. Cliquez sur un email pour voir son contenu et générer une réponse IA en un clic.</p>
+
+      <h2>✍️ Rédiger une réponse avec l'IA</h2>
+      <p>Depuis l'onglet <strong>Rédiger</strong>, collez le message reçu. Choisissez le ton (vouvoiement, amical, ferme…) et l'IA rédige une réponse professionnelle adaptée à votre activité.</p>
+
+      <h2>📅 Calendrier — Synchronisation Google</h2>
+      <p>Votre calendrier Artio et votre <strong>Google Agenda</strong> sont liés. Les rendez-vous créés dans Artio apparaissent dans votre Google Agenda et inversement. Plus besoin de jongler entre deux agendas.</p>
+
+      <div class="article-tip"><strong>💡 Conseil :</strong> Remplissez le champ "Contexte IA" dans Paramètres pour que les réponses générées soient encore mieux adaptées à votre activité.</div>
+      <div class="article-warn"><strong>⚠ Session :</strong> La connexion Google expire périodiquement. Reconnectez depuis Paramètres → Gmail si la Messagerie ne charge plus.</div>`
   },
   'tableau-bord': {
     title: '📊 Tableau de bord & KPIs',
