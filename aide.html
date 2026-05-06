@@ -568,7 +568,6 @@
         <a class="doc-item" href="#" onclick="openArticle('devis-vocal');return false;">
           <span class="doc-item-icon">🚀</span>
           <span class="doc-item-title">Créer votre premier devis vocal</span>
-          <span class="doc-item-badge new">Nouveau</span>
           <span class="doc-arrow">›</span>
         </a>
         <a class="doc-item" href="#" onclick="openArticle('profil-entreprise');return false;">
@@ -576,9 +575,9 @@
           <span class="doc-item-title">Configurer votre profil entreprise</span>
           <span class="doc-arrow">›</span>
         </a>
-        <a class="doc-item" href="#" onclick="openArticle('cle-api');return false;">
-          <span class="doc-item-icon">🔑</span>
-          <span class="doc-item-title">Connecter votre clé API</span>
+        <a class="doc-item" href="#" onclick="openArticle('abonnement');return false;">
+          <span class="doc-item-icon">💳</span>
+          <span class="doc-item-title">Abonnement Solo & Pro</span>
           <span class="doc-arrow">›</span>
         </a>
       </div>
@@ -594,13 +593,28 @@
           <span class="doc-arrow">›</span>
         </a>
         <a class="doc-item" href="#" onclick="openArticle('gmail');return false;">
-          <span class="doc-item-icon">📧</span>
-          <span class="doc-item-title">Synchronisation Gmail</span>
+          <span class="doc-item-icon">📬</span>
+          <span class="doc-item-title">Messagerie Gmail</span>
           <span class="doc-arrow">›</span>
         </a>
         <a class="doc-item" href="#" onclick="openArticle('tableau-bord');return false;">
           <span class="doc-item-icon">📊</span>
           <span class="doc-item-title">Tableau de bord & KPIs</span>
+          <span class="doc-arrow">›</span>
+        </a>
+        <a class="doc-item" href="#" onclick="openArticle('paiement');return false;">
+          <span class="doc-item-icon">💶</span>
+          <span class="doc-item-title">Marquer une facture payée & rappels</span>
+          <span class="doc-arrow">›</span>
+        </a>
+        <a class="doc-item" href="#" onclick="openArticle('dictee-vocale');return false;">
+          <span class="doc-item-icon">🎙️</span>
+          <span class="doc-item-title">Utiliser la dictée vocale</span>
+          <span class="doc-arrow">›</span>
+        </a>
+        <a class="doc-item" href="#" onclick="openArticle('pdf-facture');return false;">
+          <span class="doc-item-icon">📄</span>
+          <span class="doc-item-title">Générer une facture en PDF</span>
           <span class="doc-arrow">›</span>
         </a>
       </div>
@@ -611,13 +625,18 @@
         <div class="doc-cat-label">Légal & Conformité</div>
         <a class="doc-item" href="#" onclick="openArticle('facturation-epro');return false;">
           <span class="doc-item-icon">🏛️</span>
-          <span class="doc-item-title">Réforme facturation e-pro 2026</span>
+          <span class="doc-item-title">Réforme facturation électronique 2026</span>
           <span class="doc-item-badge new">DGFiP</span>
           <span class="doc-arrow">›</span>
         </a>
         <a class="doc-item" href="#" onclick="openArticle('securite');return false;">
           <span class="doc-item-icon">🔒</span>
           <span class="doc-item-title">Sécurité & données personnelles</span>
+          <span class="doc-arrow">›</span>
+        </a>
+        <a class="doc-item" href="#" onclick="openArticle('suppression-compte');return false;">
+          <span class="doc-item-icon">🗑️</span>
+          <span class="doc-item-title">Supprimer mon compte</span>
           <span class="doc-arrow">›</span>
         </a>
       </div>
@@ -653,16 +672,18 @@ let currentUser = null;
 
 // ── SEARCH ──────────────────────────────────────────
 const ARTICLES = [
-  { icon: '🚀', title: 'Créer votre premier devis vocal', cat: 'Démarrage rapide' },
-  { icon: '🏢', title: 'Configurer votre profil entreprise', cat: 'Démarrage rapide' },
-  { icon: '🔑', title: 'Connecter votre clé API', cat: 'Démarrage rapide' },
-  { icon: '✍️', title: 'Signature électronique', cat: 'Fonctionnalités' },
-  { icon: '📧', title: 'Synchronisation Gmail', cat: 'Fonctionnalités' },
-  { icon: '📊', title: 'Tableau de bord & KPIs', cat: 'Fonctionnalités' },
-  { icon: '🏛️', title: 'Réforme facturation e-pro 2026', cat: 'Légal & Conformité' },
-  { icon: '🔒', title: 'Sécurité & données personnelles', cat: 'Légal & Conformité' },
-  { icon: '🎙️', title: 'Utiliser la dictée vocale', cat: 'Fonctionnalités' },
-  { icon: '📄', title: 'Générer une facture en PDF', cat: 'Fonctionnalités' },
+  { icon: '🚀', title: 'Créer votre premier devis vocal', cat: 'Démarrage rapide', id: 'devis-vocal' },
+  { icon: '🏢', title: 'Configurer votre profil entreprise', cat: 'Démarrage rapide', id: 'profil-entreprise' },
+  { icon: '💳', title: 'Abonnement Solo & Pro', cat: 'Démarrage rapide', id: 'abonnement' },
+  { icon: '✍️', title: 'Signature électronique', cat: 'Fonctionnalités', id: 'signature' },
+  { icon: '📬', title: 'Messagerie Gmail', cat: 'Fonctionnalités', id: 'gmail' },
+  { icon: '📊', title: 'Tableau de bord & KPIs', cat: 'Fonctionnalités', id: 'tableau-bord' },
+  { icon: '💶', title: 'Marquer une facture payée & rappels', cat: 'Fonctionnalités', id: 'paiement' },
+  { icon: '🎙️', title: 'Utiliser la dictée vocale', cat: 'Fonctionnalités', id: 'dictee-vocale' },
+  { icon: '📄', title: 'Générer une facture en PDF', cat: 'Fonctionnalités', id: 'pdf-facture' },
+  { icon: '🏛️', title: 'Réforme facturation électronique 2026', cat: 'Légal & Conformité', id: 'facturation-epro' },
+  { icon: '🔒', title: 'Sécurité & données personnelles', cat: 'Légal & Conformité', id: 'securite' },
+  { icon: '🗑️', title: 'Supprimer mon compte', cat: 'Légal & Conformité', id: 'suppression-compte' },
 ];
 
 const searchInput = document.getElementById('search-input');
@@ -870,13 +891,13 @@ const ARTICLE_CONTENT = {
     title: '🚀 Créer votre premier devis vocal',
     body: `
       <h2>Comment ça marche</h2>
-      <p>Artio transforme votre voix en devis professionnel en quelques secondes. Parlez naturellement et l'IA structure tout automatiquement.</p>
+      <p>Artio transforme votre voix en devis professionnel en quelques secondes. Parlez naturellement, l'IA structure tout automatiquement.</p>
       <h2>Étapes</h2>
-      <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Ouvrez l'Application</strong><span>Depuis la page d'accueil, cliquez sur "Application" dans la navigation.</span></div></div>
+      <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Ouvrez l'Application</strong><span>Depuis la page d'accueil, cliquez sur "Application".</span></div></div>
       <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Sélectionnez l'onglet "Devis"</strong><span>Assurez-vous que l'onglet Devis est actif (et non Facture).</span></div></div>
-      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Appuyez sur le bouton micro 🎙️</strong><span>Autorisez l'accès au microphone si demandé. Le bouton passe en rouge.</span></div></div>
-      <div class="article-step"><div class="article-step-num">4</div><div class="article-step-body"><strong>Décrivez votre prestation</strong><span>Parlez naturellement : "Devis pour M. Martin, peinture salon 40m², 8 heures de travail, fournitures 150 euros."</span></div></div>
-      <div class="article-step"><div class="article-step-num">5</div><div class="article-step-body"><strong>Arrêtez l'enregistrement</strong><span>Cliquez sur le bouton stop ■. L'IA analyse votre dictée et remplit automatiquement tous les champs.</span></div></div>
+      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Appuyez sur le bouton micro 🎙</strong><span>Le bouton amber démarre l'enregistrement. Autorisez l'accès au microphone si demandé.</span></div></div>
+      <div class="article-step"><div class="article-step-num">4</div><div class="article-step-body"><strong>Décrivez votre prestation</strong><span>Parlez naturellement : "Devis pour M. Martin, installation électrique salon, 6 heures de travail, fournitures 120 euros."</span></div></div>
+      <div class="article-step"><div class="article-step-num">5</div><div class="article-step-body"><strong>Arrêtez l'enregistrement</strong><span>Cliquez sur le bouton stop ⏹. L'IA analyse votre dictée et remplit automatiquement tous les champs.</span></div></div>
       <div class="article-step"><div class="article-step-num">6</div><div class="article-step-body"><strong>Vérifiez et générez</strong><span>Relisez les champs, ajustez si nécessaire, puis cliquez "Générer le devis" pour obtenir le PDF.</span></div></div>
       <div class="article-tip"><strong>💡 Astuce :</strong> Plus vous êtes précis (nom complet, montants, dates), plus le résultat est fidèle. Vous pouvez toujours corriger les champs manuellement.</div>
       <h2>Navigateurs compatibles</h2>
@@ -895,70 +916,68 @@ const ARTICLE_CONTENT = {
       <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Taux horaire</strong><span>Votre tarif en €/h HT. Utilisé automatiquement pour calculer la main d'œuvre.</span></div></div>
       <div class="article-step"><div class="article-step-num">4</div><div class="article-step-body"><strong>TVA & Conditions</strong><span>Indiquez si vous êtes assujetti à la TVA, votre fréquence de déclaration et votre régime (encaissements ou débits).</span></div></div>
       <div class="article-step"><div class="article-step-num">5</div><div class="article-step-body"><strong>IBAN (optionnel)</strong><span>Apparaît en pied de facture pour faciliter les virements clients.</span></div></div>
+      <div class="article-step"><div class="article-step-num">6</div><div class="article-step-body"><strong>Contexte IA</strong><span>Décrivez votre activité, vos offres et vos tarifs. L'IA s'en sert pour personnaliser les emails et relances générés.</span></div></div>
       <div class="article-tip"><strong>💡 Assurances :</strong> Vous pouvez renseigner vos numéros de RC Pro, garantie décennale et certifications — ils apparaissent dans le pied de page de vos documents.</div>`
   },
-  'cle-api': {
-    title: '🔑 Connecter votre clé API Anthropic',
+  'abonnement': {
+    title: '💳 Abonnement Solo & Pro',
     body: `
-      <h2>À quoi sert la clé API ?</h2>
-      <p>La clé API permet à Artio d'utiliser l'IA pour analyser vos dictées vocales, générer les descriptions de prestations et rédiger vos emails.</p>
-      <div class="article-warn"><strong>⚠ Sans clé API</strong> : la dictée vocale et la génération automatique ne fonctionnent pas.</div>
-      <h2>Obtenir une clé API</h2>
-      <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Créez un compte Anthropic</strong><span>Rendez-vous sur <strong>console.anthropic.com</strong>.</span></div></div>
-      <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Créez une clé</strong><span>Dans "API Keys", cliquez "Create Key". La clé commence par <strong>sk-ant-</strong>.</span></div></div>
-      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Collez dans Artio</strong><span>Allez dans <strong>Paramètres → Mon entreprise → Clé API Anthropic</strong> et collez votre clé.</span></div></div>
-      <div class="article-tip"><strong>💡 Coût :</strong> Pour une utilisation normale (quelques devis par jour), le coût mensuel est généralement inférieur à 1-2€.</div>`
+      <h2>Les deux plans</h2>
+      <p><strong>Solo — 19 €/mois ou 190 €/an</strong><br>Accès complet à la plateforme : devis, factures, dictée vocale IA, agenda, carnet clients, signature électronique, tableau de bord.</p>
+      <p><strong>Pro — 39 €/mois ou 390 €/an</strong><br>Tout Solo, plus la connexion Gmail, le branding PDF personnalisé et les fonctionnalités avancées à venir.</p>
+      <h2>Essai gratuit</h2>
+      <p>Les plans mensuels bénéficient d'un <strong>essai gratuit de 30 jours</strong> pour les nouveaux abonnés. Aucun prélèvement pendant la période d'essai.</p>
+      <h2>Souscrire</h2>
+      <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Allez dans Paramètres → Abonnement</strong><span>Depuis n'importe quelle page, cliquez sur "Paramètres".</span></div></div>
+      <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Choisissez votre plan</strong><span>Sélectionnez Solo ou Pro, mensuel ou annuel (économisez 2 mois sur l'annuel).</span></div></div>
+      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Paiement sécurisé via Stripe</strong><span>Carte bancaire uniquement. Vos données de paiement ne transitent jamais par Artio.</span></div></div>
+      <h2>Résilier</h2>
+      <p>Cliquez sur "Demander l'annulation" dans l'onglet Abonnement. Votre accès reste actif jusqu'à la fin de la période payée. Aucun remboursement au prorata.</p>
+      <h2>Après résiliation</h2>
+      <p>Vous conservez un accès <strong>lecture seule</strong> à tout votre historique (dossiers, factures) sans pouvoir créer de nouveaux documents.</p>
+      <div class="article-tip"><strong>💡 Facturation :</strong> Une facture Artio est automatiquement générée et envoyée par email à chaque renouvellement.</div>`
   },
   'signature': {
     title: '✍️ Signature électronique',
     body: `
       <h2>Comment ça fonctionne</h2>
       <p>Vos clients signent vos devis électroniquement depuis n'importe quel appareil, sans compte ni application. Le lien est valable <strong>72 heures</strong>.</p>
-
       <h2>Ce que voit votre client</h2>
       <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Il ouvre le lien</strong><span>La page affiche le résumé du devis et l'empreinte numérique SHA-256 du document.</span></div></div>
-      <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Il vérifie son email (2FA)</strong><span>Il saisit son adresse email et reçoit un code à 6 chiffres depuis noreply@monartio.fr. Ce code prouve qu'il contrôle bien cette adresse.</span></div></div>
-      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Il signe</strong><span>Il dessine sa signature. Artio vérifie que le document n'a pas été modifié depuis l'envoi (SHA-256), puis enregistre tout.</span></div></div>
+      <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Il vérifie son email (2FA)</strong><span>Il saisit son adresse email et reçoit un code à 6 chiffres. Ce code prouve qu'il contrôle bien cette adresse.</span></div></div>
+      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Il signe</strong><span>Il dessine sa signature. Artio vérifie que le document n'a pas été modifié (SHA-256), puis enregistre tout.</span></div></div>
       <div class="article-step"><div class="article-step-num">4</div><div class="article-step-body"><strong>Il reçoit une confirmation</strong><span>Un email de confirmation lui est automatiquement envoyé avec le récapitulatif du devis signé.</span></div></div>
-
       <h2>Ce que vous obtenez</h2>
       <div class="article-step"><div class="article-step-num">5</div><div class="article-step-body"><strong>Dossier mis à jour automatiquement</strong><span>Le devis passe en statut "Accepté" et vous pouvez générer la facture correspondante.</span></div></div>
-      <div class="article-step"><div class="article-step-num">6</div><div class="article-step-body"><strong>PDF "Preuve de signature"</strong><span>Téléchargeable depuis le dossier — contient la signature manuscrite, l'audit trail complet et l'empreinte SHA-256.</span></div></div>
-
-      <h2>Audit Trail</h2>
-      <p>Le PDF de preuve inclut un journal horodaté de chaque étape : lien créé, OTP envoyé, OTP vérifié, SHA-256 conforme, signature enregistrée, IP du signataire.</p>
-
+      <div class="article-step"><div class="article-step-num">6</div><div class="article-step-body"><strong>PDF "Preuve de signature"</strong><span>Contient la signature manuscrite, l'audit trail complet et l'empreinte SHA-256.</span></div></div>
       <h2>Niveau de sécurité</h2>
       <ul>
         <li><strong>SHA-256</strong> — empreinte du document vérifiée à la signature</li>
-        <li><strong>2FA email</strong> — code OTP envoyé par Resend depuis monartio.fr</li>
+        <li><strong>2FA email</strong> — code OTP envoyé depuis monartio.fr</li>
         <li><strong>IP signataire</strong> — collectée côté serveur, infalsifiable</li>
-        <li><strong>Horodatage</strong> — date et heure exactes stockées en base Supabase</li>
         <li><strong>Audit Trail</strong> — journal complet dans le PDF de preuve</li>
       </ul>
-
-      <div class="article-tip"><strong>💡 Valeur légale :</strong> Signature simple renforcée conforme eIDAS — niveau équivalent au niveau de base de YousSign ou DocuSign. Juridiquement valable pour tous les devis et contrats de prestation.</div>
-      <div class="article-warn"><strong>⚠ Expiration :</strong> Le lien expire après 72h. Générez un nouveau lien depuis le dossier si nécessaire.</div>
-      <div class="article-warn"><strong>⚠ Cas non couverts :</strong> Pour certains actes (immobilier, actes notariés, CDI), une signature qualifiée est légalement requise. Pour les devis courants, la signature simple renforcée est suffisante.</div>`
+      <div class="article-tip"><strong>💡 Valeur légale :</strong> Signature simple renforcée conforme eIDAS — juridiquement valable pour tous les devis et contrats de prestation.</div>
+      <div class="article-warn"><strong>⚠ Expiration :</strong> Le lien expire après 72h. Générez un nouveau lien depuis le dossier si nécessaire.</div>`
   },
   'gmail': {
-    title: '📧 Synchronisation Gmail',
+    title: '📬 Messagerie Gmail',
     body: `
-      <h2>Ce que permet Gmail</h2>
-      <p>Consultez, triez et répondez à vos emails directement depuis Artio sans quitter l'application.</p>
-      <h2>Prérequis</h2>
-      <p>Un <strong>Google Client ID OAuth 2.0</strong> (projet Google Cloud gratuit pour usage personnel).</p>
-      <h2>Configuration</h2>
-      <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Créez un projet Google Cloud</strong><span>Sur <strong>console.cloud.google.com</strong>, créez un projet et activez l'API Gmail.</span></div></div>
-      <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Créez des identifiants OAuth 2.0</strong><span>Dans "APIs & Services → Identifiants", créez un ID client Web. Ajoutez <strong>monartio.fr</strong> comme origine autorisée.</span></div></div>
-      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Copiez le Client ID</strong><span>Format : <strong>123456789-abc.apps.googleusercontent.com</strong></span></div></div>
-      <div class="article-step"><div class="article-step-num">4</div><div class="article-step-body"><strong>Collez dans Artio</strong><span>Allez dans <strong>Paramètres → Gmail</strong> et collez votre Client ID.</span></div></div>
-      <div class="article-tip"><strong>💡 Utilisation :</strong> Une fois connecté, accédez à vos emails depuis l'onglet "Gmail" de l'Application. L'IA génère des réponses professionnelles automatiquement.</div>`
+      <h2>Ce que permet la Messagerie</h2>
+      <p>Consultez vos emails non lus et générez des réponses professionnelles directement depuis Artio, sans quitter l'application. Fonctionnalité <strong>réservée au plan Pro</strong>.</p>
+      <h2>Connecter Gmail</h2>
+      <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Allez dans Paramètres → Gmail</strong><span>Ou cliquez sur l'onglet "Messagerie" dans l'Application.</span></div></div>
+      <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Cliquez "Connecter Gmail"</strong><span>Vous êtes redirigé vers Google pour autoriser Artio à lire vos emails.</span></div></div>
+      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Autorisez l'accès</strong><span>Artio accède uniquement en lecture à vos emails non lus. Aucun email n'est envoyé sans votre action.</span></div></div>
+      <h2>Répondre avec l'IA</h2>
+      <p>Depuis l'onglet <strong>Rédiger</strong>, collez le message de votre client. L'IA génère une réponse professionnelle adaptée à votre secteur et au ton choisi.</p>
+      <div class="article-tip"><strong>💡 Conseil :</strong> Remplissez le champ "Contexte IA" dans vos paramètres pour que les réponses soient encore plus personnalisées.</div>
+      <div class="article-warn"><strong>⚠ Déconnexion :</strong> La session Gmail expire périodiquement. Reconnectez depuis Paramètres → Gmail si nécessaire.</div>`
   },
   'tableau-bord': {
     title: '📊 Tableau de bord & KPIs',
     body: `
-      <h2>Les 5 indicateurs clés</h2>
+      <h2>Les indicateurs clés</h2>
       <ul>
         <li><strong>CA Facturé</strong> : total TTC de toutes vos factures sur la période.</li>
         <li><strong>CA ce mois</strong> : chiffre d'affaires du mois en cours.</li>
@@ -974,6 +993,55 @@ const ARTICLE_CONTENT = {
       <p>Si vous êtes assujetti à la TVA (Paramètres), une section affiche la TVA nette à reverser, la ventilation par taux (10%/20%) et la période en cours selon votre régime.</p>
       <div class="article-warn"><strong>⚠</strong> Le calcul TVA ne tient pas compte de la TVA déductible sur vos achats. Consultez votre comptable pour le montant net réel.</div>`
   },
+  'paiement': {
+    title: '💶 Marquer une facture payée & rappels',
+    body: `
+      <h2>Suivre les paiements</h2>
+      <p>Dans l'onglet <strong>Dossiers</strong>, ouvrez un dossier contenant une facture. Vous verrez en haut les stats de vos <strong>factures impayées</strong> en rouge.</p>
+      <h2>Marquer comme payée</h2>
+      <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Ouvrez le dossier</strong><span>Cliquez sur le dossier contenant la facture.</span></div></div>
+      <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Cliquez "💶 Marquer payée"</strong><span>Le bouton est vert sur chaque facture non réglée.</span></div></div>
+      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>La facture est archivée</strong><span>La date de paiement est enregistrée, le dossier passe automatiquement en "Terminé".</span></div></div>
+      <h2>Générer un rappel de paiement</h2>
+      <p>Si une facture reste impayée, cliquez sur <strong>"📨 Rappel"</strong>. L'IA génère automatiquement un email de rappel professionnel incluant le montant, le numéro de facture et votre IBAN si renseigné.</p>
+      <div class="article-tip"><strong>💡 Conseil :</strong> Renseignez votre IBAN dans Paramètres → Mon entreprise pour qu'il apparaisse automatiquement dans les rappels de paiement.</div>`
+  },
+  'dictee-vocale': {
+    title: '🎙️ Utiliser la dictée vocale',
+    body: `
+      <h2>Comment dicter</h2>
+      <p>La dictée vocale est disponible sur les onglets <strong>Devis</strong> et <strong>Facture</strong>. Le bouton micro amber est toujours visible en haut du formulaire.</p>
+      <h2>Conseils pour une meilleure reconnaissance</h2>
+      <ul>
+        <li>Parlez clairement et à vitesse normale</li>
+        <li>Mentionnez les montants en chiffres : "cent vingt euros" ou "120 euros"</li>
+        <li>Épélez les noms difficiles si nécessaire</li>
+        <li>Donnez les dates complètes : "le quinze mars deux mille vingt-six"</li>
+      </ul>
+      <h2>Exemples de dictées efficaces</h2>
+      <p><em>"Devis pour Madame Dupont, 12 rue de la Paix Paris, réfection salle de bain, 10 heures de travail, fournitures 340 euros, prestation le 20 mai."</em></p>
+      <p><em>"Facture pour la société ABC, installation réseau informatique, 6 heures à 80 euros de l'heure, déplacement 50 euros."</em></p>
+      <div class="article-tip"><strong>💡 Navigateurs :</strong> Chrome, Edge, Opera et Safari uniquement. Firefox et Brave Desktop ne supportent pas la reconnaissance vocale.</div>`
+  },
+  'pdf-facture': {
+    title: '📄 Générer une facture en PDF',
+    body: `
+      <h2>Deux façons de créer une facture</h2>
+      <p><strong>1. Depuis un devis accepté</strong> — Cliquez sur "💶 Convertir" dans le dossier une fois le devis signé ou marqué accepté. La facture hérite automatiquement des informations du devis.</p>
+      <p><strong>2. Directement</strong> — Sélectionnez l'onglet "Facture" dans l'Application, dictez ou saisissez, puis cliquez "Générer la facture".</p>
+      <h2>Contenu du PDF</h2>
+      <ul>
+        <li>En-tête avec vos informations entreprise et logo (si renseigné)</li>
+        <li>Informations client complètes</li>
+        <li>Tableau des prestations avec quantités et prix HT</li>
+        <li>Totaux HT, TVA et TTC</li>
+        <li>IBAN et conditions de paiement en pied de page</li>
+        <li>Mentions légales (RC Pro, décennale, certifications si renseignées)</li>
+      </ul>
+      <h2>Numérotation automatique</h2>
+      <p>Chaque facture reçoit un numéro séquentiel au format <strong>FAC-YYYY-NNN</strong> (ex: FAC-2026-001). La numérotation est continue et ne peut pas être modifiée manuellement — c'est une exigence fiscale.</p>
+      <div class="article-tip"><strong>💡 Facturation électronique 2026 :</strong> Vos factures sont compatibles avec la réforme via FactPulse. Voir l'article dédié.</div>`
+  },
   'facturation-epro': {
     title: '🏛️ Réforme facturation électronique 2026',
     body: `
@@ -986,10 +1054,10 @@ const ARTICLE_CONTENT = {
       </ul>
       <h2>Artio & FactPulse</h2>
       <p>Artio est <strong>Solution Compatible DGFiP</strong> via <strong>FactPulse</strong>, une PDP agréée.</p>
-      <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Créez un compte FactPulse</strong><span>Sur <strong>factpulse.fr</strong>, créez votre compte entreprise.</span></div></div>
+      <div class="article-step"><div class="article-step-num">1</div><div class="article-step-body"><strong>Créez un compte FactPulse</strong><span>Sur factpulse.fr, créez votre compte entreprise.</span></div></div>
       <div class="article-step"><div class="article-step-num">2</div><div class="article-step-body"><strong>Obtenez votre token</strong><span>Dans votre espace FactPulse, générez un token API.</span></div></div>
-      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Configurez dans Artio</strong><span><strong>Paramètres → Mon entreprise → Token FactPulse</strong>, collez et sauvegardez.</span></div></div>
-      <div class="article-step"><div class="article-step-num">4</div><div class="article-step-body"><strong>Émettez vos factures électroniques</strong><span>Le bouton "⚡ Envoyer via FactPulse" devient disponible sur chaque facture.</span></div></div>
+      <div class="article-step"><div class="article-step-num">3</div><div class="article-step-body"><strong>Configurez dans Artio</strong><span>Paramètres → Mon entreprise → Token FactPulse, collez et sauvegardez.</span></div></div>
+      <div class="article-step"><div class="article-step-num">4</div><div class="article-step-body"><strong>Émettez vos factures</strong><span>Le bouton "⚡ Émettre" devient disponible sur chaque facture dans vos dossiers.</span></div></div>
       <div class="article-tip"><strong>💡 Calendrier :</strong> La réforme est progressive. Renseignez-vous auprès de votre expert-comptable pour votre date d'obligation.</div>`
   },
   'securite': {
@@ -1001,21 +1069,44 @@ const ARTICLE_CONTENT = {
       <ul>
         <li><strong>Profil entreprise</strong> : stocké dans votre espace personnel isolé.</li>
         <li><strong>Dossiers & documents</strong> : accessibles uniquement par vous.</li>
-        <li><strong>Clé API</strong> : stockée chiffrée, jamais transmise en clair.</li>
-        <li><strong>Signatures clients</strong> : supprimées automatiquement 24h après expiration.</li>
+        <li><strong>Signatures clients</strong> : supprimées automatiquement après expiration.</li>
+        <li><strong>Données bancaires</strong> : aucune donnée de carte stockée par Artio — paiements gérés par Stripe.</li>
       </ul>
       <h2>Isolation des données</h2>
       <p>Le système <strong>Row Level Security (RLS)</strong> de Supabase garantit qu'il est techniquement impossible pour un utilisateur d'accéder aux données d'un autre.</p>
       <h2>IA & confidentialité</h2>
-      <p>Les dictées sont traitées par <strong>Anthropic (Claude)</strong> via votre clé API personnelle. Artio ne stocke pas l'historique de vos conversations avec l'IA.</p>
-      <h2>Suppression de compte</h2>
-      <p>Pour demander la suppression de vos données, utilisez le formulaire de contact sur cette page. La demande est traitée manuellement dans les meilleurs délais.</p>
+      <p>L'IA (Claude par Anthropic) est utilisée via une clé centralisée Artio. Vos dictées et prompts ne sont pas stockés et ne servent pas à entraîner les modèles.</p>
       <div class="article-tip"><strong>💡 RGPD :</strong> Artio est conforme au RGPD. Vos données ne sont jamais revendues à des tiers.</div>`
+  },
+  'suppression-compte': {
+    title: '🗑️ Supprimer mon compte',
+    body: `
+      <h2>Votre droit à l'effacement</h2>
+      <p>Conformément au RGPD, vous pouvez supprimer votre compte à tout moment depuis <strong>Paramètres → Compte → Supprimer mon compte</strong>.</p>
+      <h2>Ce qui est supprimé</h2>
+      <ul>
+        <li>Votre profil et informations entreprise</li>
+        <li>Vos dossiers, devis et documents</li>
+        <li>Votre carnet clients</li>
+        <li>Votre agenda et rendez-vous</li>
+        <li>Votre connexion Gmail</li>
+      </ul>
+      <h2>Ce qui est conservé</h2>
+      <ul>
+        <li><strong>Vos factures</strong> — obligation légale de conservation 10 ans (Code général des impôts)</li>
+        <li>Un enregistrement minimal (email + identifiant Stripe) pour prévenir les abus d'essai gratuit</li>
+      </ul>
+      <h2>Abonnement en cours</h2>
+      <p>Si vous avez un abonnement actif, il est <strong>annulé automatiquement</strong> lors de la suppression. Aucun remboursement au prorata.</p>
+      <div class="article-warn"><strong>⚠ Irréversible :</strong> La suppression est définitive. Téléchargez vos documents importants avant de procéder.</div>`
   }
 };
 
 function openArticle(id) {
-  const article = ARTICLE_CONTENT[id];
+  // Supporte aussi bien les IDs directs que la recherche par titre
+  const resolvedId = typeof id === 'string' && ARTICLE_CONTENT[id] ? id :
+    (ARTICLES.find(a => a.title === id)?.id) || id;
+  const article = ARTICLE_CONTENT[resolvedId];
   if (!article) return;
   document.getElementById('article-panel-title').textContent = article.title;
   document.getElementById('article-panel-body').innerHTML = article.body;
