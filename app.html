@@ -991,7 +991,7 @@ Infos: Client: ${doc.client?.nom||dos.client||"le client"} | Facture N°${docNum
 Langue: ${{"fr":"français","en":"English","es":"español","zh":"中文"}[S.langue]||"français"}.
 Ton: ferme mais professionnel, rappelle les coordonnées de paiement si disponibles (IBAN: ${e.iban||"non renseigné"}).
 Signe au nom de "${e.nom||"l'entreprise"}". Écris directement l'email sans commentaire.`;
-    const {text:txt,usage:ur}=await callClaude(prompt,400,"rappel_paiement");
+    const {text:txt,usage:ur}=await callClaude(prompt,400);
     logTokens("email",ur);
     set({loading:false,tab:"email",emailMode:"reponse",generatedText:txt});
     S.fields.client_nom=doc.client?.nom||dos.client||"";
