@@ -204,6 +204,7 @@ let S={
   dossiers:[],
   templates:[],
   savingTemplate:false,
+  rappelLoadingId:null,
   templateNom:"",
   profilSaved:false,
   syncing:false,
@@ -987,7 +988,7 @@ async function genererRappelPaiement(dosId,docNum){
   const dateFacture=doc.date||"date inconnue";
   const contexte=e.contexte_ia?"\n\nContexte entreprise : "+e.contexte_ia:"";
   const ibanInfo=e.iban?"Virement bancaire — IBAN : "+e.iban:"(IBAN non renseigné — à ajouter dans Paramètres)";
-  set({loading:true});
+  set({loading:true, rappelLoadingId:docNum});
   try{
     const prompt="Tu es l'assistant de "+(e.nom||"un prestataire indépendant")+" (secteur: "+(e.secteur||"services")+")."+contexte
       +"\n\nRédige un email de rappel de paiement, professionnel mais direct."
@@ -1010,13 +1011,14 @@ async function genererRappelPaiement(dosId,docNum){
     const {text:txt,usage:ur}=await callClaude(prompt,400);
     logTokens("email",ur);
     window.__emailBody=txt;
-    set({loading:false,tab:"email",emailMode:"reponse",generatedText:txt});
+    set({loading:false,tab:"email",emailMode:"reponse",generatedText:txt,rappelLoadingId:null});
     S.fields.client_nom=doc.client?.nom||dos.client||"";
     S.fields.client_email=doc.client?.email||"";
     render();
     showToast("💶 Email de rappel de paiement généré !");
   }catch(err){
     set({loading:false});
+    set({rappelLoadingId:null});
     if(err.message!=="plan_required")alert("Erreur : "+err.message);
   }
 }
@@ -1907,7 +1909,7 @@ function renderHistorique(){
                     ?`<span class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;">✓ Payée le ${doc.date_paye}</span>`
                     :`<button class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border-color:rgba(74,222,128,.3);" onclick="markPaye('${dos.id}','${doc.docNumber}')">💶 Marquer payée</button>`
                   }
-                  ${!doc.paye?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);" onclick="genererRappelPaiement('${dos.id}','${doc.docNumber}')">📨 Rappel</button>`:""}
+                  ${!doc.paye?(S.rappelLoadingId===doc.docNumber?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);cursor:default;" disabled>⏳ Génération...</button>`:`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);" onclick="genererRappelPaiement('${dos.id}','${doc.docNumber}')">📨 Rappel</button>`):""}
                   <button class="btn-small" style="background:${doc.factpulse_id?'rgba(74,222,128,.12)':'rgba(83,74,183,.15)'};color:${doc.factpulse_id?'var(--green)':'#9d95f5'};border-color:${doc.factpulse_id?'rgba(74,222,128,.3)':'rgba(83,74,183,.3)'};" onclick="emettreFacture('${dos.id}','${doc.docNumber}')">${S.emettreId===doc.docNumber?'⏳ Envoi...':(doc.factpulse_id?'✅ Émise':'⚡ Émettre')}</button>
                 `:""  }
                 ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button>`:`<button class="btn-small" style="color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
