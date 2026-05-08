@@ -234,8 +234,6 @@ async function loadUserData(userId){
           nature_operation:profil.nature_operation||"",
           contexte_ia:profil.contexte_ia||"",
           iban:profil.iban||"",
-          logo_base64:profil.logo_base64||null,
-          couleur_pdf:profil.couleur_pdf||"#378ADD",
           onboarding_done:profil.onboarding_done||false
       };
       S.profilSaved=!!profil.nom;
@@ -1258,13 +1256,12 @@ function generatePDF(doc){
 
   if(doc.entreprise.logo_base64){
     try{
-      // Calculer la largeur proportionnelle via un canvas temporaire
-      const img = new Image();
-      img.src = doc.entreprise.logo_base64;
-      const ratio = img.naturalWidth && img.naturalHeight ? img.naturalWidth/img.naturalHeight : 3;
-      logoW = Math.min(LOGO_H * ratio, 60); // max 60mm de large
+      // getImageProperties lit les dimensions réelles depuis le base64 (synchrone, fiable)
+      const props = pdf.getImageProperties(doc.entreprise.logo_base64);
+      const ratio = props.width / props.height;
+      logoW = Math.min(LOGO_H * ratio, 55); // hauteur fixe 14mm, largeur proportionnelle max 55mm
       pdf.addImage(doc.entreprise.logo_base64, "PNG", m, y-2, logoW, LOGO_H);
-      y += LOGO_H + 2; // espace sous le logo
+      y += LOGO_H + 3;
     }catch(e){
       pdf.setFontSize(16).setFont(undefined,"bold").text(doc.entreprise.nom,m,y);
       y += 6;
