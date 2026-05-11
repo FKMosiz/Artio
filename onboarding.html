@@ -461,9 +461,9 @@ Rédige uniquement le texte de contexte, sans titre ni commentaire.`;
           "Content-Type": "application/json",
           "Authorization": "Bearer " + _token
         },
-        feature: "onboarding",
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
+          feature: "onboarding",
           max_tokens: 600,
           messages: [{ role: "user", content: prompt }]
         })
