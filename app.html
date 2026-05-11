@@ -1089,64 +1089,69 @@ sendForSignature=async(dosId,docNum)=>{
 };
 window.sendForSignature=sendForSignature;
 // ─── FACTURATION ÉLECTRONIQUE FACTPULSE ─────────────────────────────────────
-window.emettreFacture=async function(dosId,docNum){
+// Migration : on ne fait plus l'appel à FactPulse en direct depuis le frontend.
+// Toute la logique (auth FactPulse via email+password en secrets serveur,
+// construction du payload, persistance des IDs) est désormais centralisée
+// dans la Edge Function index-factpulse. Le frontend lui envoie juste
+// { dossier_id, doc_number } et reçoit le résultat.
+window.emettreFacture=async function(dosId,docNum,opts){
+  const silent=opts&&opts.silent===true;
   const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
   const doc=dos.documents.find(d=>d.docNumber===docNum);if(!doc)return;
-  const token=S.entreprise?.factpulse_token;
-  if(!token){alert("⚡ Token FactPulse manquant.\n\nVa dans Paramètres → Mon entreprise → Token FactPulse.");return;}
-  if(!doc.entreprise?.siret){alert("SIRET manquant dans ton profil. Va dans Paramètres → Mon entreprise.");return;}
+  if(!S.entreprise?.siret){
+    if(!silent)alert("SIRET manquant dans ton profil. Va dans Paramètres → Mon entreprise.");
+    return;
+  }
+  // Validation client : SIRET obligatoire pour la facturation électronique B2B.
+  // En mode silent (auto-émission), on ne prompt PAS si SIRET client manquant
+  // — on abandonne silencieusement (cas typique : client B2C).
   let clientSiret=(doc.client?.siret||"").replace(/\s/g,"");
   if(!clientSiret){
+    if(silent)return;
     const raw=prompt("SIRET du client (B2B obligatoire) :\nEx: 35600000000048\n\nAnnule si client particulier (B2C non concerné).");
     if(!raw)return;
     clientSiret=raw.replace(/\s/g,"");
+    // On met à jour le document localement pour que l'Edge Function le voie
+    doc.client=doc.client||{};
+    doc.client.siret=clientSiret;
+    // Et on persiste en base avant l'appel
+    try{await upsertDossier(dos);}catch(e){console.warn("upsertDossier:",e);}
   }
-  const vatRate=parseFloat(doc.tvaRate)||0;
-  const lines=[];
-  if(doc.nb_heures&&S.entreprise?.taux_horaire){
-    lines.push({description:"Main d'œuvre",quantity:parseFloat(doc.nb_heures),unitPrice:parseFloat(S.entreprise.taux_horaire),vatRate});
-  }
-  (doc.pieces||[]).filter(p=>p.description&&p.prix_unitaire).forEach(p=>{
-    lines.push({description:p.description,quantity:parseFloat(p.quantite)||1,unitPrice:parseFloat(p.prix_unitaire),vatRate});
-  });
-  if(!lines.length){
-    lines.push({description:doc.description||"Prestation",quantity:1,unitPrice:parseFloat(doc.totalHT)||parseFloat(doc.ttc)||0,vatRate});
-  }
-  const parseFR=d=>{if(!d)return new Date().toISOString().slice(0,10);const[j,m,ay]=d.split("/");return`${ay}-${m}-${j}`;};
-  const payload={
-    invoiceData:{
-      number:doc.docNumber,
-      invoiceDate:parseFR(doc.date),
-      paymentDueDate:doc.validUntil?parseFR(doc.validUntil):parseFR(doc.date),
-      supplier:{siret:doc.entreprise.siret.replace(/\s/g,""),iban:(S.entreprise?.iban||"").replace(/\s/g,"")||undefined,routingAddress:doc.entreprise.siret.replace(/\s/g,"")},
-      recipient:{siret:clientSiret,routingAddress:clientSiret},
-      lines,
-      notes:[
-        {subjectCode:"PMT",content:"Indemnité forfaitaire pour frais de recouvrement : 40 €"},
-        {subjectCode:"PMD",content:"Pénalités de retard : taux légal en vigueur"},
-        {subjectCode:"AAB",content:"Pas d'escompte pour paiement anticipé"}
-      ]
-    },
-    profile:"EN16931",
-    destination:{type:"afnor"}
-  };
   set({emettreId:docNum});
   try{
-    const resp=await fetch("https://factpulse.fr/api/facturation/processing/invoices/submit-complete-async/",{
-      method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
-      body:JSON.stringify(payload)
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session){
+      if(!silent)alert("⚠️ Session expirée. Reconnecte-toi.");
+      set({emettreId:null});return;
+    }
+    const resp=await fetch(FUNCTIONS_URL+"/index-factpulse",{
+      method:"POST",
+      headers:{
+        "Authorization":"Bearer "+session.access_token,
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({dossier_id:dosId,doc_number:docNum})
     });
     const result=await resp.json();
-    if(!resp.ok){
-      const msg=result?.detail||result?.error||result?.message||JSON.stringify(result);
-      alert("❌ Erreur FactPulse :\n"+msg);set({emettreId:null});return;
+    if(!resp.ok||!result.success){
+      const msg=result?.error||result?.message||"Erreur inconnue";
+      if(!silent)alert("❌ Erreur FactPulse :\n"+msg);
+      else console.warn("FactPulse silent:",msg);
+      set({emettreId:null});return;
     }
-    const flowId=result?.afnorResult?.flowId||result?.flowId||result?.id||"émis";
-    dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,factpulse_id:flowId,factpulse_date:new Date().toISOString()}:d);
-    await upsertDossier(dos);
+    // L'Edge Function a déjà persisté factpulse_id en base.
+    // On rafraîchit le dossier local depuis la BDD pour récupérer l'état à jour.
+    const{data:freshDos}=await sb.from("dossiers").select("*").eq("id",dosId).single();
+    if(freshDos){
+      const idx=S.dossiers.findIndex(d=>d.id===dosId);
+      if(idx>=0)S.dossiers[idx]=freshDos;
+    }
     set({emettreId:null,dossiers:[...S.dossiers]});
-    alert("✅ Facture émise électroniquement !\nFlow ID : "+flowId);
-  }catch(e){alert("❌ Erreur réseau : "+e.message);set({emettreId:null});}
+    if(!silent)alert("✅ Facture émise électroniquement !\nFlow ID : "+(result.flow_id||result.factpulse_id||"émis"));
+  }catch(e){
+    if(!silent)alert("❌ Erreur réseau : "+e.message);
+    set({emettreId:null});
+  }
 };
 // ────────────────────────────────────────────────────────────────────────────
 // Convertit YYYY-MM-DD -> dd/mm/yyyy (format interne des documents)
@@ -1177,9 +1182,14 @@ async function _doConvert(dosId,docNum,dateFacture){
   dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,accepte:true}:d).concat([factDoc]);
   storeDoc(factDoc);
   await upsertDossier(dos);set({convertingId:null,pendingConvert:null,showDatePrestModal:false});
-  if(S.entreprise?.factpulse_token&&S.entreprise?.siret){
-    try{await window.emettreFacture(dosId,factNum);}
-    catch(e){console.warn("Auto-émission FactPulse échouee:",e.message);}
+  // Auto-émission FactPulse : déclenchée si SIRET pro présent.
+  // L'auth FactPulse est gérée côté serveur via secrets — pas besoin
+  // de token côté frontend. Si l'utilisateur n'a pas configuré FactPulse
+  // ou si le client est B2C, l'Edge Function renverra une erreur claire
+  // qu'on log silencieusement.
+  if(S.entreprise?.siret){
+    try{await window.emettreFacture(dosId,factNum,{silent:true});}
+    catch(e){console.warn("Auto-émission FactPulse échouée:",e.message);}
   }
 }
 window.startRename=function(id){
