@@ -239,9 +239,11 @@ async function loadUserData(userId){
           couleur_pdf:profil.couleur_pdf||null
       };
       S.profilSaved=!!profil.nom;
-      S.gmailEmail=profil.gmail_email||null;
-      S.gmailAccessToken=profil.gmail_access_token||null;
-      S.gmailTokenExpiry=profil.gmail_token_expiry?new Date(profil.gmail_token_expiry):null;
+      // Migration : on lit en priorité google_*, fallback gmail_* legacy
+      S.gmailEmail=profil.google_email||profil.gmail_email||null;
+      S.gmailAccessToken=profil.google_access_token||profil.gmail_access_token||null;
+      const expiryRaw=profil.google_token_expiry||profil.gmail_token_expiry;
+      S.gmailTokenExpiry=expiryRaw?new Date(expiryRaw):null;
     }
     // Charger les templates
     const{data:tpls}=await sb.from("templates").select("*").eq("user_id",userId).order("created_at",{ascending:false});
@@ -443,13 +445,19 @@ function handleGmailExpired(){
 }
 
 async function gmailDisconnect(){
-  const{data:{session}}=await sb.auth.getSession();
-  await sb.from("profils").update({
-    gmail_access_token:null,gmail_refresh_token:null,
-    gmail_token_expiry:null,gmail_email:null
-  }).eq("user_id",session.user.id);
-  S.gmailEmail=null;S.gmailAccessToken=null;S.emails=[];
-  render();
+  if(!confirm("Déconnecter Google ? Cela désactivera l'envoi d'emails ET la synchronisation Google Calendar."))return;
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session)return;
+    const res=await fetch(FUNCTIONS_URL+"/google-disconnect",{
+      method:"POST",
+      headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},
+      body:"{}"
+    });
+    if(!res.ok){const d=await res.json().catch(()=>({}));alert("Erreur : "+(d.error||"inconnue"));return;}
+    S.gmailEmail=null;S.gmailAccessToken=null;S.emails=[];
+    render();
+  }catch(e){alert("Erreur : "+e.message);}
 }
 
 async function gmailFetchEmails(){
@@ -498,8 +506,7 @@ async function gmailFetchEmails(){
 }
 
 async function gmailSendReply(emailId,threadId,messageId,from,subject,replyBody){
-  if(!S.gmailEmail||!S.gmailAccessToken){showToast("⚠️ Gmail non connecté");return;}
-  if(isGmailExpired()){handleGmailExpired();return;}
+  if(!S.gmailEmail){showToast("⚠️ Google non connecté");return;}
   try{
     const cleanSubj=(subject||"")
       .replace(/[\u2018\u2019\u201A\u201B]/g,"'")
@@ -507,26 +514,27 @@ async function gmailSendReply(emailId,threadId,messageId,from,subject,replyBody)
       .replace(/\u2026/g,"...");
     const subj=cleanSubj.startsWith("Re:")?cleanSubj:"Re: "+cleanSubj;
     showToast("📤 Envoi en cours…");
-    // Headers RFC 2822 avec In-Reply-To + References pour rester dans le fil
-    const inReplyTo=messageId?`\r\nIn-Reply-To: ${messageId}\r\nReferences: ${messageId}`:"";
-    const rawMsg=`To: ${from}\r\nSubject: ${subj}${inReplyTo}\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n${replyBody}`;
-    const encoded=btoa(unescape(encodeURIComponent(rawMsg))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
-    // Envoi direct via Gmail API avec le token OAuth de l'utilisateur + threadId
-    const res=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send",{
+    // Envoi via la Edge Function gmail-send (qui gère le refresh
+    // du token serveur-side, plus de problème d'expiration).
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session){showToast("⚠️ Session expirée");return;}
+    const res=await fetch(FUNCTIONS_URL+"/gmail-send",{
       method:"POST",
-      headers:{"Authorization":"Bearer "+S.gmailAccessToken,"Content-Type":"application/json"},
-      body:JSON.stringify({raw:encoded,threadId:threadId||emailId})
+      headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},
+      body:JSON.stringify({
+        to:from,
+        subject:subj,
+        text:replyBody,
+        threadId:threadId||emailId,
+        inReplyTo:messageId||null
+      })
     });
-    if(res.status===401){
-      S.gmailEmail=null;S.gmailAccessToken=null;
-      showToast("⚠️ Session Gmail expirée, reconnecte-toi dans les paramètres");return;
-    }
-    if(res.ok){
+    const data=await res.json();
+    if(res.ok&&data.success){
       showToast("✅ Email envoyé dans le fil !");
       gmailFetchEmails();
     }else{
-      const err=await res.json();
-      showToast("❌ Erreur Gmail : "+(err.error?.message||"inconnue"));
+      showToast("❌ Erreur Gmail : "+(data.error||"inconnue"));
     }
   }catch(e){
     showToast("❌ Erreur : "+e.message);

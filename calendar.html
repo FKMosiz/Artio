@@ -737,14 +737,12 @@ function renderGoogleBtn() {
   const el = document.getElementById("gcal-btn-wrap");
   if (!el) return;
   if (googleConnected) {
-    el.innerHTML = '<div class="gcal-btn connected"><div class="gcal-sync-dot"></div>Google Calendar connecté</div>';
+    // Bouton cliquable qui mène à Settings → onglet Google (pour
+    // visualiser la connexion ou déconnecter)
+    el.innerHTML = '<a class="gcal-btn connected" href="settings.html?tab=gmail" style="text-decoration:none;" title="Gérer la connexion Google"><div class="gcal-sync-dot"></div>Google Calendar connecté</a>';
   } else {
-    el.innerHTML = '<a class="gcal-btn disconnected" id="gcal-connect-btn" href="#">🔗 Connecter Google Calendar</a>';
-    document.getElementById("gcal-connect-btn")?.addEventListener("click", e => {
-      e.preventDefault();
-      const token = userSession?.access_token || "";
-      window.location.href = FN + "/google-calendar-auth?token=" + encodeURIComponent(token);
-    });
+    // Connexion unifiée Mail + Calendar via Settings (un seul OAuth)
+    el.innerHTML = '<a class="gcal-btn disconnected" href="settings.html?tab=gmail">🔗 Connecter Google Calendar</a>';
   }
 }
 

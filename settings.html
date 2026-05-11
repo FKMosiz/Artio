@@ -220,7 +220,7 @@ function toast(msg) {
 /* ── RENDER MAIN ── */
 function render() {
   const lang = localStorage.getItem("artio_langue") || "fr";
-  const tabs = [["profil","Mon entreprise"],["compte","Compte"],["gmail","Gmail"],["abonnement","Abonnement"]];
+  const tabs = [["profil","Mon entreprise"],["compte","Compte"],["gmail","Google"],["abonnement","Abonnement"]];
   document.getElementById("root").innerHTML = `
     <div class="page-title">Paramètres</div>
     <div class="tab-bar">
@@ -456,40 +456,45 @@ function renderGmail() {
     </div>`;
   }
   return `<div class="card">
-    <div class="card-title">Connexion Gmail</div>
-    <div class="card-sub">Connecte ton compte Gmail pour envoyer tes devis et factures directement depuis ta propre adresse email.</div>
+    <div class="card-title">Connexion Google</div>
+    <div class="card-sub">Connecte ton compte Google pour envoyer tes devis et factures depuis ta propre adresse email <strong>et</strong> synchroniser ton agenda Google Calendar avec Artio.</div>
     ${gmailEmail && !tokenExpired ? `
       <div class="gmail-connected">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
         <span>Connecté : ${esc(gmailEmail)}</span>
       </div>
-      <button class="btn-danger" onclick="doGmailDisconnect()">Déconnecter Gmail</button>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;">
+        ✉️ Envoi d'emails activé · 📅 Synchronisation Google Calendar activée
+      </div>
+      <button class="btn-danger" onclick="doGoogleDisconnect()">Déconnecter Google</button>
     ` : gmailEmail && tokenExpired ? `
       <div style="background:rgba(245,167,66,.08);border:1px solid rgba(245,167,66,.25);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px;margin-bottom:14px;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f5a742" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span style="font-size:13px;color:#f5a742;font-weight:600;">Session expirée : ${esc(gmailEmail)}</span>
       </div>
-      <button class="btn-primary" onclick="doGmailConnect()">🔄 Reconnecter Gmail</button>
-      <button class="btn-danger" style="margin-top:8px" onclick="doGmailDisconnect()">Déconnecter</button>
+      <button class="btn-primary" onclick="doGoogleConnect()">🔄 Reconnecter Google</button>
+      <button class="btn-danger" style="margin-top:8px" onclick="doGoogleDisconnect()">Déconnecter</button>
     ` : `
-      <button class="btn-primary" ${gmailConnecting?"disabled":""} onclick="doGmailConnect()">
-        ${gmailConnecting ? "Connexion en cours…" : "Se connecter à Gmail"}
+      <button class="btn-primary" ${gmailConnecting?"disabled":""} onclick="doGoogleConnect()">
+        ${gmailConnecting ? "Connexion en cours…" : "Se connecter à Google"}
       </button>
     `}
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
       <div class="section-sep" style="margin-top:0">Comment ça marche ?</div>
       <div style="font-size:12px;color:var(--muted);line-height:1.7">
-        En cliquant sur le bouton, tu seras redirigé vers Google pour autoriser Artio à envoyer des emails en ton nom.
-        Tes tokens sont stockés de façon sécurisée et ne sont jamais partagés. Tu peux déconnecter à tout moment.
+        En cliquant sur le bouton, tu seras redirigé vers Google pour autoriser Artio à accéder à ton compte (envoi d'emails et lecture/écriture de ton agenda principal).
+        Tes tokens sont stockés de façon sécurisée et ne sont jamais partagés. Tu peux déconnecter à tout moment — la révocation est aussi visible dans ton compte Google.
       </div>
     </div>
   </div>`;
 }
 
-function doGmailConnect() {
+function doGoogleConnect() {
   const scope = encodeURIComponent([
     "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/calendar.readonly",
     "https://www.googleapis.com/auth/userinfo.email"
   ].join(" "));
   const redirect = encodeURIComponent("https://www.monartio.fr/settings.html");
@@ -499,11 +504,12 @@ function doGmailConnect() {
     + `&response_type=code`
     + `&scope=${scope}`
     + `&access_type=offline`
-    + `&prompt=consent`;
+    + `&prompt=consent`
+    + `&include_granted_scopes=true`;
   window.location.href = url;
 }
 
-async function handleGmailCode(code) {
+async function handleGoogleCode(code) {
   gmailConnecting = true; render();
   try {
     const { data: { session } } = await sb.auth.getSession();
@@ -526,13 +532,16 @@ async function handleGmailCode(code) {
     }
     const data = await res.json();
     if (data.success) {
-      gmailEmail = data.gmail_email;
+      gmailEmail = data.google_email;
       // Recalculer l'expiry côté client (1h par défaut pour access token)
       gmailTokenExpiry = new Date(Date.now() + 3600 * 1000);
-      toast("✓ Gmail connecté : " + gmailEmail);
+      const features = [];
+      if (data.has_gmail_send) features.push("emails");
+      if (data.has_calendar)   features.push("agenda");
+      toast(`✓ Google connecté : ${gmailEmail}${features.length ? " (" + features.join(" + ") + ")" : ""}`);
       activeTab = "gmail";
     } else {
-      toast("Erreur Gmail : " + (data.error || "inconnue"));
+      toast("Erreur Google : " + (data.error || "inconnue"));
     }
   } catch(e) {
     toast("Erreur : " + e.message);
@@ -542,18 +551,31 @@ async function handleGmailCode(code) {
   render();
 }
 
-async function doGmailDisconnect() {
-  const { data: { session } } = await sb.auth.getSession();
-  await sb.from("profils").update({
-    gmail_access_token: null,
-    gmail_refresh_token: null,
-    gmail_token_expiry: null,
-    gmail_email: null
-  }).eq("user_id", session.user.id);
-  gmailEmail = null;
-  gmailTokenExpiry = null;
-  render();
-  toast("Gmail déconnecté");
+async function doGoogleDisconnect() {
+  if (!confirm("Déconnecter ton compte Google ? Cela désactivera l'envoi d'emails ET la synchronisation Google Calendar.")) return;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    const res = await fetch(FUNCTIONS_URL + "/google-disconnect", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + session.access_token,
+        "Content-Type":  "application/json"
+      },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      toast("Erreur : " + (data.error || "inconnue"));
+      return;
+    }
+    gmailEmail = null;
+    gmailTokenExpiry = null;
+    render();
+    toast("Google déconnecté");
+  } catch(e) {
+    toast("Erreur : " + e.message);
+  }
 }
 
 
@@ -864,20 +886,23 @@ document.getElementById("btn-logout").addEventListener("click", async () => { aw
     subscriptionStatus = p.subscription_status || "free";
     subscriptionEndDate = p.subscription_end_date || null;
     cancellationRequested = p.cancellation_requested || false;
-    gmailEmail = p.gmail_email || null;
-    gmailTokenExpiry = p.gmail_token_expiry ? new Date(p.gmail_token_expiry) : null;
+    gmailEmail = p.google_email || p.gmail_email || null;
+    // google_token_expiry est un timestamp ISO depuis la nouvelle migration ;
+    // gmail_token_expiry est en bigint (ms epoch). On gère les deux formats.
+    const expiryRaw = p.google_token_expiry || p.gmail_token_expiry;
+    gmailTokenExpiry = expiryRaw ? new Date(expiryRaw) : null;
   }
   const { data: fdata } = await sb.from("factures").select("*").eq("user_id", user.id).order("date_emission", {ascending:false});
   if (fdata) factures = fdata;
 
-  // Gestion retour OAuth Gmail
+  // Gestion retour OAuth Google (mail + calendar unifiés)
   const urlParams = new URLSearchParams(location.search);
   const gmailCode = urlParams.get("code");
   if (gmailCode) {
     history.replaceState(null, "", location.pathname);
     activeTab = "gmail";
     render();
-    await handleGmailCode(gmailCode);
+    await handleGoogleCode(gmailCode);
     return;
   }
 
