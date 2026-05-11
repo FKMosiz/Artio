@@ -55,7 +55,7 @@
       <div class="doc-title">Conditions Générales de Vente</div>
       <div class="doc-meta">
         <span>Service Artio — monartio.fr</span>
-        <span>Version 2.0 — Avril 2026</span>
+        <span>Version 2.1 — Mai 2026</span>
       </div>
     </div>
 
@@ -82,18 +82,20 @@
         <li>Gestion des clients et dossiers commerciaux</li>
         <li>Calendrier professionnel et rendez-vous</li>
         <li>Signature électronique simple (eIDAS)</li>
+        <li>Émission de factures électroniques B2B conformes Factur-X / EN16931 (via partenaire FactPulse), dans le cadre de la réforme française de la facturation électronique</li>
         <li>Tableau de bord financier</li>
         <li>Envoi d'emails générés par IA</li>
-        <li>Intégration Gmail optionnelle</li>
+        <li>Intégration Google optionnelle (Gmail + Google Calendar unifiés)</li>
+        <li>Application mobile (iOS / Android) en complément de l'application web, avec notifications push optionnelles</li>
       </ul>
 
       <h2>Article 4 – Tarifs</h2>
       <h3>4.1 Prix</h3>
       <table class="price-table">
-        <thead><tr><th>Formule</th><th>Prix mensuel</th><th>Engagement</th></tr></thead>
+        <thead><tr><th>Formule</th><th>Prix mensuel</th><th>Prix annuel (économie)</th><th>Engagement</th></tr></thead>
         <tbody>
-          <tr><td>Artio Starter</td><td>Voir monartio.fr</td><td>Mensuel, sans engagement</td></tr>
-          <tr><td>Artio Pro</td><td>Voir monartio.fr</td><td>Mensuel, sans engagement</td></tr>
+          <tr><td>Artio Solo</td><td>19 € HT / mois</td><td>190 € HT / an (2 mois offerts)</td><td>Mensuel, sans engagement</td></tr>
+          <tr><td>Artio Pro</td><td>39 € HT / mois</td><td>390 € HT / an (2 mois offerts)</td><td>Mensuel, sans engagement</td></tr>
         </tbody>
       </table>
       <p>Prix en euros, HT = TTC (franchise TVA). Les prix en vigueur sont ceux affichés sur monartio.fr au moment de la souscription.</p>
@@ -129,8 +131,13 @@
       <h3>8.4 Absence de conseil</h3>
       <p>Le Service ne constitue pas un conseil juridique, fiscal, comptable ou financier. L'Abonné est invité à consulter un professionnel qualifié pour toute question de conformité.</p>
 
-      <h2>Article 9 – Intégration Gmail</h2>
-      <p>L'intégration Gmail est optionnelle, activée sous consentement OAuth 2.0 explicite. L'Abonné est seul responsable du contenu des emails envoyés via son compte Gmail. L'Éditeur ne saurait être responsable des communications émises depuis le compte de l'Abonné. Les données Gmail sont traitées conformément à la <a href="/confidentialite.html" style="color:var(--teal)">Politique de Confidentialité</a>.</p>
+      <h2>Article 9 – Intégrations tierces et services optionnels</h2>
+      <h3>9.1 Intégration Google (Gmail + Google Calendar)</h3>
+      <p>L'intégration Google est optionnelle et unifiée : une seule autorisation OAuth 2.0 explicite couvre à la fois l'envoi et la lecture d'emails via Gmail et la synchronisation bidirectionnelle de Google Calendar. L'Abonné est seul responsable du contenu des emails envoyés et des événements créés via son compte Google. L'Éditeur ne saurait être responsable des communications émises depuis le compte de l'Abonné. Les données Google sont traitées conformément à la <a href="/confidentialite.html" style="color:var(--teal)">Politique de Confidentialité</a> et à la Google API Services User Data Policy.</p>
+      <h3>9.2 Facturation électronique (FactPulse)</h3>
+      <p>L'émission de factures électroniques au format Factur-X / EN16931 est réalisée via le partenaire technique français FactPulse, déclenchée par l'Abonné via le bouton « Émettre » sur une facture. L'Abonné est responsable de l'exactitude des informations transmises (notamment SIRET fournisseur et client). Une fois émise via FactPulse, une facture ne peut plus être modifiée pour des raisons d'intégrité fiscale et comptable.</p>
+      <h3>9.3 Application mobile et notifications push</h3>
+      <p>L'application mobile Artio (iOS / Android) est mise à disposition gratuitement aux Abonnés. Les notifications push sont optionnelles et désactivables à tout moment depuis les réglages du système d'exploitation. Aucune notification commerciale ou publicitaire n'est envoyée par ce canal.</p>
 
       <h2>Article 10 – Disponibilité du Service et maintenance</h2>
       <p>L'Éditeur s'efforce d'assurer la disponibilité du Service mais ne peut la garantir. Des interruptions peuvent survenir pour maintenance planifiée, pannes chez des prestataires tiers, événements de force majeure, ou incidents de sécurité. Aucune indemnisation n'est due en cas d'interruption, sauf faute grave de l'Éditeur dûment démontrée.</p>
@@ -144,7 +151,9 @@
           <tr><td>Stripe</td><td>Paiements et facturation</td><td>Données de paiement</td></tr>
           <tr><td>Resend</td><td>Emails transactionnels</td><td>Adresse email, notifications</td></tr>
           <tr><td>Anthropic (Claude)</td><td>IA générative</td><td>Contenu dicté pour génération</td></tr>
-          <tr><td>Google (Gmail API)</td><td>Intégration messagerie (opt.)</td><td>Emails (si activé)</td></tr>
+          <tr><td>Google (Gmail + Calendar)</td><td>Intégration messagerie et agenda (opt.)</td><td>Emails et événements (si activé)</td></tr>
+          <tr><td>FactPulse</td><td>Génération factures Factur-X</td><td>Contenu des factures émises électroniquement</td></tr>
+          <tr><td>Expo / Apple APNs / Google FCM</td><td>Notifications push mobiles (opt.)</td><td>Token push, contenu des notifications</td></tr>
         </tbody>
       </table>
       <p>Ces prestataires sont soumis à des obligations de confidentialité conformes au RGPD. L'Éditeur se réserve le droit de modifier ses prestataires en cas de changement substantiel affectant les données.</p>
@@ -197,7 +206,7 @@
   </main>
 
   <footer>
-    <span>Conditions Générales de Vente — Artio — Version 2.0 — Avril 2026</span>
+    <span>Conditions Générales de Vente — Artio — Version 2.1 — Mai 2026</span>
   </footer>
   <script src="legal-footer.js"></script>
 </body>

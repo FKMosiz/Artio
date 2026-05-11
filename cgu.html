@@ -72,7 +72,7 @@
       <div class="doc-title">Conditions Générales d'Utilisation</div>
       <div class="doc-meta">
         <span>Service Artio — monartio.fr</span>
-        <span>Version 2.0 — Avril 2026</span>
+        <span>Version 2.1 — Mai 2026</span>
       </div>
     </div>
 
@@ -90,7 +90,8 @@
         <li><strong>« Contenu »</strong> : données, documents, devis, factures créés dans le Service.</li>
         <li><strong>« Abonnement »</strong> : formule d'accès payant au Service.</li>
         <li><strong>« IA »</strong> : fonctionnalités d'intelligence artificielle propulsées par l'API Anthropic (Claude).</li>
-        <li><strong>« Intégration Gmail »</strong> : fonctionnalité optionnelle permettant l'envoi et la lecture d'emails via le compte Gmail personnel de l'Utilisateur.</li>
+        <li><strong>« Intégration Google »</strong> : fonctionnalité optionnelle permettant l'envoi et la lecture d'emails via le compte Gmail personnel de l'Utilisateur et la synchronisation bidirectionnelle de son agenda Google Calendar, via une autorisation OAuth 2.0 unifiée.</li>
+        <li><strong>« FactPulse »</strong> : partenaire technique français permettant l'émission de factures électroniques B2B au format Factur-X (PDF/A-3 + XML EN16931 embarqué), conformément à la réforme française de la facturation électronique applicable à partir de 2026.</li>
       </ul>
 
       <h2>Article 2 – Accès au Service</h2>
@@ -107,15 +108,17 @@
         <li>Génération de devis et factures par dictée vocale assistée par IA</li>
         <li>Gestion des dossiers clients et historique commercial</li>
         <li>Calendrier et gestion des rendez-vous</li>
-        <li>Signature électronique de documents</li>
+        <li>Signature électronique simple de documents (eIDAS)</li>
+        <li>Émission de factures électroniques B2B conformes Factur-X / EN16931 (via partenaire FactPulse), dans le cadre de la réforme française de la facturation électronique applicable progressivement à partir de 2026</li>
         <li>Tableau de bord financier (KPIs, chiffre d'affaires)</li>
         <li>Envoi d'emails professionnels générés par IA</li>
-        <li>Intégration Gmail optionnelle (envoi et lecture d'emails)</li>
+        <li>Intégration Google optionnelle (Gmail + Google Calendar unifiés)</li>
+        <li>Application mobile (iOS / Android) avec notifications push optionnelles, en complément de l'application web</li>
       </ul>
       <h3>3.2 Fonctionnalités en version bêta</h3>
       <p>Certaines fonctionnalités peuvent être proposées en version bêta, signalée dans l'interface. Elles sont fournies sans garantie de stabilité ou de continuité.</p>
       <h3>3.3 Dépendance aux services tiers</h3>
-      <p>Certaines fonctionnalités dépendent de services tiers (API Anthropic, API Gmail, Stripe). L'Éditeur ne garantit pas la continuité de ces services.</p>
+      <p>Certaines fonctionnalités dépendent de services tiers (API Anthropic, APIs Google Gmail et Calendar, Stripe, FactPulse, Expo Push API). L'Éditeur ne garantit pas la continuité de ces services et ne saurait être tenu responsable d'une indisponibilité imputable à un de ces partenaires.</p>
       <h3>3.4 Limites liées à l'IA</h3>
       <p>Les documents générés par l'IA constituent exclusivement un outil d'assistance à la rédaction. L'Utilisateur est seul responsable de leur vérification avant tout envoi ou utilisation légale, fiscale ou commerciale. L'Éditeur ne garantit pas l'exactitude ni l'absence d'hallucinations dans les contenus générés.</p>
       <h3>3.5 Usages interdits des fonctionnalités IA</h3>
@@ -130,21 +133,33 @@
       <h3>3.6 Signature électronique</h3>
       <p>La signature proposée est une signature électronique <strong>simple</strong> au sens du Règlement eIDAS n°910/2014. Elle ne constitue pas une signature avancée ou qualifiée.</p>
 
-      <h2>Article 4 – Intégration Gmail</h2>
-      <h3>4.1 Nature et caractère optionnel</h3>
-      <p>L'intégration Gmail est optionnelle et requiert un consentement explicite. Elle n'est pas activée par défaut.</p>
-      <h3>4.2 Consentement et révocabilité</h3>
-      <p>L'activation passe par le flux OAuth 2.0 de Google. Le consentement est révocable à tout moment depuis les paramètres du compte Artio ou via <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" style="color:var(--teal)">myaccount.google.com/permissions</a>.</p>
-      <h3>4.3 Périmètre d'accès</h3>
+      <h2>Article 4 – Intégrations tierces et services optionnels</h2>
+
+      <h3>4.1 Intégration Google (Gmail + Google Calendar) — optionnelle</h3>
+      <p>L'intégration Google est unifiée : une seule autorisation OAuth 2.0 couvre Gmail et Google Calendar. Elle est optionnelle et requiert un consentement explicite. Elle n'est pas activée par défaut.</p>
+      <p>L'activation passe par le flux OAuth 2.0 de Google. Le consentement est révocable à tout moment depuis les paramètres du compte Artio (déconnexion complète Gmail + Calendar en un clic) ou via <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" style="color:var(--teal)">myaccount.google.com/permissions</a>.</p>
+      <p><strong>Périmètre d'accès :</strong></p>
       <ul>
         <li><code style="color:var(--amber)">gmail.send</code> : envoi d'emails depuis le compte Gmail de l'Utilisateur</li>
         <li><code style="color:var(--amber)">gmail.readonly</code> : lecture des emails pour affichage dans Artio</li>
+        <li><code style="color:var(--amber)">calendar.events</code> : création et modification d'événements dans Google Calendar</li>
+        <li><code style="color:var(--amber)">calendar.readonly</code> : lecture des événements pour synchronisation dans Artio</li>
+        <li><code style="color:var(--amber)">userinfo.email</code> : récupération de l'adresse email Google</li>
       </ul>
-      <p>Aucun accès humain aux emails n'est effectué par l'Éditeur, sauf nécessité technique exceptionnelle (incident de sécurité, débogage critique) et dans ce cas uniquement dans le strict minimum nécessaire, sans lecture du contenu des messages.</p>
-      <h3>4.4 Responsabilité sur les emails</h3>
-      <p>L'Utilisateur est seul responsable du contenu des emails envoyés, y compris ceux générés par l'IA. Il s'engage à ne pas utiliser l'intégration pour l'envoi de spam ou de contenus illicites.</p>
-      <h3>4.5 Données issues de Gmail</h3>
-      <p>Les données Gmail sont traitées conformément à la <a href="/confidentialite.html" style="color:var(--teal)">Politique de Confidentialité</a>. Elles ne sont pas utilisées à des fins publicitaires ni partagées au-delà des sous-traitants nécessaires.</p>
+      <p>Aucun accès humain aux données Google n'est effectué par l'Éditeur, sauf nécessité technique exceptionnelle (incident de sécurité, débogage critique) et dans ce cas uniquement dans le strict minimum nécessaire.</p>
+      <p>L'Utilisateur est seul responsable du contenu des emails envoyés (y compris ceux générés par l'IA) et des événements créés dans son agenda. Il s'engage à ne pas utiliser l'intégration pour l'envoi de spam ou de contenus illicites.</p>
+      <p>Les données Google sont traitées conformément à la <a href="/confidentialite.html" style="color:var(--teal)">Politique de Confidentialité</a> et à la <strong>Google API Services User Data Policy</strong> (Limited Use Policy). Elles ne sont pas utilisées à des fins publicitaires ni partagées au-delà des sous-traitants nécessaires.</p>
+
+      <h3>4.2 Émission de factures électroniques (FactPulse) — sur action explicite</h3>
+      <p>Pour permettre l'émission de factures électroniques conformes à la réforme française de la facturation électronique (DGFiP), Artio s'appuie sur le partenaire <strong>FactPulse</strong>, plateforme française de génération Factur-X au format européen EN16931.</p>
+      <p>L'émission est déclenchée uniquement par l'Utilisateur (clic sur le bouton « Émettre » d'une facture). Aucun envoi automatique sans action explicite.</p>
+      <p>Les données transmises sont strictement limitées au contenu de la facture concernée (lignes, montants, SIRET fournisseur et client, mentions légales obligatoires). Aucune donnée personnelle hors champ professionnel n'est partagée.</p>
+      <p>L'Utilisateur est responsable de l'exactitude des données saisies dans la facture avant émission. Une fois émise via FactPulse, la facture ne peut plus être modifiée (intégrité comptable et fiscale).</p>
+
+      <h3>4.3 Notifications push (application mobile) — optionnelles</h3>
+      <p>L'application mobile Artio peut envoyer des notifications push (iOS / Android) relatives à l'activité de l'Utilisateur : devis signé, paiement reçu, échec de paiement, rappel de signature envoyé à un client.</p>
+      <p>L'activation requiert l'acceptation explicite de l'Utilisateur lors du premier lancement de l'application. Elle peut être désactivée à tout moment depuis les réglages du système d'exploitation ou en désinstallant l'application.</p>
+      <p>Aucune notification commerciale, publicitaire ou de relance marketing n'est envoyée par ce canal. Le contenu des notifications est limité au strict nécessaire.</p>
 
       <h2>Article 5 – Abonnement et facturation</h2>
       <h3>5.1 Modèle tarifaire</h3>
@@ -216,7 +231,7 @@
   </main>
 
   <footer>
-    <span>Conditions Générales d'Utilisation — Artio — Version 2.0 — Avril 2026</span>
+    <span>Conditions Générales d'Utilisation — Artio — Version 2.1 — Mai 2026</span>
   </footer>
 
   <script src="legal-footer.js"></script>
