@@ -216,10 +216,14 @@ const SUPABASE_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
 const { createClient } = supabase;
 const sb = window.sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let user = null, dossiers = [], filterType = "mois", filterFrom = "", filterTo = "", chartFilter = "6mois", assujetti_tva = false, tva_frequence = "trimestrielle", tva_regime = "encaissements";
+let user = null, dossiers = [], filterType = "mois", filterFrom = "", filterTo = "", chartFilter = "6mois", chartFrom = "", chartTo = "", assujetti_tva = false, tva_frequence = "trimestrielle", tva_regime = "encaissements";
 const now_ = new Date();
 filterFrom = new Date(now_.getFullYear()-1, 0, 1).toISOString().slice(0,10);
 filterTo   = now_.toISOString().slice(0,10);
+// Le graphique a son propre range custom, indépendant des KPIs du haut.
+// Par défaut on initialise sur les 6 derniers mois.
+chartFrom  = new Date(now_.getFullYear(), now_.getMonth()-5, 1).toISOString().slice(0,10);
+chartTo    = now_.toISOString().slice(0,10);
 
 const MOIS      = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
 const MOIS_LONG = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -257,8 +261,8 @@ function buildBars(caParMois, now) {
     for (let i=5; i>=0; i--) { const dt=new Date(now); dt.setMonth(dt.getMonth()-i); const k=dt.getFullYear()+"-"+dt.getMonth(); bars.push({label:MOIS[dt.getMonth()], val:caParMois[k]||0}); }
   } else if (chartFilter === "annee") {
     for (let i=0; i<12; i++) { const k=now.getFullYear()+"-"+i; bars.push({label:MOIS[i], val:caParMois[k]||0}); }
-  } else if (chartFilter === "custom" && filterFrom && filterTo) {
-    const from = new Date(filterFrom), to = new Date(filterTo);
+  } else if (chartFilter === "custom" && chartFrom && chartTo) {
+    const from = new Date(chartFrom), to = new Date(chartTo);
     let cur = new Date(from.getFullYear(), from.getMonth(), 1);
     while (cur <= to) {
       const k = cur.getFullYear()+"-"+cur.getMonth();
@@ -413,13 +417,20 @@ function render() {
     </div>
 
     <div class="chart-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;flex-wrap:wrap;">
         <div class="card-title" style="margin-bottom:0">CA mensuel</div>
-        <select style="background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;" onchange="chartFilter=this.value;render()">
-          <option value="6mois" ${chartFilter==="6mois"?"selected":""}>6 derniers mois</option>
-          <option value="annee" ${chartFilter==="annee"?"selected":""}>Année en cours</option>
-          <option value="custom" ${chartFilter==="custom"?"selected":""}>Personnalisé</option>
-        </select>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          ${chartFilter === "custom" ? `
+            <input type="date" class="date-input" value="${chartFrom}" onchange="chartFrom=this.value;render()" max="${new Date().toISOString().slice(0,10)}"/>
+            <span class="date-sep">→</span>
+            <input type="date" class="date-input" value="${chartTo}" onchange="chartTo=this.value;render()" max="${new Date().toISOString().slice(0,10)}"/>
+          ` : ""}
+          <select style="background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;" onchange="chartFilter=this.value;render()">
+            <option value="6mois" ${chartFilter==="6mois"?"selected":""}>6 derniers mois</option>
+            <option value="annee" ${chartFilter==="annee"?"selected":""}>Année en cours</option>
+            <option value="custom" ${chartFilter==="custom"?"selected":""}>Personnalisé</option>
+          </select>
+        </div>
       </div>
       <div class="bar-chart">${bars}</div>
     </div>
