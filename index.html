@@ -380,6 +380,128 @@
     .tw-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all .2s; }
     .tw-swatch.on { border-color: white; transform: scale(1.15); }
 
+    /* ── HERO WAITLIST INLINE ────────────────────── */
+    .hero-wl-form {
+      display: flex; gap: 10px; flex-wrap: wrap; max-width: 480px;
+    }
+    .hero-wl-form .wl-input {
+      flex: 1; min-width: 200px;
+      padding: 14px 18px; font-size: 15px;
+    }
+    .hero-wl-success {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 18px; background: rgba(62,207,207,.1);
+      border: 1px solid rgba(62,207,207,.25); border-radius: 12px;
+      font-size: 14px; color: var(--teal); font-weight: 500;
+      max-width: 480px;
+    }
+    .hero-wl-note {
+      font-size: 12px; color: var(--muted); margin-top: 10px;
+    }
+
+    /* ── PRICING BLUR ────────────────────────────── */
+    .price-blurred {
+      filter: blur(7px); user-select: none; pointer-events: none;
+      transition: filter .3s;
+    }
+    .price-lock-wrap {
+      position: relative; display: inline-block;
+    }
+    .price-lock-overlay {
+      position: absolute; inset: -4px -8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pc-locked .btn-plan {
+      background: var(--surface-2); color: var(--muted);
+      border: 1px solid var(--border-hi);
+      box-shadow: none;
+    }
+    .pc-locked .btn-plan:hover {
+      border-color: var(--amber); color: var(--amber);
+      background: var(--amber-dim); box-shadow: none; transform: none;
+    }
+
+    /* ── WAITLIST ────────────────────────────────── */
+    #waitlist {
+      padding: 120px 48px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #waitlist::before {
+      content: '';
+      position: absolute; top: -120px; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 500px;
+      background: radial-gradient(ellipse, rgba(245,167,66,0.09) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .wl-inner { position: relative; z-index: 2; max-width: 600px; margin: 0 auto; }
+    .wl-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--amber-dim); border: 1px solid rgba(245,167,66,0.28);
+      border-radius: 100px; padding: 6px 14px; margin-bottom: 24px;
+      font-size: 13px; font-weight: 500; color: var(--amber);
+    }
+    .wl-title {
+      font-family: var(--fh); font-size: clamp(30px, 3.8vw, 48px);
+      font-weight: 800; line-height: 1.12; letter-spacing: -0.025em;
+      margin-bottom: 16px; color: var(--text);
+    }
+    .wl-sub {
+      font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 40px;
+      max-width: 480px; margin-left: auto; margin-right: auto;
+    }
+    .wl-form {
+      display: flex; gap: 10px; max-width: 460px;
+      margin: 0 auto 16px; flex-wrap: wrap; justify-content: center;
+    }
+    .wl-input {
+      flex: 1; min-width: 220px; padding: 14px 18px;
+      background: var(--bg); border: 1px solid var(--border-hi);
+      border-radius: 12px; font-size: 15px; color: var(--text);
+      font-family: var(--fb); outline: none; transition: border-color .2s;
+    }
+    .wl-input:focus { border-color: var(--amber); }
+    .wl-input::placeholder { color: var(--muted); }
+    .wl-btn {
+      padding: 14px 28px; background: var(--amber); color: #080b14;
+      border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: var(--fb); white-space: nowrap;
+      box-shadow: 0 0 36px var(--amber-glow);
+      transition: transform .2s, box-shadow .2s, opacity .2s;
+    }
+    .wl-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 48px rgba(245,167,66,.42); }
+    .wl-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    .wl-legal { font-size: 12px; color: var(--muted); margin: 0 0 36px; }
+    .wl-success {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 14px 24px; background: rgba(62,207,207,.1);
+      border: 1px solid rgba(62,207,207,.25); border-radius: 12px;
+      font-size: 15px; color: var(--teal); font-weight: 500;
+      max-width: 460px; margin: 0 auto 16px;
+    }
+    .wl-error {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 12px 20px; background: rgba(248,113,113,.1);
+      border: 1px solid rgba(248,113,113,.25); border-radius: 12px;
+      font-size: 14px; color: #f87171;
+      max-width: 460px; margin: 0 auto 16px;
+    }
+    .wl-perks {
+      display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;
+      margin-top: 36px;
+    }
+    .wl-perk {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted);
+    }
+    .wl-perk-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--amber); flex-shrink: 0;
+    }
+
     @media (max-width: 860px) {
       nav { padding: 0 20px; }
       .nav-links { display: none; }
@@ -391,6 +513,9 @@
       .testi-grid { grid-template-columns: 1fr; }
       .pricing-grid { grid-template-columns: 1fr; }
       footer { padding: 32px 20px; flex-direction: column; text-align: center; }
+      #waitlist { padding: 80px 20px; }
+      .wl-form { flex-direction: column; }
+      .wl-input, .wl-btn { width: 100%; }
     }
     #time-savings {
       padding: 120px 48px;
@@ -558,8 +683,7 @@
     <li><a href="contact.html" data-fr="Contact" data-en="Contact">Contact</a></li>
   </ul>
   <div class="nav-right">
-    <button class="btn-login" onclick="window.location='/login'" data-fr="Se connecter" data-en="Log in">Se connecter</button>
-    <button class="btn-nav" onclick="window.location='/login'" data-fr="S'inscrire gratuitement" data-en="Sign up free">S'inscrire gratuitement</button>
+    <button class="btn-nav" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})" data-fr="Accès anticipé" data-en="Early access">Accès anticipé</button>
   </div>
 </nav>
 
@@ -571,20 +695,25 @@
     <div>
       <div class="hero-badge">
         <span class="badge-dot"></span>
-        <span data-fr="Nouvelle génération d'administratif intelligent" data-en="Next-gen intelligent admin">Nouvelle génération d'administratif intelligent</span>
+        <span data-fr="🚀 Early Bird · Lancement Juillet 2026" data-en="🚀 Early Bird · Launch July 2026">🚀 Early Bird · Lancement Juillet 2026</span>
       </div>
       <h1>
         <span data-fr="Dictez." data-en="Speak.">Dictez.</span><br>
         <span class="h1-accent" data-fr="Artio s'occupe" data-en="Artio handles">Artio s'occupe</span><br>
         <span data-fr="du reste." data-en="the rest.">du reste.</span>
       </h1>
-      <p class="hero-sub" data-fr="Dictez, Artio génère votre devis ou facture en 30 secondes. Signez en ligne, suivez vos paiements, gérez vos clients. Tout ça, depuis un seul endroit." data-en="Quotes, invoices, follow-ups — generated by your voice in 30 seconds. So you can focus on your craft.">
-        Devis, factures, relances — générés par votre voix en 30 secondes. Pour que vous puissiez vous concentrer sur votre vrai métier.
+      <p class="hero-sub" data-fr="Devis, factures, relances — générés par votre voix en 30 secondes. Inscrivez-vous avant le lancement et bénéficiez du <strong style='color:var(--amber)'>tarif fondateur figé à vie</strong> + 2 mois offerts." data-en="Quotes, invoices, follow-ups — generated by your voice in 30 seconds. Sign up before launch and get your <strong style='color:var(--amber)'>founder price locked for life</strong> + 2 months free.">
+        Devis, factures, relances — générés par votre voix en 30 secondes. Inscrivez-vous avant le lancement et bénéficiez du <strong style="color:var(--amber)">tarif fondateur figé à vie</strong> + 2 mois offerts.
       </p>
-      <div class="hero-ctas">
-        <button class="btn-primary" onclick="window.location='/login'" data-fr="S'inscrire gratuitement" data-en="Sign up free">S'inscrire gratuitement</button>
-
+      <form class="hero-wl-form" id="hero-waitlist-form" onsubmit="submitWaitlist(event,'hero-wl-email','hero-waitlist-form','hero-wl-success')">
+        <input type="email" class="wl-input" id="hero-wl-email" placeholder="votre@email.fr" required autocomplete="email" />
+        <button type="submit" class="btn-primary" id="hero-wl-btn" data-fr="Accès anticipé →" data-en="Early access →">Accès anticipé →</button>
+      </form>
+      <div id="hero-wl-success" style="display:none" class="hero-wl-success">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span data-fr="C'est noté ! On vous contacte dès l'ouverture." data-en="You're in! We'll reach out when we launch.">C'est noté ! On vous contacte dès l'ouverture.</span>
       </div>
+      <p class="hero-wl-note" data-fr="Pas de CB · Pas de spam · Offre réservée aux inscrits avant le lancement" data-en="No CC · No spam · Offer reserved for pre-launch sign-ups">Pas de CB · Pas de spam · Offre réservée aux inscrits avant le lancement</p>
       <div class="hero-legal">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"></polyline></svg>
         <div>
@@ -903,14 +1032,16 @@
 
   <div class="pricing-grid">
     <!-- SOLO -->
-    <div class="pc">
+    <div class="pc pc-locked">
       <div class="p-name">Solo</div>
       <div class="p-desc" data-fr="Pour travailler vite et bien, dès le premier jour" data-en="To work fast and well, from day one">Pour travailler vite et bien, dès le premier jour</div>
       <div class="p-price">
-        <span class="p-amount" id="price-solo">19 €</span>
-        <span class="p-suf" data-fr="/ mois" data-en="/ mo">/ mois</span>
+        <span class="price-lock-wrap">
+          <span class="p-amount price-blurred" id="price-solo">19 €</span>
+        </span>
+        <span class="p-suf price-blurred" data-fr="/ mois" data-en="/ mo">/ mois</span>
       </div>
-      <div class="p-monthly" id="note-solo" data-fr="facturation mensuelle" data-en="billed monthly">facturation mensuelle</div>
+      <div class="p-monthly price-blurred" id="note-solo" data-fr="facturation mensuelle" data-en="billed monthly">facturation mensuelle</div>
       <div class="p-div"></div>
       <ul class="p-feats">
         <li><span class="ck">✓</span><span data-fr="Génération devis & factures par la voix" data-en="Voice-generated quotes & invoices">Génération devis & factures par la voix</span></li>
@@ -920,19 +1051,21 @@
         <li><span class="ck">✓</span><span data-fr="Dashboard financier complet" data-en="Full financial dashboard">Dashboard financier complet</span></li>
         <li><span class="ck">✓</span><span data-fr="Multilingue FR / EN / ES / ZH" data-en="Multilingual FR / EN / ES / ZH">Multilingue FR / EN / ES / ZH</span></li>
       </ul>
-      <button class="btn-plan out" onclick="window.location='/login'" data-fr="Démarrer en Solo" data-en="Start with Solo">Démarrer en Solo</button>
+      <button class="btn-plan out" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})" data-fr="🔒 Débloquer le tarif Early Bird" data-en="🔒 Unlock Early Bird pricing">🔒 Débloquer le tarif Early Bird</button>
     </div>
 
     <!-- PRO -->
-    <div class="pc pop">
+    <div class="pc pop pc-locked">
       <div class="pop-label" data-fr="Recommandé" data-en="Recommended">Recommandé</div>
       <div class="p-name">Pro</div>
       <div class="p-desc" data-fr="Pour piloter et développer votre activité" data-en="To manage and grow your business">Pour piloter et développer votre activité</div>
       <div class="p-price">
-        <span class="p-amount" id="price-pro">39 €</span>
-        <span class="p-suf" data-fr="/ mois" data-en="/ mo">/ mois</span>
+        <span class="price-lock-wrap">
+          <span class="p-amount price-blurred" id="price-pro">39 €</span>
+        </span>
+        <span class="p-suf price-blurred" data-fr="/ mois" data-en="/ mo">/ mois</span>
       </div>
-      <div class="p-monthly" id="note-pro" data-fr="facturation mensuelle" data-en="billed monthly">facturation mensuelle</div>
+      <div class="p-monthly price-blurred" id="note-pro" data-fr="facturation mensuelle" data-en="billed monthly">facturation mensuelle</div>
       <div class="p-div"></div>
       <ul class="p-feats">
         <li><span class="ck">✓</span><span data-fr="Tout Solo, plus :" data-en="Everything in Solo, plus:"><strong data-fr="Tout Solo, plus :" data-en="Everything in Solo, plus:">Tout Solo, plus :</strong></span></li>
@@ -945,7 +1078,43 @@
         <li><span class="ck">✓</span><span data-fr="Statistiques de conversion" data-en="Conversion analytics">Statistiques de conversion</span></li>
         <li><span class="ck">✓</span><span data-fr="Templates de devis sauvegardés" data-en="Saved quote templates">Templates de devis sauvegardés</span></li>
       </ul>
-      <button class="btn-plan prim" onclick="window.location='/login'" data-fr="Choisir Pro" data-en="Choose Pro">Choisir Pro</button>
+      <button class="btn-plan prim" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})" data-fr="🔒 Débloquer le tarif Early Bird" data-en="🔒 Unlock Early Bird pricing">🔒 Débloquer le tarif Early Bird</button>
+    </div>
+  </div>
+</section>
+
+<!-- WAITLIST -->
+<section id="waitlist" class="reveal">
+  <div class="wl-inner">
+    <div class="wl-badge">
+      <span class="badge-dot"></span>
+      <span data-fr="Offre Fondateur · Lancement Juillet 2026" data-en="Founder Offer · Launch July 2026">Offre Fondateur · Lancement Juillet 2026</span>
+    </div>
+    <h2 class="wl-title" data-fr="Rejoignez la liste avant le lancement.<br><span class='h1-accent'>Votre prix, figé à vie.</span>" data-en="Join the list before launch.<br><span class='h1-accent'>Your price, locked for life.</span>">
+      Rejoignez la liste avant le lancement.<br><span class="h1-accent">Votre prix, figé à vie.</span>
+    </h2>
+    <p class="wl-sub" data-fr="Inscrivez-vous maintenant. Au lancement, votre tarif sera figé à vie — même si le prix augmente un jour. Et si vous choisissez l'offre mensuelle : 2 mois offerts. Exclusif aux inscrits avant l'ouverture." data-en="Sign up now. At launch, your price will be locked forever — even if we raise our rates one day. Monthly plan? 2 months free. Exclusive to pre-launch members.">
+      Inscrivez-vous maintenant. Au lancement, votre tarif sera figé à vie — même si le prix augmente un jour. Et si vous choisissez l'offre mensuelle : 2 mois offerts. Exclusif aux inscrits avant l'ouverture.
+    </p>
+    <form class="wl-form" id="waitlist-form" onsubmit="submitWaitlist(event,'wl-email','waitlist-form','wl-success')">
+      <input type="email" class="wl-input" id="wl-email" placeholder="votre@email.fr" required autocomplete="email" />
+      <button type="submit" class="wl-btn" id="wl-btn">
+        <span id="wl-btn-text" data-fr="Rejoindre la liste" data-en="Join the waitlist">Rejoindre la liste</span>
+      </button>
+    </form>
+    <div id="wl-success" style="display:none" class="wl-success">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <span data-fr="C'est noté ! On vous contacte en priorité dès le lancement." data-en="You're in! We'll reach out as a priority when we launch.">C'est noté ! On vous contacte en priorité dès le lancement.</span>
+    </div>
+    <div id="wl-error" style="display:none" class="wl-error">
+      <span id="wl-error-msg" data-fr="Une erreur est survenue, veuillez réessayer." data-en="Something went wrong, please try again.">Une erreur est survenue, veuillez réessayer.</span>
+    </div>
+    <p class="wl-legal" data-fr="Pas de carte bancaire. Pas de spam. Désabonnement en 1 clic." data-en="No credit card. No spam. Unsubscribe in one click.">Pas de carte bancaire. Pas de spam. Désabonnement en 1 clic.</p>
+    <div class="wl-perks">
+      <div class="wl-perk"><span class="wl-perk-dot"></span><span data-fr="Accès prioritaire au lancement" data-en="Priority launch access">Accès prioritaire au lancement</span></div>
+      <div class="wl-perk"><span class="wl-perk-dot"></span><span data-fr="Tarif fondateur figé à vie" data-en="Founder price locked for life">Tarif fondateur figé à vie</span></div>
+      <div class="wl-perk"><span class="wl-perk-dot"></span><span data-fr="2 mois offerts (offre mensuelle)" data-en="2 months free (monthly plan)">2 mois offerts (offre mensuelle)</span></div>
+      <div class="wl-perk"><span class="wl-perk-dot"></span><span data-fr="Offre réservée avant le lancement" data-en="Offer closes at launch">Offre réservée avant le lancement</span></div>
     </div>
   </div>
 </section>
@@ -1067,6 +1236,57 @@
   }, 3000);
   vname.style.transition = 'opacity .35s';
   vactivity.style.transition = 'opacity .35s';
+
+  /* ── WAITLIST ── */
+  const SB_URL_WL = "https://mwmexkoeqeyueqgdkkni.supabase.co";
+  const SB_KEY_WL = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bWV4a29lcWV5dWVxZ2Rra25pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDEzMzcsImV4cCI6MjA5MDk3NzMzN30.380jxCN_CpWqmnwraob5crwUeBpTQxrXsTe2YDF-Rk8";
+
+  async function submitWaitlist(e, emailId, formId, successId) {
+    e.preventDefault();
+    const email   = document.getElementById(emailId).value.trim();
+    const form    = document.getElementById(formId);
+    const ok      = document.getElementById(successId);
+    const btn     = form.querySelector('button[type="submit"]');
+    const errEl   = document.getElementById('wl-error');
+    const errMsg  = document.getElementById('wl-error-msg');
+
+    btn.disabled = true;
+    const origText = btn.innerHTML;
+    btn.innerHTML = '…';
+    if (errEl) errEl.style.display = 'none';
+
+    try {
+      const res = await fetch(`${SB_URL_WL}/rest/v1/waitlist`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SB_KEY_WL,
+          'Authorization': `Bearer ${SB_KEY_WL}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ email, source: formId === 'hero-waitlist-form' ? 'hero' : 'landing-section' })
+      });
+
+      if (res.status === 201 || res.status === 200 || res.status === 409) {
+        form.style.display = 'none';
+        if (ok) ok.style.display = 'flex';
+        // Masquer aussi la note sous le hero
+        const note = document.querySelector('.hero-wl-note');
+        if (note && formId === 'hero-waitlist-form') note.style.display = 'none';
+      } else {
+        throw new Error('status ' + res.status);
+      }
+    } catch (ex) {
+      btn.disabled = false;
+      btn.innerHTML = origText;
+      if (errEl) {
+        errMsg.textContent = lang === 'en'
+          ? 'Something went wrong, please try again.'
+          : 'Une erreur est survenue, veuillez réessayer.';
+        errEl.style.display = 'flex';
+      }
+    }
+  }
 
   /* ── SCROLL REVEAL ── */
   const obs = new IntersectionObserver(entries => {
