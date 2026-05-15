@@ -12,7 +12,7 @@
 <script src="plan-guard.js"></script>
 <script>const PAGE_PLAN_REQUIRED = "solo";</script>
 <style>
-:root {
+:root, [data-theme="dark"] {
   --bg:        #080b14;
   --surface:   #0e1220;
   --surface-2: #141829;
@@ -32,6 +32,25 @@
   --r: 12px;
   --nav-h: 60px;
 }
+
+[data-theme="light"] {
+  --bg:        #faf8f3;
+  --surface:   #ffffff;
+  --surface-2: #f3efe6;
+  --surface-3: #ece7dc;
+  --border:    rgba(20,18,12,0.08);
+  --border-hi: rgba(20,18,12,0.16);
+  --text:      #1a1a1f;
+  --muted:     #6a6b78;
+  --amber:     #d97706;
+  --amber-dim: rgba(217,119,6,0.10);
+  --amber-glow:rgba(217,119,6,0.22);
+  --teal:      #0d9488;
+  --teal-dim:  rgba(13,148,136,0.10);
+  --green:     #16a34a;
+  --red:       #dc2626;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: var(--fb);
@@ -49,7 +68,7 @@ body {
   background: rgba(8,11,20,0.85); backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
 }
-.nav-logo { font-family: var(--fh); font-size: 18px; font-weight: 700; color: var(--amber); letter-spacing:-0.02em; text-decoration:none; flex-shrink:0; }
+.nav-logo { font-family: var(--fh); font-size: 18px; font-weight: 700; color: var(--text); letter-spacing:-0.02em; text-decoration:none; flex-shrink:0; }
 .nav-links { display: flex; gap: 3px; flex: 1; justify-content: center; overflow-x: auto; }
 .nav-link { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; color: var(--muted); text-decoration: none; white-space: nowrap; border: none; background: transparent; cursor: pointer; font-family: var(--fb); transition: color .2s, background .2s; }
 .nav-link:hover { color: var(--text); background: var(--surface); }
@@ -252,12 +271,25 @@ textarea.field-input { resize: vertical; min-height: 70px; }
       transition: color 0.2s;
     }
     .artio-legal-footer a:hover { color: var(--amber, #f5a742); }
+
+.theme-toggle { width:34px; height:34px; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border); border-radius:9px; cursor:pointer; color:var(--text); transition:all .2s; flex-shrink:0; }
+.theme-toggle:hover { border-color:var(--amber); color:var(--amber); }
+.theme-toggle svg { width:15px; height:15px; }
+.theme-toggle .icon-sun { display:none; }
+.theme-toggle .icon-moon { display:block; }
+[data-theme="light"] .theme-toggle .icon-sun { display:block; }
+[data-theme="light"] .theme-toggle .icon-moon { display:none; }
+.nav-logo { display:inline-flex !important; align-items:center; gap:8px; }
+.nav-logo img { width:28px; height:28px; display:block; flex-shrink:0; }
 </style>
 </head>
 <body>
 
 <header class="topbar">
-  <a class="nav-logo" href="home.html">Artio</a>
+  <a class="nav-logo" href="home.html">
+    <img src="artio-icon.png" alt="">
+    <span>Artio</span>
+  </a>
   <nav class="nav-links">
     <a class="nav-link" href="home.html">Accueil</a>
     <a class="nav-link" href="app.html">Application</a>
@@ -746,7 +778,20 @@ document.getElementById("btn-logout").addEventListener("click", async () => {
   render();
 })();
 </script>
-<script src="chat-widget.js"></script>
+<script src="chat-widget.js">
+  /* ── THEME ── */
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('artio-theme', next); } catch(e) {}
+  }
+  (function initTheme() {
+    let saved = 'dark';
+    try { saved = localStorage.getItem('artio-theme') || 'dark'; } catch(e) {}
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
 <div class="artio-legal-footer">
   <a href="cgv.html">CGV</a> · <a href="cgu.html">CGU</a> · <a href="confidentialite.html">Politique de confidentialité</a>
 </div>

@@ -7,13 +7,32 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <style>
-    :root {
+    :root, [data-theme="dark"] {
       --bg: #080b14; --surface: #0e1220; --surface-2: #141829;
       --border: rgba(255,255,255,0.07); --border-hi: rgba(255,255,255,0.13);
       --text: #e2e5f1; --muted: #6b7494; --amber: #f5a742;
       --amber-dim: rgba(245,167,66,0.12); --amber-glow: rgba(245,167,66,0.28);
       --teal: #3ecfcf; --fh: 'Space Grotesk', sans-serif; --fb: 'Plus Jakarta Sans', sans-serif; --r: 14px;
     }
+
+[data-theme="light"] {
+  --bg:        #faf8f3;
+  --surface:   #ffffff;
+  --surface-2: #f3efe6;
+  --surface-3: #ece7dc;
+  --border:    rgba(20,18,12,0.08);
+  --border-hi: rgba(20,18,12,0.16);
+  --text:      #1a1a1f;
+  --muted:     #6a6b78;
+  --amber:     #d97706;
+  --amber-dim: rgba(217,119,6,0.10);
+  --amber-glow:rgba(217,119,6,0.22);
+  --teal:      #0d9488;
+  --teal-dim:  rgba(13,148,136,0.10);
+  --green:     #16a34a;
+  --red:       #dc2626;
+}
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: var(--fb); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
     body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
@@ -23,7 +42,7 @@
 
     /* TOPBAR */
     .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 60px; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; background: rgba(8,11,20,0.82); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
-    .logo { font-family: var(--fh); font-size: 20px; font-weight: 700; color: var(--amber); letter-spacing: -0.02em; text-decoration: none; }
+    .logo { font-family: var(--fh); font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; text-decoration: none; }
     .back-btn { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; text-decoration: none; transition: color .2s; }
     .back-btn:hover { color: var(--text); }
     .back-btn svg { flex-shrink: 0; }
@@ -52,14 +71,26 @@
     footer { position: relative; z-index: 1; text-align: center; padding: 16px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); }
 
     @media (max-width: 600px) { .doc-title { font-size: 22px; } }
-  </style>
+  
+.theme-toggle { width:34px; height:34px; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border); border-radius:9px; cursor:pointer; color:var(--text); transition:all .2s; flex-shrink:0; }
+.theme-toggle:hover { border-color:var(--amber); color:var(--amber); }
+.theme-toggle svg { width:15px; height:15px; }
+.theme-toggle .icon-sun { display:none; }
+.theme-toggle .icon-moon { display:block; }
+[data-theme="light"] .theme-toggle .icon-sun { display:block; }
+[data-theme="light"] .theme-toggle .icon-moon { display:none; }
+.nav-logo { display:inline-flex !important; align-items:center; gap:8px; }
+.nav-logo img { width:28px; height:28px; display:block; flex-shrink:0; }
+.logo img { width:24px; height:24px; display:block; }
+.logo { display:inline-flex !important; align-items:center; gap:8px; }
+</style>
 </head>
 <body>
   <div class="blob-a"></div>
   <div class="blob-b"></div>
 
   <header class="topbar">
-    <a href="/" class="logo">Artio</a>
+    <a href="/" class="logo"><img src="artio-icon.png" alt=""><span>Artio</span></a>
     <a href="javascript:history.back()" class="back-btn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
       Retour
@@ -72,7 +103,7 @@
       <div class="doc-title">Conditions Générales d'Utilisation</div>
       <div class="doc-meta">
         <span>Service Artio — monartio.fr</span>
-        <span>Version 2.1 — Mai 2026</span>
+        <span>Version 2.0 — Avril 2026</span>
       </div>
     </div>
 
@@ -90,8 +121,7 @@
         <li><strong>« Contenu »</strong> : données, documents, devis, factures créés dans le Service.</li>
         <li><strong>« Abonnement »</strong> : formule d'accès payant au Service.</li>
         <li><strong>« IA »</strong> : fonctionnalités d'intelligence artificielle propulsées par l'API Anthropic (Claude).</li>
-        <li><strong>« Intégration Google »</strong> : fonctionnalité optionnelle permettant l'envoi et la lecture d'emails via le compte Gmail personnel de l'Utilisateur et la synchronisation bidirectionnelle de son agenda Google Calendar, via une autorisation OAuth 2.0 unifiée.</li>
-        <li><strong>« FactPulse »</strong> : partenaire technique français permettant l'émission de factures électroniques B2B au format Factur-X (PDF/A-3 + XML EN16931 embarqué), conformément à la réforme française de la facturation électronique applicable à partir de 2026.</li>
+        <li><strong>« Intégration Gmail »</strong> : fonctionnalité optionnelle permettant l'envoi et la lecture d'emails via le compte Gmail personnel de l'Utilisateur.</li>
       </ul>
 
       <h2>Article 2 – Accès au Service</h2>
@@ -108,17 +138,15 @@
         <li>Génération de devis et factures par dictée vocale assistée par IA</li>
         <li>Gestion des dossiers clients et historique commercial</li>
         <li>Calendrier et gestion des rendez-vous</li>
-        <li>Signature électronique simple de documents (eIDAS)</li>
-        <li>Émission de factures électroniques B2B conformes Factur-X / EN16931 (via partenaire FactPulse), dans le cadre de la réforme française de la facturation électronique applicable progressivement à partir de 2026</li>
+        <li>Signature électronique de documents</li>
         <li>Tableau de bord financier (KPIs, chiffre d'affaires)</li>
         <li>Envoi d'emails professionnels générés par IA</li>
-        <li>Intégration Google optionnelle (Gmail + Google Calendar unifiés)</li>
-        <li>Application mobile (iOS / Android) avec notifications push optionnelles, en complément de l'application web</li>
+        <li>Intégration Gmail optionnelle (envoi et lecture d'emails)</li>
       </ul>
       <h3>3.2 Fonctionnalités en version bêta</h3>
       <p>Certaines fonctionnalités peuvent être proposées en version bêta, signalée dans l'interface. Elles sont fournies sans garantie de stabilité ou de continuité.</p>
       <h3>3.3 Dépendance aux services tiers</h3>
-      <p>Certaines fonctionnalités dépendent de services tiers (API Anthropic, APIs Google Gmail et Calendar, Stripe, FactPulse, Expo Push API). L'Éditeur ne garantit pas la continuité de ces services et ne saurait être tenu responsable d'une indisponibilité imputable à un de ces partenaires.</p>
+      <p>Certaines fonctionnalités dépendent de services tiers (API Anthropic, API Gmail, Stripe). L'Éditeur ne garantit pas la continuité de ces services.</p>
       <h3>3.4 Limites liées à l'IA</h3>
       <p>Les documents générés par l'IA constituent exclusivement un outil d'assistance à la rédaction. L'Utilisateur est seul responsable de leur vérification avant tout envoi ou utilisation légale, fiscale ou commerciale. L'Éditeur ne garantit pas l'exactitude ni l'absence d'hallucinations dans les contenus générés.</p>
       <h3>3.5 Usages interdits des fonctionnalités IA</h3>
@@ -133,33 +161,21 @@
       <h3>3.6 Signature électronique</h3>
       <p>La signature proposée est une signature électronique <strong>simple</strong> au sens du Règlement eIDAS n°910/2014. Elle ne constitue pas une signature avancée ou qualifiée.</p>
 
-      <h2>Article 4 – Intégrations tierces et services optionnels</h2>
-
-      <h3>4.1 Intégration Google (Gmail + Google Calendar) — optionnelle</h3>
-      <p>L'intégration Google est unifiée : une seule autorisation OAuth 2.0 couvre Gmail et Google Calendar. Elle est optionnelle et requiert un consentement explicite. Elle n'est pas activée par défaut.</p>
-      <p>L'activation passe par le flux OAuth 2.0 de Google. Le consentement est révocable à tout moment depuis les paramètres du compte Artio (déconnexion complète Gmail + Calendar en un clic) ou via <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" style="color:var(--teal)">myaccount.google.com/permissions</a>.</p>
-      <p><strong>Périmètre d'accès :</strong></p>
+      <h2>Article 4 – Intégration Gmail</h2>
+      <h3>4.1 Nature et caractère optionnel</h3>
+      <p>L'intégration Gmail est optionnelle et requiert un consentement explicite. Elle n'est pas activée par défaut.</p>
+      <h3>4.2 Consentement et révocabilité</h3>
+      <p>L'activation passe par le flux OAuth 2.0 de Google. Le consentement est révocable à tout moment depuis les paramètres du compte Artio ou via <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" style="color:var(--teal)">myaccount.google.com/permissions</a>.</p>
+      <h3>4.3 Périmètre d'accès</h3>
       <ul>
         <li><code style="color:var(--amber)">gmail.send</code> : envoi d'emails depuis le compte Gmail de l'Utilisateur</li>
         <li><code style="color:var(--amber)">gmail.readonly</code> : lecture des emails pour affichage dans Artio</li>
-        <li><code style="color:var(--amber)">calendar.events</code> : création et modification d'événements dans Google Calendar</li>
-        <li><code style="color:var(--amber)">calendar.readonly</code> : lecture des événements pour synchronisation dans Artio</li>
-        <li><code style="color:var(--amber)">userinfo.email</code> : récupération de l'adresse email Google</li>
       </ul>
-      <p>Aucun accès humain aux données Google n'est effectué par l'Éditeur, sauf nécessité technique exceptionnelle (incident de sécurité, débogage critique) et dans ce cas uniquement dans le strict minimum nécessaire.</p>
-      <p>L'Utilisateur est seul responsable du contenu des emails envoyés (y compris ceux générés par l'IA) et des événements créés dans son agenda. Il s'engage à ne pas utiliser l'intégration pour l'envoi de spam ou de contenus illicites.</p>
-      <p>Les données Google sont traitées conformément à la <a href="/confidentialite.html" style="color:var(--teal)">Politique de Confidentialité</a> et à la <strong>Google API Services User Data Policy</strong> (Limited Use Policy). Elles ne sont pas utilisées à des fins publicitaires ni partagées au-delà des sous-traitants nécessaires.</p>
-
-      <h3>4.2 Émission de factures électroniques (FactPulse) — sur action explicite</h3>
-      <p>Pour permettre l'émission de factures électroniques conformes à la réforme française de la facturation électronique (DGFiP), Artio s'appuie sur le partenaire <strong>FactPulse</strong>, plateforme française de génération Factur-X au format européen EN16931.</p>
-      <p>L'émission est déclenchée uniquement par l'Utilisateur (clic sur le bouton « Émettre » d'une facture). Aucun envoi automatique sans action explicite.</p>
-      <p>Les données transmises sont strictement limitées au contenu de la facture concernée (lignes, montants, SIRET fournisseur et client, mentions légales obligatoires). Aucune donnée personnelle hors champ professionnel n'est partagée.</p>
-      <p>L'Utilisateur est responsable de l'exactitude des données saisies dans la facture avant émission. Une fois émise via FactPulse, la facture ne peut plus être modifiée (intégrité comptable et fiscale).</p>
-
-      <h3>4.3 Notifications push (application mobile) — optionnelles</h3>
-      <p>L'application mobile Artio peut envoyer des notifications push (iOS / Android) relatives à l'activité de l'Utilisateur : devis signé, paiement reçu, échec de paiement, rappel de signature envoyé à un client.</p>
-      <p>L'activation requiert l'acceptation explicite de l'Utilisateur lors du premier lancement de l'application. Elle peut être désactivée à tout moment depuis les réglages du système d'exploitation ou en désinstallant l'application.</p>
-      <p>Aucune notification commerciale, publicitaire ou de relance marketing n'est envoyée par ce canal. Le contenu des notifications est limité au strict nécessaire.</p>
+      <p>Aucun accès humain aux emails n'est effectué par l'Éditeur, sauf nécessité technique exceptionnelle (incident de sécurité, débogage critique) et dans ce cas uniquement dans le strict minimum nécessaire, sans lecture du contenu des messages.</p>
+      <h3>4.4 Responsabilité sur les emails</h3>
+      <p>L'Utilisateur est seul responsable du contenu des emails envoyés, y compris ceux générés par l'IA. Il s'engage à ne pas utiliser l'intégration pour l'envoi de spam ou de contenus illicites.</p>
+      <h3>4.5 Données issues de Gmail</h3>
+      <p>Les données Gmail sont traitées conformément à la <a href="/confidentialite.html" style="color:var(--teal)">Politique de Confidentialité</a>. Elles ne sont pas utilisées à des fins publicitaires ni partagées au-delà des sous-traitants nécessaires.</p>
 
       <h2>Article 5 – Abonnement et facturation</h2>
       <h3>5.1 Modèle tarifaire</h3>
@@ -231,9 +247,22 @@
   </main>
 
   <footer>
-    <span>Conditions Générales d'Utilisation — Artio — Version 2.1 — Mai 2026</span>
+    <span>Conditions Générales d'Utilisation — Artio — Version 2.0 — Avril 2026</span>
   </footer>
 
-  <script src="legal-footer.js"></script>
+  <script src="legal-footer.js">
+  /* ── THEME ── */
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('artio-theme', next); } catch(e) {}
+  }
+  (function initTheme() {
+    let saved = 'dark';
+    try { saved = localStorage.getItem('artio-theme') || 'dark'; } catch(e) {}
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
 </body>
 </html>

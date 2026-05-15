@@ -7,22 +7,44 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
   <style>
-    :root {
+    :root, [data-theme="dark"] {
       --bg: #080b14;
+      --bg-rgb: 8,11,20;
       --surface: #0e1220;
       --surface-2: #141829;
       --border: rgba(255,255,255,0.07);
       --border-hi: rgba(255,255,255,0.13);
       --text: #e2e5f1;
+      --on-accent: #080b14;
       --muted: #6b7494;
       --amber: #f5a742;
       --amber-dim: rgba(245,167,66,0.13);
       --amber-glow: rgba(245,167,66,0.3);
       --teal: #3ecfcf;
       --teal-dim: rgba(62,207,207,0.12);
+      --noise-opacity: 0.45;
+      --shadow-color: 0,0,0;
       --r: 16px;
       --fh: 'Space Grotesk', sans-serif;
       --fb: 'Plus Jakarta Sans', sans-serif;
+    }
+    [data-theme="light"] {
+      --bg: #faf8f3;
+      --bg-rgb: 250,248,243;
+      --surface: #ffffff;
+      --surface-2: #f3efe6;
+      --border: rgba(20,18,12,0.08);
+      --border-hi: rgba(20,18,12,0.16);
+      --text: #1a1a1f;
+      --on-accent: #ffffff;
+      --muted: #6a6b78;
+      --amber: #d97706;
+      --amber-dim: rgba(217,119,6,0.10);
+      --amber-glow: rgba(217,119,6,0.22);
+      --teal: #0d9488;
+      --teal-dim: rgba(13,148,136,0.10);
+      --noise-opacity: 0.18;
+      --shadow-color: 20,18,12;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
@@ -37,7 +59,7 @@
       content: '';
       position: fixed; inset: 0; pointer-events: none; z-index: 9998;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-      opacity: 0.45;
+      opacity: var(--noise-opacity);
     }
 
     /* ── NAV ─────────────────────────────────────── */
@@ -45,24 +67,38 @@
       position: fixed; top: 0; left: 0; right: 0; z-index: 200;
       height: 64px; padding: 0 48px;
       display: flex; align-items: center; justify-content: space-between;
-      background: rgba(8,11,20,0.75);
+      background: rgba(var(--bg-rgb), 0.78);
       backdrop-filter: blur(24px);
       border-bottom: 1px solid var(--border);
     }
     .nav-logo {
+      display: inline-flex; align-items: center; gap: 10px;
       font-family: var(--fh); font-size: 22px; font-weight: 800;
-      color: var(--amber);
+      color: var(--text);
       letter-spacing: -0.02em;
+      text-decoration: none;
     }
+    .nav-logo img { width: 32px; height: 32px; display: block; }
+    .theme-toggle {
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 9px;
+      cursor: pointer; color: var(--text); transition: all .2s;
+    }
+    .theme-toggle:hover { border-color: var(--amber); color: var(--amber); }
+    .theme-toggle svg { width: 16px; height: 16px; }
+    .theme-toggle .icon-sun { display: none; }
+    .theme-toggle .icon-moon { display: block; }
+    [data-theme="light"] .theme-toggle .icon-sun { display: block; }
+    [data-theme="light"] .theme-toggle .icon-moon { display: none; }
     .nav-links { display: flex; gap: 32px; list-style: none; }
     .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color .2s; }
     .nav-links a:hover { color: var(--text); }
     .nav-right { display: flex; align-items: center; gap: 12px; }
     .lang-toggle { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .lang-btn { padding: 6px 12px; font-size: 12px; font-weight: 700; font-family: var(--fb); background: none; border: none; cursor: pointer; color: var(--muted); transition: all .2s; letter-spacing: 0.05em; }
-    .lang-btn.active { background: var(--amber); color: #080b14; }
+    .lang-btn.active { background: var(--amber); color: var(--on-accent); }
     .btn-nav {
-      padding: 9px 20px; background: var(--amber); color: #080b14;
+      padding: 9px 20px; background: var(--amber); color: var(--on-accent);
       border: none; border-radius: 9px; font-size: 14px; font-weight: 600;
       cursor: pointer; font-family: var(--fb); transition: opacity .2s, transform .15s;
     }
@@ -113,7 +149,7 @@
     .hero-sub { font-size: 17px; color: var(--muted); max-width: 430px; margin-bottom: 36px; line-height: 1.75; }
     .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
     .btn-primary {
-      padding: 14px 28px; background: var(--amber); color: #080b14;
+      padding: 14px 28px; background: var(--amber); color: var(--on-accent);
       border: none; border-radius: 12px; font-size: 15px; font-weight: 600;
       cursor: pointer; font-family: var(--fb);
       box-shadow: 0 0 36px var(--amber-glow);
@@ -146,6 +182,7 @@
       width: 68px; height: 68px; border-radius: 50%; background: var(--amber);
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 0 40px var(--amber-glow); animation: mpulse 3s ease-in-out infinite;
+      color: var(--on-accent);
     }
     @keyframes mpulse { 0%,100% { box-shadow:0 0 30px var(--amber-glow); } 50% { box-shadow:0 0 64px rgba(245,167,66,.55); } }
     .waveform { display: flex; align-items: center; gap: 3px; height: 32px; }
@@ -171,6 +208,7 @@
     }
     .doc-lines { display: flex; flex-direction: column; gap: 7px; }
     .dline { height: 8px; border-radius: 4px; background: rgba(255,255,255,.06); }
+    [data-theme="light"] .dline { background: rgba(20,18,12,.08); }
     .dline.m { width: 78%; } .dline.s { width: 54%; }
     .dline.hl { background: rgba(245,167,66,.18); width: 42%; }
 
@@ -272,6 +310,7 @@
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 0 60px var(--amber-glow);
       transition: transform .2s, box-shadow .2s;
+      color: var(--on-accent);
     }
     .demo-player:hover .play-circle { transform: scale(1.1); box-shadow: 0 0 80px rgba(245,167,66,.5); }
     .demo-foot {
@@ -317,7 +356,7 @@
     }
     .pop-label {
       position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
-      background: var(--amber); color: #080b14;
+      background: var(--amber); color: var(--on-accent);
       font-size: 11px; font-weight: 700; padding: 4px 16px; border-radius: 100px; white-space: nowrap;
       letter-spacing: .04em;
     }
@@ -337,7 +376,7 @@
       border-radius: 10px; font-size: 14px; font-weight: 600;
       cursor: pointer; font-family: var(--fb); transition: all .2s; border: none;
     }
-    .btn-plan.prim { background: var(--amber); color: #080b14; }
+    .btn-plan.prim { background: var(--amber); color: var(--on-accent); }
     .btn-plan.prim:hover { box-shadow: 0 6px 30px var(--amber-glow); transform: translateY(-1px); }
     .btn-plan.out { background: transparent; color: var(--text); border: 1px solid var(--border-hi); }
     .btn-plan.out:hover { border-color: var(--amber); background: var(--amber-dim); }
@@ -349,9 +388,11 @@
       color: var(--muted); font-size: 13px; flex-wrap: wrap; gap: 12px;
     }
     .f-logo {
+      display: inline-flex; align-items: center; gap: 8px;
       font-family: var(--fh); font-weight: 800; font-size: 18px;
-      color: var(--amber);
+      color: var(--text);
     }
+    .f-logo img { width: 26px; height: 26px; display: block; }
     .f-links { display: flex; gap: 20px; }
     .f-links a { color: var(--muted); text-decoration: none; transition: color .2s; }
     .f-links a:hover { color: var(--text); }
@@ -365,7 +406,7 @@
       position: fixed; bottom: 24px; right: 24px; z-index: 1000;
       background: var(--surface-2); border: 1px solid var(--border-hi);
       border-radius: 18px; padding: 20px 22px; width: 250px;
-      box-shadow: 0 24px 64px rgba(0,0,0,.55); display: none;
+      box-shadow: 0 24px 64px rgba(var(--shadow-color), .35); display: none;
     }
     #tweaks-panel h3 { font-family: var(--fh); font-size: 14px; font-weight: 700; margin-bottom: 16px; }
     .tw-group { margin-bottom: 14px; }
@@ -376,9 +417,9 @@
       background: var(--surface); border: 1px solid var(--border);
       cursor: pointer; color: var(--muted); transition: all .2s; font-family: var(--fb);
     }
-    .tw-opt.on { background: var(--amber); color: #080b14; border-color: var(--amber); }
+    .tw-opt.on { background: var(--amber); color: var(--on-accent); border-color: var(--amber); }
     .tw-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all .2s; }
-    .tw-swatch.on { border-color: white; transform: scale(1.15); }
+    .tw-swatch.on { border-color: var(--text); transform: scale(1.15); }
 
     /* ── HERO WAITLIST INLINE ────────────────────── */
     .hero-wl-form {
@@ -466,7 +507,7 @@
     .wl-input:focus { border-color: var(--amber); }
     .wl-input::placeholder { color: var(--muted); }
     .wl-btn {
-      padding: 14px 28px; background: var(--amber); color: #080b14;
+      padding: 14px 28px; background: var(--amber); color: var(--on-accent);
       border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
       cursor: pointer; font-family: var(--fb); white-space: nowrap;
       box-shadow: 0 0 36px var(--amber-glow);
@@ -533,6 +574,7 @@
       background: var(--bg); border: 1px solid var(--border);
       border-radius: 20px; padding: 36px 32px;
     }
+    [data-theme="light"] .ts-side { background: var(--surface-2); }
     .ts-side.before { border-color: rgba(248,113,113,.2); }
     .ts-side.after {
       border-color: rgba(245,167,66,.3);
@@ -581,6 +623,7 @@
       background: linear-gradient(145deg, rgba(245,167,66,.05) 0%, var(--bg) 70%);
       position: relative; overflow: hidden;
     }
+    [data-theme="light"] .ts-counter-card { background: linear-gradient(145deg, rgba(217,119,6,.06) 0%, var(--surface-2) 70%); }
     .ts-counter-card::after {
       content: ''; position: absolute; bottom: -40px; right: -40px;
       width: 160px; height: 160px;
@@ -597,6 +640,7 @@
       background: var(--bg); border: 1px solid rgba(62,207,207,.2);
       border-radius: 20px; padding: 36px 32px;
     }
+    [data-theme="light"] .ts-time-back { background: var(--surface-2); border-color: rgba(13,148,136,.22); }
     .ts-time-back-title {
       font-family: var(--fh); font-size: 17px; font-weight: 700; margin-bottom: 20px;
       color: var(--teal);
@@ -675,7 +719,10 @@
 
 <!-- NAV -->
 <nav>
-  <div class="nav-logo">Artio</div>
+  <a class="nav-logo" href="index.html">
+    <img src="assets/artio-icon.png" alt="" />
+    <span>Artio</span>
+  </a>
   <ul class="nav-links">
     <li><a href="#features" data-fr="Fonctionnalités" data-en="Features">Fonctionnalités</a></li>
     <li><a href="#testimonials" data-fr="Avis clients" data-en="Reviews">Avis clients</a></li>
@@ -683,6 +730,10 @@
     <li><a href="contact.html" data-fr="Contact" data-en="Contact">Contact</a></li>
   </ul>
   <div class="nav-right">
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme" title="Changer de thème">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    </button>
     <button class="btn-nav" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})" data-fr="Accès anticipé" data-en="Early access">Accès anticipé</button>
   </div>
 </nav>
@@ -728,7 +779,7 @@
       <div class="voice-card">
         <div class="mic-area">
           <div class="mic-btn">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="#080b14">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2H3v2a9 9 0 0 0 8 8.94V22H8v2h8v-2h-3v-1.06A9 9 0 0 0 21 12v-2h-2z"/>
             </svg>
@@ -1024,7 +1075,7 @@
   <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:32px auto 0;">
     <span id="lbl-mensuel" style="font-size:14px;font-weight:600;color:var(--text)" data-fr="Mensuel" data-en="Monthly">Mensuel</span>
     <div id="billing-toggle" onclick="toggleBilling()" style="width:48px;height:26px;border-radius:100px;background:var(--amber);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;">
-      <div id="billing-knob" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#080b14;transition:transform .2s;"></div>
+      <div id="billing-knob" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--on-accent);transition:transform .2s;"></div>
     </div>
     <span id="lbl-annuel" style="font-size:14px;font-weight:400;color:var(--muted)" data-fr="Annuel" data-en="Annual">Annuel</span>
     <span id="badge-annuel" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;background:var(--teal-dim);color:var(--teal);border:1px solid rgba(62,207,207,.25)" data-fr="2 mois offerts" data-en="2 months free">2 mois offerts</span>
@@ -1125,14 +1176,17 @@
   <div class="section-tag" data-fr="Contact" data-en="Contact">Contact</div>
   <div class="section-title" data-fr="Une question ?<br>On est là." data-en="Any questions?<br>We're here.">Une question ?<br>On est là.</div>
   <p class="section-sub" style="margin:0 auto 40px" data-fr="Notre équipe répond à toutes vos questions sur Artio — onboarding, tarifs, fonctionnalités." data-en="Our team answers all your questions about Artio — onboarding, pricing, features.">Notre équipe répond à toutes vos questions sur Artio — onboarding, tarifs, fonctionnalités.</p>
-  <a href="contact.html" style="display:inline-flex;align-items:center;gap:10px;padding:14px 32px;background:var(--amber);border-radius:12px;font-family:var(--fh);font-size:15px;font-weight:700;color:#080b14;text-decoration:none;transition:opacity .2s,transform .2s" onmouseover="this.style.opacity='.88';this.style.transform='translateY(-2px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">
+  <a href="contact.html" style="display:inline-flex;align-items:center;gap:10px;padding:14px 32px;background:var(--amber);border-radius:12px;font-family:var(--fh);font-size:15px;font-weight:700;color:var(--on-accent);text-decoration:none;transition:opacity .2s,transform .2s" onmouseover="this.style.opacity='.88';this.style.transform='translateY(-2px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     <span data-fr="Nous contacter" data-en="Contact us">Nous contacter</span>
   </a>
 </section>
 
 <footer>
-  <div class="f-logo">Artio</div>
+  <div class="f-logo">
+    <img src="assets/artio-icon.png" alt="" />
+    <span>Artio</span>
+  </div>
   <div data-fr="© 2026 Artio. Tous droits réservés." data-en="© 2026 Artio. All rights reserved.">© 2026 Artio. Tous droits réservés.</div>
   <div class="f-links">
     <a href="confidentialite.html" data-fr="Confidentialité" data-en="Privacy">Confidentialité</a>
@@ -1145,6 +1199,13 @@
 <!-- TWEAKS -->
 <div id="tweaks-panel">
   <h3>Tweaks</h3>
+  <div class="tw-group">
+    <div class="tw-lbl" data-fr="Thème" data-en="Theme">Thème</div>
+    <div class="tw-opts" id="tw-theme">
+      <button class="tw-opt on" onclick="setTheme('dark')" data-fr="Sombre" data-en="Dark">Sombre</button>
+      <button class="tw-opt" onclick="setTheme('light')" data-fr="Clair" data-en="Light">Clair</button>
+    </div>
+  </div>
   <div class="tw-group">
     <div class="tw-lbl" data-fr="Variante Hero" data-en="Hero Variant">Variante Hero</div>
     <div class="tw-opts" id="tw-hero">
@@ -1171,6 +1232,26 @@
     if (e.data?.type === '__deactivate_edit_mode') document.getElementById('tweaks-panel').style.display = 'none';
   });
   window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+
+  /* ── THEME ── */
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    try { localStorage.setItem('artio-theme', t); } catch (e) {}
+    document.querySelectorAll('#tw-theme .tw-opt').forEach((b, i) => b.classList.toggle('on', ['dark','light'][i] === t));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { theme: t } }, '*');
+  }
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+    setTheme(cur === 'dark' ? 'light' : 'dark');
+  }
+  (function initTheme() {
+    let saved = 'dark';
+    try { saved = localStorage.getItem('artio-theme') || 'dark'; } catch (e) {}
+    document.documentElement.setAttribute('data-theme', saved);
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('#tw-theme .tw-opt').forEach((b, i) => b.classList.toggle('on', ['dark','light'][i] === saved));
+    });
+  })();
 
   /* ── LANG ── */
   let lang = 'fr';
