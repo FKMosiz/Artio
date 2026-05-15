@@ -14,15 +14,31 @@
   const MAX_TOKENS    = 512;
   const INACTIVITY_MS = 10 * 60 * 1000; // 10 minutes
 
-  const SYSTEM_PROMPT_BASE = `Tu es l'assistant IA d'Artio, une application SaaS pour les professionnels indépendants français (freelancers, artisans, coaches, photographes, etc.).
+  const SYSTEM_PROMPT_BASE = `Tu es l'assistant IA d'Artio, une application SaaS pour les professionnels indépendants français (freelancers, artisans, coaches, photographes, nettoyeurs, etc.).
 
 Artio permet de :
-- Générer des devis et factures par dictée vocale (IA)
-- Gérer les dossiers clients
-- Suivre les finances (tableau de bord, KPIs)
-- Gérer le calendrier et les rendez-vous
-- Signer électroniquement les documents
-- Gérer les paramètres de l'entreprise
+- Créer des devis et factures par dictée vocale (IA) ou manuellement
+- Gérer les dossiers clients (création, historique, suivi)
+- Tableau de bord avec KPIs financiers (CA, factures en attente, évolution mensuelle)
+- Gestion du calendrier et des rendez-vous (synchronisé avec Google Calendar)
+- Signature électronique des documents (lien envoyé au client, TTL 72h)
+- Intégration Gmail unifiée : connexion unique OAuth Google pour Gmail + Calendar
+- Envoi d'emails depuis l'application (via le compte Gmail connecté)
+- Génération automatique de numéros de facture conformes
+- Facturation électronique (FactPulse / PDP) pour conformité légale 2026
+- Interface en mode sombre (dark) ou clair (light) selon la préférence
+- Plans : Solo (19€/mois ou 190€/an) et Pro (39€/mois ou 390€/an)
+- Période d'essai fondateur 62 jours offerte aux premiers inscrits
+- Application mobile en cours de développement (React Native, parité feature web)
+- Paramètres : informations entreprise, TVA, logo PDF, contexte IA personnalisé
+
+Pages principales :
+- app.html → créer/modifier devis et factures
+- dashboard.html → tableau de bord financier
+- calendar.html → agenda et rendez-vous
+- clients.html → gestion des clients
+- settings.html → paramètres, abonnement, connexion Google
+- aide.html → documentation et FAQ
 
 Tu aides les utilisateurs à naviguer dans l'application, comprendre ses fonctionnalités et résoudre leurs problèmes. Réponds en français, de façon concise (3-4 phrases max), bienveillante et pratique.
 
@@ -352,6 +368,28 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
       .artio-chip{background:#1a2035;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 12px;font-size:12px;color:#a0a8c0;cursor:pointer;text-align:left;transition:background .2s,color .2s;font-family:inherit}
       .artio-chip:hover{background:rgba(245,167,66,.1);color:#e2e5f1;border-color:rgba(245,167,66,.2)}
       @media(max-width:420px){#artio-chat-panel{width:calc(100vw - 32px);height:70vh;right:0}}
+
+      /* ── Light mode overrides ── */
+      [data-theme="light"] #artio-chat-panel{background:#ffffff;border-color:rgba(20,18,12,0.12);box-shadow:0 16px 48px rgba(20,18,12,0.15)}
+      [data-theme="light"] #artio-chat-header{background:#f3efe6;border-bottom-color:rgba(20,18,12,0.10)}
+      [data-theme="light"] #artio-chat-header-title{color:#1a1a1f}
+      [data-theme="light"] #artio-chat-header-sub{color:#6a6b78}
+      [data-theme="light"] .artio-hbtn{color:#6a6b78}
+      [data-theme="light"] .artio-hbtn:hover{color:#1a1a1f;background:rgba(20,18,12,0.06)}
+      [data-theme="light"] #artio-chat-messages::-webkit-scrollbar-thumb{background:rgba(20,18,12,0.15)}
+      [data-theme="light"] .artio-msg.user{background:rgba(217,119,6,0.12);color:#1a1a1f;border-color:rgba(217,119,6,0.3)}
+      [data-theme="light"] .artio-msg.bot{background:#f3efe6;color:#1a1a1f;border-color:rgba(20,18,12,0.10)}
+      [data-theme="light"] .artio-msg.typing{background:#f3efe6;border-color:rgba(20,18,12,0.10)}
+      [data-theme="light"] .artio-dots span{background:#6a6b78}
+      [data-theme="light"] #artio-chat-footer{background:#ffffff;border-top-color:rgba(20,18,12,0.10)}
+      [data-theme="light"] #artio-chat-input{background:#f3efe6;border-color:rgba(20,18,12,0.15);color:#1a1a1f}
+      [data-theme="light"] #artio-chat-input::placeholder{color:#6a6b78}
+      [data-theme="light"] #artio-chat-send{background:#d97706}
+      [data-theme="light"] .artio-chat-empty{color:#6a6b78}
+      [data-theme="light"] .artio-chat-empty strong{color:#1a1a1f}
+      [data-theme="light"] .artio-chip{background:#f3efe6;border-color:rgba(20,18,12,0.12);color:#6a6b78}
+      [data-theme="light"] .artio-chip:hover{background:rgba(217,119,6,0.10);color:#1a1a1f;border-color:rgba(217,119,6,0.25)}
+      [data-theme="light"] #artio-chat-badge{border-color:#ffffff}
     `;
     document.head.appendChild(style);
 

@@ -303,15 +303,14 @@
 [data-theme="light"] .theme-toggle .icon-moon { display:none; }
 .nav-logo { display:inline-flex !important; align-items:center; gap:8px; }
 .nav-logo img { width:28px; height:28px; display:block; flex-shrink:0; }
+
+/* ── Light mode topbar ── */
+[data-theme="light"] .topbar,
+[data-theme="light"] .artio-nav {
+  background: rgba(250,248,243,0.92) !important;
+  border-bottom-color: rgba(20,18,12,0.10) !important;
+}
 </style>
-<script>
-  /* ── THEME INIT (head) ── */
-  (function(){
-    let t='dark';
-    try{t=localStorage.getItem('artio-theme')||'dark';}catch(e){}
-    document.documentElement.setAttribute('data-theme',t);
-  })();
-</script>
 </head>
 <body>
 
