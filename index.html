@@ -1245,8 +1245,8 @@
     setTheme(cur === 'dark' ? 'light' : 'dark');
   }
   (function initTheme() {
-    let saved = 'dark';
-    try { saved = localStorage.getItem('artio-theme') || 'dark'; } catch (e) {}
+    let saved = 'light';
+    try { saved = localStorage.getItem('artio-theme') || 'light'; } catch (e) {}
     document.documentElement.setAttribute('data-theme', saved);
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('#tw-theme .tw-opt').forEach((b, i) => b.classList.toggle('on', ['dark','light'][i] === saved));
