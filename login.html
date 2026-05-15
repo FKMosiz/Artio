@@ -270,6 +270,14 @@
   border-bottom-color: rgba(20,18,12,0.10) !important;
 }
 </style>
+<script>
+  /* ── THEME INIT (head) ── */
+  (function(){
+    let t='dark';
+    try{t=localStorage.getItem('artio-theme')||'dark';}catch(e){}
+    document.documentElement.setAttribute('data-theme',t);
+  })();
+</script>
 </head>
 <body>
 

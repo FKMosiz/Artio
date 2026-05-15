@@ -91,6 +91,14 @@
   border-bottom-color: rgba(20,18,12,0.10) !important;
 }
 </style>
+<script>
+  /* ── THEME INIT (head) ── */
+  (function(){
+    let t='dark';
+    try{t=localStorage.getItem('artio-theme')||'dark';}catch(e){}
+    document.documentElement.setAttribute('data-theme',t);
+  })();
+</script>
 </head>
 <body>
   <div class="blob-a"></div>
@@ -257,19 +265,15 @@
     <span>Conditions Générales d'Utilisation — Artio — Version 2.0 — Avril 2026</span>
   </footer>
 
-  <script src="legal-footer.js">
-  /* ── THEME ── */
-  function toggleTheme() {
-    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
-    const next = cur === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('artio-theme', next); } catch(e) {}
+  <script src="legal-footer.js"></script>
+<script>
+  /* ── THEME TOGGLE ── */
+  function toggleTheme(){
+    const cur=document.documentElement.getAttribute('data-theme')||'dark';
+    const next=cur==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    try{localStorage.setItem('artio-theme',next);}catch(e){}
   }
-  (function initTheme() {
-    let saved = 'dark';
-    try { saved = localStorage.getItem('artio-theme') || 'dark'; } catch(e) {}
-    document.documentElement.setAttribute('data-theme', saved);
-  })();
 </script>
 </body>
 </html>
