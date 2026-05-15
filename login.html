@@ -263,6 +263,14 @@
 .logo img { width:32px; height:32px; display:block; }
 .logo { display:inline-flex !important; align-items:center; gap:10px; }
 </style>
+<script>
+  /* ── THEME INIT (head) ── */
+  (function(){
+    let t='dark';
+    try{t=localStorage.getItem('artio-theme')||'dark';}catch(e){}
+    document.documentElement.setAttribute('data-theme',t);
+  })();
+</script>
 </head>
 <body>
 

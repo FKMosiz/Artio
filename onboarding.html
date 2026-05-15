@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root {
+:root, [data-theme="dark"] {
   --bg:        #080b14;
   --surface:   #0e1220;
   --surface-2: #141829;
@@ -25,6 +25,23 @@
   --green:     #4ade80;
   --fh: 'Space Grotesk', sans-serif;
   --fb: 'Plus Jakarta Sans', sans-serif;
+}
+[data-theme="light"] {
+  --bg:        #faf8f3;
+  --surface:   #ffffff;
+  --surface-2: #f3efe6;
+  --surface-3: #ece7dc;
+  --border:    rgba(20,18,12,0.08);
+  --border-hi: rgba(20,18,12,0.16);
+  --text:      #1a1a1f;
+  --muted:     #6a6b78;
+  --amber:     #d97706;
+  --amber-dim: rgba(217,119,6,0.10);
+  --amber-glow:rgba(217,119,6,0.22);
+  --teal:      #0d9488;
+  --teal-dim:  rgba(13,148,136,0.10);
+  --green:     #16a34a;
+  --red:       #dc2626;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
@@ -270,7 +287,23 @@ h1 {
   h1 { font-size: 22px; }
   .welcome-logo { font-size: 40px; }
 }
+
+.theme-toggle { width:34px; height:34px; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border); border-radius:9px; cursor:pointer; color:var(--text); transition:all .2s; flex-shrink:0; }
+.theme-toggle:hover { border-color:var(--amber); color:var(--amber); }
+.theme-toggle svg { width:15px; height:15px; }
+.theme-toggle .icon-sun { display:none; }
+.theme-toggle .icon-moon { display:block; }
+[data-theme="light"] .theme-toggle .icon-sun { display:block; }
+[data-theme="light"] .theme-toggle .icon-moon { display:none; }
 </style>
+<script>
+  /* ── THEME INIT (head) ── */
+  (function(){
+    let t='dark';
+    try{t=localStorage.getItem('artio-theme')||'dark';}catch(e){}
+    document.documentElement.setAttribute('data-theme',t);
+  })();
+</script>
 </head>
 <body>
 
@@ -694,6 +727,15 @@ function nextStep() { step++; render(); window.scrollTo(0,0); }
 
   render();
 })();
+</script>
+<script>
+  /* ── THEME ── */
+  function toggleTheme(){
+    const cur=document.documentElement.getAttribute('data-theme')||'dark';
+    const next=cur==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    try{localStorage.setItem('artio-theme',next);}catch(e){}
+  }
 </script>
 </body>
 </html>

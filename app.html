@@ -140,6 +140,14 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .nav-logo{display:inline-flex !important;align-items:center;gap:8px}
 .nav-logo img{width:28px;height:28px;display:block;flex-shrink:0}
 </style>
+<script>
+  /* ── THEME INIT (head) ── */
+  (function(){
+    let t='dark';
+    try{t=localStorage.getItem('artio-theme')||'dark';}catch(e){}
+    document.documentElement.setAttribute('data-theme',t);
+  })();
+</script>
 </head>
 <body>
 <div id="root">Chargement...</div>
@@ -2032,24 +2040,20 @@ function _showReadonlyAlert(msg) {
 }
 
 </script>
-<script src="chat-widget.js">
-  /* ── THEME ── */
-  function toggleTheme() {
-    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
-    const next = cur === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('artio-theme', next); } catch(e) {}
-  }
-  (function initTheme() {
-    let saved = 'dark';
-    try { saved = localStorage.getItem('artio-theme') || 'dark'; } catch(e) {}
-    document.documentElement.setAttribute('data-theme', saved);
-  })();
-</script>
+<script src="chat-widget.js"></script>
 <div class="artio-legal-footer">
   <a href="cgv.html">CGV</a> · <a href="cgu.html">CGU</a> · <a href="confidentialite.html">Politique de confidentialité</a>
 </div>
 
 
+<script>
+  /* ── THEME ── */
+  function toggleTheme(){
+    const cur=document.documentElement.getAttribute('data-theme')||'dark';
+    const next=cur==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    try{localStorage.setItem('artio-theme',next);}catch(e){}
+  }
+</script>
 </body>
 </html>

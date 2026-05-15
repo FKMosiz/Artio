@@ -243,6 +243,14 @@
 .logo img { width:28px; height:28px; display:block; flex-shrink:0; }
 .logo { display:inline-flex !important; align-items:center; gap:8px; }
 </style>
+<script>
+  /* ── THEME INIT (head) ── */
+  (function(){
+    let t='dark';
+    try{t=localStorage.getItem('artio-theme')||'dark';}catch(e){}
+    document.documentElement.setAttribute('data-theme',t);
+  })();
+</script>
 </head>
 <body>
 
@@ -556,19 +564,15 @@ async function doLogout() {
   window.location.href = 'index.html';
 }
 </script>
-<script src="chat-widget.js">
+<script src="chat-widget.js"></script>
+<script>
   /* ── THEME ── */
-  function toggleTheme() {
-    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
-    const next = cur === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('artio-theme', next); } catch(e) {}
+  function toggleTheme(){
+    const cur=document.documentElement.getAttribute('data-theme')||'dark';
+    const next=cur==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    try{localStorage.setItem('artio-theme',next);}catch(e){}
   }
-  (function initTheme() {
-    let saved = 'dark';
-    try { saved = localStorage.getItem('artio-theme') || 'dark'; } catch(e) {}
-    document.documentElement.setAttribute('data-theme', saved);
-  })();
 </script>
 </body>
 </html>
