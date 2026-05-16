@@ -1007,16 +1007,19 @@
     btn.innerHTML = '…';
     if (errEl) errEl.style.display = 'none';
     try {
-      const res = await fetch(`${SB_URL_WL}/rest/v1/waitlist`, {
+      const res = await fetch(`${SB_URL_WL}/functions/v1/waitlist-signup`, {
         method: 'POST',
-        headers: { 'Content-Type':'application/json','apikey':SB_KEY_WL,'Authorization':`Bearer ${SB_KEY_WL}`,'Prefer':'return=minimal' },
-        body: JSON.stringify({ email, source: formId==='hero-waitlist-form' ? 'hero' : 'landing-section' })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SB_KEY_WL}`
+        },
+        body: JSON.stringify({ email, source: formId === 'hero-waitlist-form' ? 'hero' : 'landing-section' })
       });
-      if ([200,201,409].includes(res.status)) {
+      if (res.ok) {
         form.style.display = 'none';
         if (ok) ok.style.display = 'flex';
         const note = document.querySelector('.hero-wl-note');
-        if (note && formId==='hero-waitlist-form') note.style.display = 'none';
+        if (note && formId === 'hero-waitlist-form') note.style.display = 'none';
       } else throw new Error();
     } catch {
       btn.disabled = false; btn.innerHTML = orig;
