@@ -178,6 +178,21 @@ canvas { display: block; width: 100%; height: 180px; touch-action: none; }
   background: var(--surface); border: 1px solid var(--border);
 }
 .status-icon { font-size: 44px; margin-bottom: 16px; }
+
+/* ── COUNTDOWN BANNER ── */
+#countdown-banner {
+  display: none;
+  width: 100%; max-width: 620px;
+  padding: 0 20px 12px;
+  position: relative; z-index: 1;
+}
+.countdown-inner {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--amber-dim); border: 1px solid var(--amber-glow);
+  border-radius: 12px; padding: 10px 16px;
+  font-size: 13px; color: var(--amber);
+}
+.countdown-inner span { font-weight: 700; font-variant-numeric: tabular-nums; }
 .status-title { font-family: var(--fh); font-size: 22px; font-weight: 700; margin-bottom: 8px; }
 .status-sub { font-size: 14px; color: var(--muted); line-height: 1.7; }
 .status-box.success { border-color: rgba(74,222,128,.2); }
@@ -226,6 +241,14 @@ canvas { display: block; width: 100%; height: 180px; touch-action: none; }
   <div class="sign-badge">
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     Signature sécurisée
+  </div>
+</div>
+
+<!-- Bannière compte à rebours expiration (injectée dynamiquement) -->
+<div id="countdown-banner">
+  <div class="countdown-inner">
+    <span>⏳</span>
+    <span>Ce document expire dans&nbsp;<span id="countdown-value">—</span></span>
   </div>
 </div>
 
@@ -515,6 +538,28 @@ window.submitSignature = async function() {
     </div>`;
 };
 
+/* ── COUNTDOWN ── */
+let _cdInterval = null;
+function startCountdown(expiresAt) {
+  const banner = document.getElementById("countdown-banner");
+  const val    = document.getElementById("countdown-value");
+  if (!banner || !val || !expiresAt) return;
+  banner.style.display = "block";
+  function tick() {
+    const diff = new Date(expiresAt) - Date.now();
+    if (diff <= 0) { val.textContent = "expiré"; clearInterval(_cdInterval); return; }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    val.textContent = d > 0
+      ? `${d}j ${h}h ${m}m ${s}s`
+      : h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`;
+  }
+  tick();
+  _cdInterval = setInterval(tick, 1000);
+}
+
 /* ── INIT ── */
 (async () => {
   const params = new URLSearchParams(window.location.search);
@@ -571,10 +616,14 @@ window.submitSignature = async function() {
   document.getElementById("content").innerHTML = renderDoc(sig);
   setTimeout(initCanvas, 100);
 
-  // Marquer le lien comme ouvert par le client (déclencheur fiable des relances).
-  // RPC SECURITY DEFINER : ne fait rien si déjà ouvert ou si non-pending.
+  // Marquer le lien comme ouvert et récupérer expires_at (set à now+7j par la RPC).
+  // Si déjà ouvert, la RPC ne touche rien mais on retourne expires_at existant.
   try {
     await sb.rpc("mark_signature_opened", { p_token: token });
+    // Relire expires_at mis à jour
+    const { data: fresh } = await sb.from("signatures")
+      .select("expires_at").eq("token", token).single();
+    if (fresh?.expires_at) startCountdown(fresh.expires_at);
   } catch (e) { console.warn("mark_signature_opened:", e); }
 })();
 </script>

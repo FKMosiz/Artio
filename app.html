@@ -1105,10 +1105,12 @@ sendForSignature=async(dosId,docNum)=>{
   const token=[...Array(32)].map(()=>(Math.random().toString(36)[2]||"a")).join("");
   // dossier_id en texte libre (pas de FK stricte) + dosId dans doc_data
   const docHash = await hashDoc({...doc, _dossier_id:dosId});
+  // expires_at est null a la creation : le compte a rebours (7 jours)
+  // demarrera quand le CLIENT ouvrira le lien (mark_signature_opened).
   const{error}=await sb.from("signatures").upsert({
     token,user_id:S.user.id,dossier_id:dosId,doc_number:docNum,
     doc_data:{...doc,_dossier_id:dosId},doc_hash:docHash,status:"pending",
-    created_at:new Date().toISOString()
+    expires_at:null,created_at:new Date().toISOString()
   },{onConflict:"token"});
   set({loading:false});
   if(error){alert("Erreur : "+error.message);return}
