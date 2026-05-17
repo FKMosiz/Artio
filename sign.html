@@ -211,8 +211,8 @@ canvas { display: block; width: 100%; height: 180px; touch-action: none; }
 <script>
   /* ── THEME INIT (head) ── */
   (function(){
-    let t='light';
-    try{t=localStorage.getItem('artio-theme')||'light';}catch(e){}
+    let t='dark';
+    try{t=localStorage.getItem('artio-theme')||'dark';}catch(e){}
     document.documentElement.setAttribute('data-theme',t);
   })();
 </script>
@@ -570,6 +570,12 @@ window.submitSignature = async function() {
 
   document.getElementById("content").innerHTML = renderDoc(sig);
   setTimeout(initCanvas, 100);
+
+  // Marquer le lien comme ouvert par le client (déclencheur fiable des relances).
+  // RPC SECURITY DEFINER : ne fait rien si déjà ouvert ou si non-pending.
+  try {
+    await sb.rpc("mark_signature_opened", { p_token: token });
+  } catch (e) { console.warn("mark_signature_opened:", e); }
 })();
 </script>
 <script>

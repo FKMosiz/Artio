@@ -327,8 +327,8 @@ body {
 <script>
   /* ── THEME INIT (head) ── */
   (function(){
-    let t='light';
-    try{t=localStorage.getItem('artio-theme')||'light';}catch(e){}
+    let t='dark';
+    try{t=localStorage.getItem('artio-theme')||'dark';}catch(e){}
     document.documentElement.setAttribute('data-theme',t);
   })();
 </script>
@@ -460,7 +460,7 @@ function buildEvents() {
         heureFin: doc.heure_fin_prestation||"",
         dosId: dos.id,
         accepte: doc.accepte||false,
-        color: doc.type === "devis" ? "blue" : "teal",
+        color: doc.type === "facture" ? "teal" : (doc.accepte ? "green" : "orange"),
       });
     });
   });
