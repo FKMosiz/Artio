@@ -333,6 +333,20 @@ function renderProfil() {
         <div class="field"><label class="field-label">Conditions de paiement</label><select class="pi field-input" data-k="conditions_paiement"><option value="">-- Choisir --</option>${CONDITIONS.map(c=>`<option value="${c}" ${e.conditions_paiement===c?"selected":""}>${c}</option>`).join("")}</select></div>
         <div class="field"><label class="field-label">Délai de validité (jours)</label><input class="pi field-input" data-k="delai_paiement" type="number" value="${esc(e.delai_paiement||"30")}" placeholder="30"/></div>
       </div>
+      <div class="fields-2" style="margin-top:10px;">
+        <div class="field">
+          <label class="field-label">Validité des devis par défaut</label>
+          <select class="pi field-input" data-k="validite_devis">
+            <option value="1"  ${(e.validite_devis||3)==1 ?"selected":""}>1 jour</option>
+            <option value="2"  ${(e.validite_devis||3)==2 ?"selected":""}>2 jours</option>
+            <option value="3"  ${(e.validite_devis||3)==3 ?"selected":""}>3 jours (défaut)</option>
+            <option value="7"  ${(e.validite_devis||3)==7 ?"selected":""}>7 jours</option>
+            <option value="15" ${(e.validite_devis||3)==15?"selected":""}>15 jours</option>
+            <option value="30" ${(e.validite_devis||3)==30?"selected":""}>30 jours</option>
+          </select>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">Durée pendant laquelle le lien de signature reste actif après que le client l'ouvre. Modifiable par devis.</div>
+        </div>
+      </div>
     </div>
 
     <div class="card" style="border-color:rgba(167,139,250,.22)">
@@ -931,7 +945,7 @@ document.getElementById("btn-logout").addEventListener("click", async () => { aw
   user = session.user;
   const { data: p } = await sb.from("profils").select("*").eq("user_id", user.id).single();
   if (p) {
-    profil = { nom:p.nom||"", adresse:p.adresse||"", tel:p.tel||"", email:p.email||"", siret:p.siret||"", taux_horaire:p.taux_horaire||"", assujetti_tva:p.assujetti_tva||false, tva_frequence:p.tva_frequence||"trimestrielle", tva_regime:p.tva_regime||"encaissements", secteur:p.secteur||"", conditions_paiement:p.conditions_paiement||"", delai_paiement:p.delai_paiement||"30", iban:p.iban||"", contexte_ia:p.contexte_ia||"", couleur_pdf:p.couleur_pdf||"#378ADD" };
+    profil = { nom:p.nom||"", adresse:p.adresse||"", tel:p.tel||"", email:p.email||"", siret:p.siret||"", taux_horaire:p.taux_horaire||"", assujetti_tva:p.assujetti_tva||false, tva_frequence:p.tva_frequence||"trimestrielle", tva_regime:p.tva_regime||"encaissements", secteur:p.secteur||"", conditions_paiement:p.conditions_paiement||"", delai_paiement:p.delai_paiement||"30", validite_devis:p.validite_devis||3, iban:p.iban||"", contexte_ia:p.contexte_ia||"", couleur_pdf:p.couleur_pdf||"#378ADD" };
     logoBase64 = p.logo_base64 || null;
     isAdmin = p.is_admin === true;
     subscriptionStatus = p.subscription_status || "free";

@@ -229,7 +229,7 @@ let S={
   signatureLinkCopied:false,
   emettreId:null,
   copied:false,
-  entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:"",assujetti_tva:false,secteur:"",conditions_paiement:"",delai_paiement:"30"},
+  entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:"",assujetti_tva:false,secteur:"",conditions_paiement:"",delai_paiement:"30",validite_devis:3},
   dossiers:[],
   templates:[],
   savingTemplate:false,
@@ -255,6 +255,7 @@ async function loadUserData(userId){
         secteur:profil.secteur||"",
         conditions_paiement:profil.conditions_paiement||"",
         delai_paiement:profil.delai_paiement||"30",
+        validite_devis:profil.validite_devis||3,
           rc_pro_assureur:profil.rc_pro_assureur||"",
           rc_pro_police:profil.rc_pro_police||"",
           decennale_assureur:profil.decennale_assureur||"",
@@ -922,7 +923,8 @@ window.handleGenerate=async()=>{
     const totaux=calcTotaux(f.nb_heures,e.taux_horaire,pv,e.assujetti_tva?(f.tva||"0"):"0");
     const {text:desc,usage:ud}=await callClaude(`Tu es un assistant administratif pour ${S.entreprise.secteur||"un prestataire indépendant"}. Rédige en 2-3 phrases professionnelles la description de cette prestation : ${f.travaux}. Adapte le vocabulaire au secteur. IMPORTANT: Réponds obligatoirement en ${({'fr':'français','en':'English','es':'español','zh':'中文'})[S.langue]||'français'}. Paragraphe fluide, pas de liste.`,300);
     logTokens("description", ud);
-    const doc={type:tab,docNumber,date:todayFR(),validUntil:tab==="devis"?addDays(parseInt(S.entreprise.delai_paiement)||30):null,accepte:false,entreprise:{...e},client:{nom:f.client_nom,adresse:f.client_adresse,tel:f.client_tel||"",email:f.client_email||""},adresse_travaux:f.client_adresse||"",date_prestation:f.date_prestation||"",heure_prestation:f.heure_prestation||"",heure_fin_prestation:f.heure_fin_prestation||"",description:desc,nb_heures:f.nb_heures,pieces:pv,...totaux};
+    const validiteJours=tab==="devis"?parseInt(S.fields.validite_jours||S.entreprise.validite_devis||3):null;
+const doc={type:tab,docNumber,date:todayFR(),validUntil:tab==="devis"?addDays(validiteJours):null,accepte:false,validite_jours:validiteJours,entreprise:{...e},client:{nom:f.client_nom,adresse:f.client_adresse,tel:f.client_tel||"",email:f.client_email||""},adresse_travaux:f.client_adresse||"",date_prestation:f.date_prestation||"",heure_prestation:f.heure_prestation||"",heure_fin_prestation:f.heure_fin_prestation||"",description:desc,nb_heures:f.nb_heures,pieces:pv,...totaux};
     // Nom du dossier = Civilité + Nom client + aperçu prestation
 const civStr=f.client_nom?f.client_nom.trim():"Client";
 const travStr=(f.travaux||"").slice(0,35)+((f.travaux||"").length>35?"...":"");
@@ -1105,12 +1107,14 @@ sendForSignature=async(dosId,docNum)=>{
   const token=[...Array(32)].map(()=>(Math.random().toString(36)[2]||"a")).join("");
   // dossier_id en texte libre (pas de FK stricte) + dosId dans doc_data
   const docHash = await hashDoc({...doc, _dossier_id:dosId});
-  // expires_at est null a la creation : le compte a rebours (7 jours)
-  // demarrera quand le CLIENT ouvrira le lien (mark_signature_opened).
+  // expires_at = date de création + validité du devis (en jours).
+  // La validité commerciale et la validité du lien sont identiques.
+  const validiteJoursLink=parseInt(doc.validite_jours)||3;
+  const expiresAt=new Date(Date.now()+validiteJoursLink*86400000).toISOString();
   const{error}=await sb.from("signatures").upsert({
     token,user_id:S.user.id,dossier_id:dosId,doc_number:docNum,
     doc_data:{...doc,_dossier_id:dosId},doc_hash:docHash,status:"pending",
-    expires_at:null,created_at:new Date().toISOString()
+    expires_at:expiresAt,created_at:new Date().toISOString()
   },{onConflict:"token"});
   set({loading:false});
   if(error){alert("Erreur : "+error.message);return}
@@ -1284,7 +1288,7 @@ window.setTab=t=>{
     _showReadonlyAlert("La création de documents nécessite un abonnement actif. Consultez votre historique ci-dessous.");
     return;
   }
-  set({tab:t,fields:{},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null});
+  set({tab:t,fields:{validite_jours:String(S.entreprise.validite_devis||3)},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null});
 };
 window.setEmailMode=m=>set({emailMode:m,fields:{},generatedText:""});
 window.startVoiceContexte=function(fieldId){
@@ -1411,10 +1415,10 @@ function generatePDF(doc){
   const condTxt=condMap[doc.entreprise.conditions_paiement||""]||"Paiement à réception de facture.";
   const delai=doc.entreprise.delai_paiement||"30";
   const isBTPpdf=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"].includes(doc.entreprise?.secteur||"");
-  const fullCondTxt="Conditions : "+condTxt+(doc.entreprise?.delai_paiement?" Devis valable "+doc.entreprise.delai_paiement+" jours.":"")+(isBTPpdf?" Garantie décennale applicable.":"");
+  const validiteLabel=doc.validite_jours?doc.validite_jours+" jour"+(doc.validite_jours>1?"s":""):"";const fullCondTxt="Conditions : "+condTxt+(validiteLabel?" Devis valable "+validiteLabel+".":" ")+(isBTPpdf?" Garantie décennale applicable.":"");
   const condLines=pdf.splitTextToSize(fullCondTxt,cW);
   pdf.text(condLines,m,y);y+=condLines.length*4+2;
-  pdf.text("Devis valable "+delai+" jours.",m,y);y+=12;
+  if(doc.validite_jours){pdf.text("Devis valable "+doc.validite_jours+" jour"+(doc.validite_jours>1?"s":"")+", jusqu'au "+doc.validUntil+".",m,y);}y+=12;
   pdf.setTextColor(0).setFontSize(9).text("Bon pour accord — Date et signature :",m,y);y+=14;
   pdf.setDrawColor(180).line(m,y,m+80,y);
 }
@@ -1807,6 +1811,18 @@ function renderDevisFacture(){
       ${fld("heure_prestation",tab==="devis"?"Heure début":"Heure début","","select_heure",true)}
       ${fld("heure_fin_prestation","Heure fin","","select_heure",true)}
     </div>
+    ${tab==="devis"?`<div class="field" style="margin-bottom:12px;">
+      <label class="label">Validité du devis <span class="opt">(optionnel)</span></label>
+      <select id="validite_jours_select" class="field-input" onchange="S.fields.validite_jours=this.value;render()">
+        <option value="1"  ${(S.fields.validite_jours||String(e.validite_devis||3))==="1" ?"selected":""}>1 jour</option>
+        <option value="2"  ${(S.fields.validite_jours||String(e.validite_devis||3))==="2" ?"selected":""}>2 jours</option>
+        <option value="3"  ${(S.fields.validite_jours||String(e.validite_devis||3))==="3" ?"selected":""}>3 jours</option>
+        <option value="7"  ${(S.fields.validite_jours||String(e.validite_devis||3))==="7" ?"selected":""}>7 jours</option>
+        <option value="15" ${(S.fields.validite_jours||String(e.validite_devis||3))==="15"?"selected":""}>15 jours</option>
+        <option value="30" ${(S.fields.validite_jours||String(e.validite_devis||3))==="30"?"selected":""}>30 jours</option>
+      </select>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Durée de validité commerciale du devis. Le lien de signature expire à la même date. Défaut issu de vos paramètres.</div>
+    </div>`:""}
     ${fld("travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false)}
     ${fld("nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true)}
     ${e.assujetti_tva?fld("tva","TVA (%)","","select",false):""}
