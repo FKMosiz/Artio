@@ -232,10 +232,12 @@ let S={
   entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:"",assujetti_tva:false,secteur:"",conditions_paiement:"",delai_paiement:"30",validite_devis:3},
   dossiers:[],
   templates:[],
+  clients:[],
   savingTemplate:false,
   rappelLoadingId:null,
   templateNom:"",
   templateIncludeClient:false,
+  _showClientPicker:false,
   profilSaved:false,
   syncing:false,
 };
@@ -279,6 +281,9 @@ async function loadUserData(userId){
     // Charger les templates
     const{data:tpls}=await sb.from("templates").select("*").eq("user_id",userId).order("created_at",{ascending:false});
     if(tpls) S.templates=tpls;
+    // Charger les clients (pour autocomplete)
+    const{data:cls}=await sb.from("clients").select("id,nom,email,tel,adresse").eq("user_id",userId).order("nom",{ascending:true});
+    if(cls) S.clients=cls;
     // Charger les dossiers
     const{data:dossiers,error:de}=await sb.from("dossiers").select("*").eq("user_id",userId).order("updated_at",{ascending:false});
     if(de) console.error("Erreur dossiers:",de.message);
@@ -826,7 +831,7 @@ Instructions d'extraction:
 - heure_prestation: heure de début au format HH:MM si mentionnée ("9h", "14h30"...), null sinon
 - heure_fin_prestation: heure de fin au format HH:MM si mentionnée ("jusqu'à 11h", "pendant 2h"...), null sinon
 - pieces: tableau des prestations/articles avec leur prix. Généraliser : forfait, code service, pièce, produit... (ex: "forfait lavage 39 euros" → {"description":"Forfait lavage","quantite":"1","prix_unitaire":"39"}, "code D9" → {"description":"Code D9","quantite":"1","prix_unitaire":null})
-- template_hint: si l'utilisateur fait référence à un modèle habituel ou récurrent ("comme d'habitude", "modèle X", "habituel pour Y", "pareil que d'habitude"), retourner le nom ou mot-clé du modèle. null sinon.
+- template_hint: si l'utilisateur mentionne un modèle habituel ou récurrent ("comme d'habitude", "pareil que d'habitude", "modèle X", "habituel pour Y", "même chose que"), retourner le nom/mot-clé du modèle ou du client. null sinon.
 
 Si une information n'est pas mentionnée, mettre null. Pour pieces, tableau vide [] si rien mentionné.
 
@@ -851,7 +856,7 @@ JSON:
         }));
       }
       // Détection automatique de modèle par la voix
-      if(p.template_hint && String(p.template_hint)!=="null" && S.templates.length>0){
+      if(p.template_hint&&String(p.template_hint)!=="null"&&S.templates.length>0){
         const hint=String(p.template_hint).toLowerCase().trim();
         const match=S.templates.find(t=>{
           const tn=t.nom.toLowerCase();
@@ -980,17 +985,19 @@ async function saveTemplate(){
   const nom = (S.templateNom||"").trim();
   if(!nom){ alert("Donnez un nom au template."); return; }
   if(!S.user?.id) return;
+  // Synchroniser les textareas (travaux, etc.) vers S.fields avant save
+  document.querySelectorAll("input[data-fid],textarea[data-fid]").forEach(el=>{S.fields[el.dataset.fid]=el.value;});
   set({savingTemplate:true});
-  // Champs prestation (hors client) — toujours sauvegardés
-  const prestFields = {...S.fields};
+  // Champs prestation (hors client)
+  const prestFields={...S.fields};
   ["client_nom","client_adresse","client_tel","client_email"].forEach(k=>delete prestFields[k]);
   // Champs client — uniquement si option cochée
-  const clientFields = S.templateIncludeClient ? {
-    client_nom:     S.fields.client_nom     || "",
-    client_adresse: S.fields.client_adresse || "",
-    client_tel:     S.fields.client_tel     || "",
-    client_email:   S.fields.client_email   || ""
-  } : null;
+  const clientFields=S.templateIncludeClient?{
+    client_nom:    S.fields.client_nom    ||"",
+    client_adresse:S.fields.client_adresse||"",
+    client_tel:    S.fields.client_tel    ||"",
+    client_email:  S.fields.client_email  ||""
+  }:null;
   const payload={
     user_id:       S.user.id,
     nom,
@@ -1002,9 +1009,9 @@ async function saveTemplate(){
   const{data,error}=await sb.from("templates").insert(payload).select().single();
   if(error){ alert("Erreur : "+error.message); set({savingTemplate:false}); return; }
   S.templates=[data,...S.templates];
-  const withClient=S.templateIncludeClient && (S.fields.client_nom||"").trim();
-  set({savingTemplate:false, templateNom:"", templateIncludeClient:false});
-  showToast("✅ Template \""+nom+"\" sauvegardé !"+(withClient?" — 👤 client inclus":""));
+  const withClient=S.templateIncludeClient&&(S.fields.client_nom||"").trim();
+  set({savingTemplate:false,templateNom:"",templateIncludeClient:false});
+  showToast("✅ Modèle \""+nom+"\" sauvegardé !"+(withClient?" — 👤 client inclus":""));
 }
 
 async function deleteTemplate(id){
@@ -1018,15 +1025,15 @@ async function deleteTemplate(id){
 function loadTemplate(id){
   const tpl=S.templates.find(t=>t.id===id);
   if(!tpl) return;
-  const hasClient = tpl.client_fields && (tpl.client_fields.client_nom||"").trim();
+  const hasClient=tpl.client_fields&&(tpl.client_fields.client_nom||"").trim();
   if(hasClient){
-    // Template client récurrent — tout pré-remplir
+    // Modèle client récurrent — tout pré-remplir
     S.fields={...S.fields,...tpl.fields,...tpl.client_fields};
     S.pieces=(tpl.pieces||[]).map(p=>({...p}));
     set({tab:tpl.tab});
-    showToast('📋 Modèle "'+tpl.nom+'" chargé — 👤 '+tpl.client_fields.client_nom+' pré-rempli');
+    showToast('📋 Modèle "'+tpl.nom+'" — 👤 '+tpl.client_fields.client_nom+' pré-rempli');
   } else {
-    // Template sans client — conserver le client actuellement saisi
+    // Modèle sans client — conserver le client actuellement saisi
     const keep={client_nom:S.fields.client_nom,client_adresse:S.fields.client_adresse,client_tel:S.fields.client_tel,client_email:S.fields.client_email};
     S.fields={...keep,...tpl.fields};
     S.pieces=(tpl.pieces||[]).map(p=>({...p}));
@@ -1772,6 +1779,68 @@ function updateTotaux(){
   const el=document.getElementById('totaux-container');
   if(el)el.innerHTML=renderTotaux();
 }
+
+// ── Client picker ─────────────────────────────────────────────────────────────
+// Fonction globale pour sélectionner un client (évite les guillemets dans HTML)
+window.selectClient = function(idx){
+  const c = S.clients[idx];
+  if(!c) return;
+  S.fields.client_nom     = c.nom     || "";
+  S.fields.client_email   = c.email   || "";
+  S.fields.client_tel     = c.tel     || "";
+  S.fields.client_adresse = c.adresse || "";
+  S._showClientPicker = false;
+  set({});
+};
+
+function renderClientPicker(){
+  var hasClients = S.clients && S.clients.length > 0;
+  var nomVal = esc(S.fields.client_nom || "");
+  var nomPh  = esc(L("ph_client_nom"));
+  var html   = '<div class="field">'
+    + '<label class="label">Nom du client</label>'
+    + '<div style="display:flex;gap:6px;align-items:center;">'
+    + '<input type="text" value="' + nomVal + '" placeholder="' + nomPh + '" data-fid="client_nom"'
+    + ' oninput="S.fields.client_nom=this.value;S._showClientPicker=false" style="flex:1;" />';
+
+  if(hasClients){
+    var btnStyle = "flex-shrink:0;padding:0 10px;height:38px;background:var(--surface-3);"
+      + "border:1px solid var(--border);border-radius:9px;color:var(--muted);"
+      + "cursor:pointer;font-size:16px;transition:all .15s;";
+    html += '<button type="button" title="Choisir un client" onclick="S._showClientPicker=!S._showClientPicker;set({})" style="' + btnStyle + '">👥</button>';
+  }
+  html += '</div>';
+
+  if(hasClients && S._showClientPicker){
+    var listStyle = "background:var(--surface-2);border:1px solid var(--border-hi);border-radius:12px;"
+      + "padding:6px;max-height:220px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.35);";
+    var headerStyle = "padding:6px 8px;font-size:11px;color:var(--muted);font-weight:600;"
+      + "letter-spacing:.04em;border-bottom:1px solid var(--border);margin-bottom:4px;";
+    var rowStyle = "padding:9px 10px;border-radius:8px;cursor:pointer;";
+    var manageStyle = "padding:9px 10px;border-radius:8px;cursor:pointer;font-size:12px;"
+      + "color:var(--amber);font-weight:500;border-top:1px solid var(--border);margin-top:4px;";
+
+    html += '<div style="position:relative;z-index:100;margin-top:-6px;margin-bottom:8px;">'
+      + '<div style="' + listStyle + '">'
+      + '<div style="' + headerStyle + '">CLIENTS ENREGISTR\u00c9S</div>';
+
+    for(var i = 0; i < S.clients.length; i++){
+      var c = S.clients[i];
+      var nameHtml = '<div style="font-size:13px;font-weight:500;color:var(--text);">' + esc(c.nom) + '</div>';
+      var emailHtml = c.email ? '<div style="font-size:11px;color:var(--muted);">' + esc(c.email) + '</div>' : '';
+      html += '<div onclick="selectClient(' + i + ')" style="' + rowStyle + '">'
+        + nameHtml + emailHtml + '</div>';
+    }
+
+    html += '<div onclick="window.location.href=\'clients.html\'" style="' + manageStyle + '">+ G\u00e9rer les clients \u2192</div>'
+      + '</div></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+
+
 function renderDevisFacture(){
   const f=S.fields,tab=S.tab,e=S.entreprise;
   const heureOpts=(id)=>{
@@ -1801,7 +1870,7 @@ function renderDevisFacture(){
   // ── Barre templates (Pro) ── précomputée sans template literal imbriqué
   let tplBar = "";
   if(window.PlanGuard && window.PlanGuard.isPro() && S.templates.filter(t=>t.tab===tab).length > 0){
-    const opts = S.templates.filter(t=>t.tab===tab).map(t=>'<option value="'+t.id+'">'+(t.client_fields?(t.client_fields.client_nom?'👤 ':''):'')+''+esc(t.nom)+'</option>').join("");
+    const opts = S.templates.filter(t=>t.tab===tab).map(t=>'<option value="'+t.id+'">'+esc(t.nom)+'</option>').join("");
     tplBar = '<div class="tpl-bar">'
       +'<select class="tpl-select" id="tpl-select"><option value="">&#128203; Charger un template...</option>'+opts+'</select>'
       +'<button class="tpl-btn tpl-btn-load" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)loadTemplate(v)">Charger</button>'
@@ -1809,23 +1878,25 @@ function renderDevisFacture(){
       +'</div>';
   }
 
-  // ── Section sauvegarder template (Pro) ── précomputée
+  // ── Section sauvegarder modèle (Pro) ── précomputée
   let tplSave = "";
   if(window.PlanGuard && window.PlanGuard.isPro()){
     const clientNom=(S.fields.client_nom||"").trim();
-    tplSave = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">'
+    tplSave = '<div style="margin-bottom:4px;">'
+      +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">'
       +'<input type="text" placeholder="Nom du mod\u00e8le (ex: Entretien mensuel Mme Martin)" value="'+esc(S.templateNom||"")+'"'
       +' style="flex:1;padding:9px 12px;font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);"'
       +' oninput="S.templateNom=this.value"/>'
       +'<button class="tpl-btn tpl-btn-save" onclick="saveTemplate()"'+(S.savingTemplate?' disabled':'')+'>&#128190; '+(S.savingTemplate?'...':'Sauvegarder')+'</button>'
+      +'</div>'
+      +(clientNom
+        ?'<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:6px;cursor:pointer;padding:7px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;">'
+          +'<input type="checkbox" '+(S.templateIncludeClient?'checked':'')
+          +' onchange="S.templateIncludeClient=this.checked;set({})" style="width:15px;height:15px;accent-color:var(--amber);cursor:pointer;flex-shrink:0;"/>'
+          +'<span>\ud83d\udccc Client r\u00e9current \u2014 inclure <strong style=\"color:var(--text)\">'+esc(clientNom)+'</strong> dans ce mod\u00e8le</span>'
+          +'</label>'
+        :'')
       +'</div>';
-    // Checkbox client récurrent — visible uniquement si un client est saisi
-    if(clientNom){
-      tplSave += '<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:14px;cursor:pointer;padding:8px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;">'
-        +'<input type="checkbox" '+(S.templateIncludeClient?'checked':'')+' onchange="S.templateIncludeClient=this.checked" style="width:15px;height:15px;accent-color:var(--amber);cursor:pointer;flex-shrink:0;"/>'
-        +'<span>📌 Client r\u00e9current — inclure <strong style="color:var(--text);">'+esc(clientNom)+'</strong> dans ce mod\u00e8le</span>'
-        +'</label>';
-    }
   }
 
   return`<div class="card">
@@ -1836,7 +1907,7 @@ function renderDevisFacture(){
       <span class="section-title">Client</span>
       <div class="section-line"></div>
     </div>
-    ${fld("client_nom","Nom du client",L("ph_client_nom"),"text",false)}
+    ${renderClientPicker()}
     <div class="grid2">
       ${fld("client_tel","Téléphone",L("ph_client_tel"),"text",true)}
       ${fld("client_email","Email",L("ph_client_email"),"text",true)}
