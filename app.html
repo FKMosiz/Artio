@@ -235,6 +235,7 @@ let S={
   savingTemplate:false,
   rappelLoadingId:null,
   templateNom:"",
+  templateIncludeClient:false,
   profilSaved:false,
   syncing:false,
 };
@@ -825,11 +826,12 @@ Instructions d'extraction:
 - heure_prestation: heure de début au format HH:MM si mentionnée ("9h", "14h30"...), null sinon
 - heure_fin_prestation: heure de fin au format HH:MM si mentionnée ("jusqu'à 11h", "pendant 2h"...), null sinon
 - pieces: tableau des prestations/articles avec leur prix. Généraliser : forfait, code service, pièce, produit... (ex: "forfait lavage 39 euros" → {"description":"Forfait lavage","quantite":"1","prix_unitaire":"39"}, "code D9" → {"description":"Code D9","quantite":"1","prix_unitaire":null})
+- template_hint: si l'utilisateur fait référence à un modèle habituel ou récurrent ("comme d'habitude", "modèle X", "habituel pour Y", "pareil que d'habitude"), retourner le nom ou mot-clé du modèle. null sinon.
 
 Si une information n'est pas mentionnée, mettre null. Pour pieces, tableau vide [] si rien mentionné.
 
 JSON:
-{"client_nom":null,"client_adresse":null,"client_tel":null,"client_email":null,"travaux":null,"nb_heures":null,"tva":null,"date_prestation":null,"heure_prestation":null,"pieces":[]}`,800);
+{"client_nom":null,"client_adresse":null,"client_tel":null,"client_email":null,"travaux":null,"nb_heures":null,"tva":null,"date_prestation":null,"heure_prestation":null,"pieces":[],"template_hint":null}`,800);
       logTokens("devis", raw.usage);
 
       const cleaned=raw.text.replace(/```json/g,"").replace(/```/g,"").trim();
@@ -847,6 +849,16 @@ JSON:
           quantite:String(x.quantite||"1"),
           prix_unitaire:String(x.prix_unitaire||"")
         }));
+      }
+      // Détection automatique de modèle par la voix
+      if(p.template_hint && String(p.template_hint)!=="null" && S.templates.length>0){
+        const hint=String(p.template_hint).toLowerCase().trim();
+        const match=S.templates.find(t=>{
+          const tn=t.nom.toLowerCase();
+          const cn=(t.client_fields?.client_nom||"").toLowerCase();
+          return tn.includes(hint)||hint.includes(tn)||(cn&&(cn.includes(hint)||hint.includes(cn)));
+        });
+        if(match) loadTemplate(match.id);
       }
       render();
     }catch(err){
@@ -969,18 +981,30 @@ async function saveTemplate(){
   if(!nom){ alert("Donnez un nom au template."); return; }
   if(!S.user?.id) return;
   set({savingTemplate:true});
+  // Champs prestation (hors client) — toujours sauvegardés
+  const prestFields = {...S.fields};
+  ["client_nom","client_adresse","client_tel","client_email"].forEach(k=>delete prestFields[k]);
+  // Champs client — uniquement si option cochée
+  const clientFields = S.templateIncludeClient ? {
+    client_nom:     S.fields.client_nom     || "",
+    client_adresse: S.fields.client_adresse || "",
+    client_tel:     S.fields.client_tel     || "",
+    client_email:   S.fields.client_email   || ""
+  } : null;
   const payload={
-    user_id: S.user.id,
+    user_id:       S.user.id,
     nom,
-    tab:   S.tab,
-    fields: {...S.fields},
-    pieces: S.pieces.map(p=>({...p})),
+    tab:           S.tab,
+    fields:        prestFields,
+    pieces:        S.pieces.map(p=>({...p})),
+    client_fields: clientFields,
   };
   const{data,error}=await sb.from("templates").insert(payload).select().single();
   if(error){ alert("Erreur : "+error.message); set({savingTemplate:false}); return; }
   S.templates=[data,...S.templates];
-  set({savingTemplate:false, templateNom:""});
-  showToast("✅ Template \""+nom+"\" sauvegardé !");
+  const withClient=S.templateIncludeClient && (S.fields.client_nom||"").trim();
+  set({savingTemplate:false, templateNom:"", templateIncludeClient:false});
+  showToast("✅ Template \""+nom+"\" sauvegardé !"+(withClient?" — 👤 client inclus":""));
 }
 
 async function deleteTemplate(id){
@@ -994,12 +1018,21 @@ async function deleteTemplate(id){
 function loadTemplate(id){
   const tpl=S.templates.find(t=>t.id===id);
   if(!tpl) return;
-  // Ne pas écraser les infos client — seulement prestation + articles
-  const keep={client_nom:S.fields.client_nom,client_adresse:S.fields.client_adresse,client_tel:S.fields.client_tel,client_email:S.fields.client_email};
-  S.fields={...keep,...tpl.fields};
-  S.pieces=(tpl.pieces||[]).map(p=>({...p}));
-  set({tab:tpl.tab});
-  showToast('📋 Template "'+tpl.nom+'" chargé !');
+  const hasClient = tpl.client_fields && (tpl.client_fields.client_nom||"").trim();
+  if(hasClient){
+    // Template client récurrent — tout pré-remplir
+    S.fields={...S.fields,...tpl.fields,...tpl.client_fields};
+    S.pieces=(tpl.pieces||[]).map(p=>({...p}));
+    set({tab:tpl.tab});
+    showToast('📋 Modèle "'+tpl.nom+'" chargé — 👤 '+tpl.client_fields.client_nom+' pré-rempli');
+  } else {
+    // Template sans client — conserver le client actuellement saisi
+    const keep={client_nom:S.fields.client_nom,client_adresse:S.fields.client_adresse,client_tel:S.fields.client_tel,client_email:S.fields.client_email};
+    S.fields={...keep,...tpl.fields};
+    S.pieces=(tpl.pieces||[]).map(p=>({...p}));
+    set({tab:tpl.tab});
+    showToast('📋 Modèle "'+tpl.nom+'" chargé !');
+  }
 }
 
 window.markTermine=async id=>{
@@ -1768,7 +1801,7 @@ function renderDevisFacture(){
   // ── Barre templates (Pro) ── précomputée sans template literal imbriqué
   let tplBar = "";
   if(window.PlanGuard && window.PlanGuard.isPro() && S.templates.filter(t=>t.tab===tab).length > 0){
-    const opts = S.templates.filter(t=>t.tab===tab).map(t=>'<option value="'+t.id+'">'+esc(t.nom)+'</option>').join("");
+    const opts = S.templates.filter(t=>t.tab===tab).map(t=>'<option value="'+t.id+'">'+(t.client_fields?(t.client_fields.client_nom?'👤 ':''):'')+''+esc(t.nom)+'</option>').join("");
     tplBar = '<div class="tpl-bar">'
       +'<select class="tpl-select" id="tpl-select"><option value="">&#128203; Charger un template...</option>'+opts+'</select>'
       +'<button class="tpl-btn tpl-btn-load" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)loadTemplate(v)">Charger</button>'
@@ -1779,12 +1812,20 @@ function renderDevisFacture(){
   // ── Section sauvegarder template (Pro) ── précomputée
   let tplSave = "";
   if(window.PlanGuard && window.PlanGuard.isPro()){
+    const clientNom=(S.fields.client_nom||"").trim();
     tplSave = '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">'
-      +'<input type="text" placeholder="Nom du template (ex: Installation \xe9lectrique)" value="'+esc(S.templateNom||"")+'"'
+      +'<input type="text" placeholder="Nom du mod\u00e8le (ex: Entretien mensuel Mme Martin)" value="'+esc(S.templateNom||"")+'"'
       +' style="flex:1;padding:9px 12px;font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);"'
       +' oninput="S.templateNom=this.value"/>'
       +'<button class="tpl-btn tpl-btn-save" onclick="saveTemplate()"'+(S.savingTemplate?' disabled':'')+'>&#128190; '+(S.savingTemplate?'...':'Sauvegarder')+'</button>'
       +'</div>';
+    // Checkbox client récurrent — visible uniquement si un client est saisi
+    if(clientNom){
+      tplSave += '<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:14px;cursor:pointer;padding:8px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;">'
+        +'<input type="checkbox" '+(S.templateIncludeClient?'checked':'')+' onchange="S.templateIncludeClient=this.checked" style="width:15px;height:15px;accent-color:var(--amber);cursor:pointer;flex-shrink:0;"/>'
+        +'<span>📌 Client r\u00e9current — inclure <strong style="color:var(--text);">'+esc(clientNom)+'</strong> dans ce mod\u00e8le</span>'
+        +'</label>';
+    }
   }
 
   return`<div class="card">
