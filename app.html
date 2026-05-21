@@ -678,9 +678,14 @@ const TOUR_STEPS = [
     target:null, tab:"historique", pro:false, pos:"center"
   },
   {
-    title:"📋 Modèles récurrents ✨",
-    desc:"Clients réguliers avec la même prestation chaque mois ? Sauvegarde un modèle :<br><span class=\"tour-example\">① Remplis le formulaire normalement<br>② Nomme le modèle : « Coaching Martin »<br>③ Coche 📌 Client récurrent<br>④ Clique 💾 Sauvegarder</span>La prochaine fois, charge-le en un clic — ou dicte <em style=\"color:var(--amber)\">« comme d'habitude pour Martin »</em> et Artio s'en charge seul.",
-    target:null, tab:"devis", pro:true, pos:"center"
+    title:"📋 Sauvegarder un modèle",
+    desc:"Tu as des clients réguliers ? Sauvegarde le devis comme modèle réutilisable :<br><span class=\"tour-example\">① Remplis le formulaire — à la main ou par dictée vocale<br>② Donne un nom au modèle <em>(ex : « Coaching Martin »)</em><br>③ Coche 📌 Client récurrent <em>si tu veux lier ce client au modèle</em> — laisse décoché si tu veux utiliser ce modèle avec différents clients<br>④ Clique 💾 Sauvegarder</span>Le champ de nom et le bouton 💾 sont juste au-dessus du bouton « Générer ».",
+    target:".tpl-btn-save", tab:"devis", pro:true, pos:"top"
+  },
+  {
+    title:"📂 Charger un modèle",
+    desc:"Une fois un modèle sauvegardé, une barre apparaît en haut du formulaire avec la liste déroulante de tous tes modèles.<br><br>Sélectionne un modèle → clique <strong style=\"color:var(--amber)\">Charger</strong> — tout est pré-rempli en un clic.<br><br>Si le modèle a un client récurrent, son nom, email, téléphone et adresse sont automatiquement remplis aussi.<br><br><em style=\"color:var(--muted)\">Tu peux aussi dicter « comme d'habitude pour Martin » et Artio le charge seul.</em>",
+    target:".tpl-bar", tab:"devis", pro:true, pos:"bottom"
   },
   {
     title:"🎉 Tu es prêt !",
