@@ -815,7 +815,7 @@ function _tourRender(){
     ? '<button class="tour-btn-skip" onclick="tourEnd()">Quitter le tutoriel</button>'
     : '';
 
-  var cardHtml = '<div class="tour-card" id="tour-card">'
+  var cardHtml = '<div class="tour-card" id="tour-card" style="top:-9999px;left:-9999px;opacity:0;">'
     + '<div class="tour-card-header">'
     +   '<span class="tour-card-title">' + step.title + '</span>'
     +   '<span class="tour-card-step">' + (S.tourStep+1) + ' / ' + TOUR_STEPS.length + '</span>'
@@ -842,8 +842,7 @@ function _tourRender(){
     card.style.left = '50%';
     card.style.transform = 'translate(-50%,-50%)';
     card.style.position = 'fixed';
-    card.style.opacity = '0';
-    setTimeout(function(){ if(card) card.style.opacity = '1'; }, 20);
+    requestAnimationFrame(function(){ if(card) card.style.opacity = '1'; });
   } else {
     // D'abord scroller l'élément en vue, puis positionner après le scroll
     targetEl.scrollIntoView({behavior:'smooth', block:'center'});
