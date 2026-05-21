@@ -146,6 +146,7 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
   background: rgba(250,248,243,0.92) !important;
   border-bottom-color: rgba(20,18,12,0.10) !important;
 }
+.cp-row:hover{background:var(--surface-3);}
 </style>
 <script>
   /* ── THEME INIT (head) ── */
@@ -1602,6 +1603,7 @@ function showToast(msg){
 // ——— RENDER ———
 function render(){
   renderApp();
+  if(S._showClientPicker && window.updatePickerDOM) window.updatePickerDOM();
 }
 
 function renderApp(){
@@ -1794,6 +1796,37 @@ window.selectClient = function(idx){
   set({});
 };
 
+// ── Met à jour le dropdown client SANS re-render global (préserve le focus) ──
+window.goToClients = function(){ window.location.href = "clients.html"; };
+
+window.updatePickerDOM = function(){
+  var el = document.getElementById("client-picker-container");
+  if(!el){ return; }
+  if(!S._showClientPicker){ el.innerHTML = ""; return; }
+  var filter  = (S._clientFilter || "").toLowerCase().trim();
+  var listStyle = "background:var(--surface-2);border:1px solid var(--border-hi);border-radius:12px;padding:6px;max-height:220px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.35);";
+  var headStyle = "padding:6px 8px;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.04em;border-bottom:1px solid var(--border);margin-bottom:4px;";
+  var rowStyle  = "padding:9px 10px;border-radius:8px;cursor:pointer;transition:background .12s;";
+  var moreStyle = "padding:9px 10px;border-radius:8px;cursor:pointer;font-size:12px;color:var(--amber);font-weight:500;border-top:1px solid var(--border);margin-top:4px;transition:background .12s;";
+  var html = '<div style="' + listStyle + '"><div style="' + headStyle + '">CLIENTS ENREGISTRÉS</div>';
+  var shown = 0;
+  for(var i = 0; i < S.clients.length; i++){
+    var c = S.clients[i];
+    if(filter && !c.nom.toLowerCase().includes(filter)) continue;
+    shown++;
+    html += '<div class="cp-row" onclick="selectClient(' + i + ')" style="' + rowStyle + '">'
+      + '<div style="font-size:13px;font-weight:500;color:var(--text);">' + esc(c.nom) + '</div>'
+      + (c.email ? '<div style="font-size:11px;color:var(--muted);">' + esc(c.email) + '</div>' : '')
+      + '</div>';
+  }
+  if(shown === 0){
+    html += '<div style="padding:10px;font-size:12px;color:var(--muted);font-style:italic;">Aucun client trouvé</div>';
+  }
+  html += '<div class="cp-row" onclick="goToClients()" style="' + moreStyle + '">+ Gérer les clients →</div>'
+    + '</div>';
+  el.innerHTML = html;
+};
+
 function renderClientPicker(){
   var hasClients = S.clients && S.clients.length > 0;
   var nomVal = esc(S.fields.client_nom || "");
@@ -1802,7 +1835,7 @@ function renderClientPicker(){
     + '<label class="label">Nom du client</label>'
     + '<div style="display:flex;gap:6px;align-items:center;">'
     + '<input type="text" value="' + nomVal + '" placeholder="' + nomPh + '" data-fid="client_nom"'
-    + ' oninput="S.fields.client_nom=this.value;var f=this.value.toLowerCase().trim();S._clientFilter=f;S._showClientPicker=f.length>0&&S.clients.some(function(c){return c.nom.toLowerCase().includes(f);});set({})" style="flex:1;" />';
+    + ' oninput="S.fields.client_nom=this.value;var f=this.value.toLowerCase().trim();S._clientFilter=f;S._showClientPicker=f.length>0&&S.clients.some(function(c){return c.nom.toLowerCase().includes(f);});window.updatePickerDOM&&window.updatePickerDOM()" style="flex:1;" />';
 
   if(hasClients){
     var btnStyle = "flex-shrink:0;padding:0 10px;height:38px;background:var(--surface-3);"
@@ -1812,37 +1845,8 @@ function renderClientPicker(){
   }
   html += '</div>';
 
-  if(hasClients && S._showClientPicker){
-    var listStyle = "background:var(--surface-2);border:1px solid var(--border-hi);border-radius:12px;"
-      + "padding:6px;max-height:220px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.35);";
-    var headerStyle = "padding:6px 8px;font-size:11px;color:var(--muted);font-weight:600;"
-      + "letter-spacing:.04em;border-bottom:1px solid var(--border);margin-bottom:4px;";
-    var rowStyle = "padding:9px 10px;border-radius:8px;cursor:pointer;";
-    var manageStyle = "padding:9px 10px;border-radius:8px;cursor:pointer;font-size:12px;"
-      + "color:var(--amber);font-weight:500;border-top:1px solid var(--border);margin-top:4px;";
-
-    html += '<div style="position:relative;z-index:100;margin-top:-6px;margin-bottom:8px;">'
-      + '<div style="' + listStyle + '">'
-      + '<div style="' + headerStyle + '">CLIENTS ENREGISTR\u00c9S</div>';
-
-    var filter = (S._clientFilter || "").toLowerCase().trim();
-    var shown = 0;
-    for(var i = 0; i < S.clients.length; i++){
-      var c = S.clients[i];
-      if(filter && !c.nom.toLowerCase().includes(filter)) continue;
-      shown++;
-      var nameHtml = '<div style="font-size:13px;font-weight:500;color:var(--text);">' + esc(c.nom) + '</div>';
-      var emailHtml = c.email ? '<div style="font-size:11px;color:var(--muted);">' + esc(c.email) + '</div>' : '';
-      html += '<div onclick="selectClient(' + i + ')" style="' + rowStyle + '">'
-        + nameHtml + emailHtml + '</div>';
-    }
-    if(shown === 0){
-      html += '<div style="padding:10px;font-size:12px;color:var(--muted);font-style:italic;">Aucun client trouvé</div>';
-    }
-
-    html += '<div onclick="window.location.href=\'clients.html\'" style="' + manageStyle + '">+ G\u00e9rer les clients \u2192</div>'
-      + '</div></div>';
-  }
+  // Le contenu du picker est géré par updatePickerDOM() sans re-render global
+  html += '<div id="client-picker-container" style="position:relative;z-index:100;margin-top:-6px;margin-bottom:8px;"></div>';
   html += '</div>';
   return html;
 }
