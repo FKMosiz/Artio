@@ -1802,7 +1802,7 @@ function renderClientPicker(){
     + '<label class="label">Nom du client</label>'
     + '<div style="display:flex;gap:6px;align-items:center;">'
     + '<input type="text" value="' + nomVal + '" placeholder="' + nomPh + '" data-fid="client_nom"'
-    + ' oninput="S.fields.client_nom=this.value;S._showClientPicker=false" style="flex:1;" />';
+    + ' oninput="S.fields.client_nom=this.value;var f=this.value.toLowerCase().trim();S._clientFilter=f;S._showClientPicker=f.length>0&&S.clients.some(function(c){return c.nom.toLowerCase().includes(f);});set({})" style="flex:1;" />';
 
   if(hasClients){
     var btnStyle = "flex-shrink:0;padding:0 10px;height:38px;background:var(--surface-3);"
