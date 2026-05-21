@@ -841,26 +841,41 @@ function _tourRender(){
     card.style.top = '50%';
     card.style.left = '50%';
     card.style.transform = 'translate(-50%,-50%)';
+    card.style.position = 'fixed';
   } else {
-    var rect = targetEl.getBoundingClientRect();
-    var vw = window.innerWidth, vh = window.innerHeight;
-    var cw = 340, ch = 220; // card approx size
-    card.style.transform = '';
-
-    if(step.pos === 'bottom' || (rect.bottom + ch + 16 < vh)){
-      // En dessous
-      card.style.top = (rect.bottom + 12) + 'px';
-    } else {
-      // Au-dessus
-      card.style.top = Math.max(8, rect.top - ch - 12) + 'px';
-    }
-    // Horizontalement: centré sur l'élément, sans dépasser
-    var left = rect.left + rect.width/2 - cw/2;
-    left = Math.max(12, Math.min(left, vw - cw - 12));
-    card.style.left = left + 'px';
-
-    // Scroll l'élément en vue
+    // D'abord scroller l'élément en vue, puis positionner après le scroll
     targetEl.scrollIntoView({behavior:'smooth', block:'center'});
+    setTimeout(function(){
+      var rect2 = targetEl.getBoundingClientRect();
+      var vw2 = window.innerWidth, vh2 = window.innerHeight;
+      var cw2 = 340;
+      // Mesurer la vraie hauteur de la card
+      var ch2 = card.offsetHeight || 260;
+      card.style.transform = '';
+      card.style.position = 'fixed';
+
+      // Logique de placement : préférer au-dessus si pos==='top' ou si pas assez de place en dessous
+      var spaceBelow = vh2 - rect2.bottom - 16;
+      var spaceAbove = rect2.top - 16;
+      var placeAbove = (step.pos === 'top') || (spaceBelow < ch2 + 12 && spaceAbove >= ch2 + 12);
+
+      if(placeAbove){
+        var topVal = rect2.top - ch2 - 12;
+        // Si ça dépasse en haut, centrer verticalement
+        if(topVal < 8) topVal = Math.max(8, vh2/2 - ch2/2);
+        card.style.top = topVal + 'px';
+      } else {
+        var topVal2 = rect2.bottom + 12;
+        // Si ça dépasse en bas, remonter
+        if(topVal2 + ch2 > vh2 - 8) topVal2 = Math.max(8, vh2 - ch2 - 16);
+        card.style.top = topVal2 + 'px';
+      }
+
+      // Horizontalement : centré sur l'élément, sans dépasser les bords
+      var left2 = rect2.left + rect2.width / 2 - cw2 / 2;
+      left2 = Math.max(12, Math.min(left2, vw2 - cw2 - 12));
+      card.style.left = left2 + 'px';
+    }, 350); // Attendre la fin du scroll smooth
   }
 }
 
