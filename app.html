@@ -165,7 +165,12 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .tour-actions{display:flex;gap:8px;align-items:center;}
 .tour-btn-next{flex:1;padding:9px;background:var(--amber);color:#080b14;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fh);}
 .tour-btn-prev{padding:9px 12px;background:var(--surface-3);color:var(--muted);border:1px solid var(--border);border-radius:10px;font-size:13px;cursor:pointer;}
-.tour-btn-skip{padding:9px 10px;background:none;color:var(--muted);border:none;font-size:12px;cursor:pointer;margin-left:auto;}
+.tour-btn-skip{padding:8px 0;background:none;color:var(--muted);border:none;font-size:11px;cursor:pointer;text-align:center;width:100%;margin-top:8px;text-decoration:underline;text-decoration-color:rgba(255,255,255,.15);transition:color .2s;}
+.tour-btn-skip:hover{color:#e2e5f1;text-decoration-color:rgba(255,255,255,.5);}
+.tour-example{display:block;color:var(--amber);padding:10px 12px;background:rgba(245,167,66,.08);border-left:3px solid var(--amber);border-radius:6px;margin:10px 0;font-size:12.5px;font-style:italic;line-height:1.5;}
+.tour-warn{display:block;font-size:11.5px;color:#f5a742;padding:8px 10px;background:rgba(245,167,66,.06);border-radius:6px;margin-top:8px;line-height:1.5;}
+.tour-action-btn{display:block;width:100%;padding:9px;margin:10px 0 0;background:rgba(245,167,66,.12);color:var(--amber);border:1px solid rgba(245,167,66,.3);border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--fb);transition:all .15s;}
+.tour-action-btn:hover{background:rgba(245,167,66,.2);border-color:rgba(245,167,66,.5);}
 .tour-highlight{outline:3px solid var(--amber)!important;outline-offset:4px;border-radius:10px;position:relative;z-index:9501;}
 </style>
 <script>
@@ -633,55 +638,78 @@ Signe "${e.nom||""}".`,800);
 const TOUR_STEPS = [
   {
     title:"👋 Bienvenue sur Artio !",
-    desc:"En 2 minutes, découvre tout ce qu'Artio peut faire pour toi. Allons-y !",
+    desc:"En quelques minutes, découvre tout ce qu'Artio peut faire — la dictée vocale, l'annuaire clients, la signature électronique...<br><br>Tu peux passer une étape avec « Suivant » ou quitter à tout moment avec « Quitter ».",
     target:null, tab:null, pro:false, pos:"center"
   },
   {
-    title:"🎙 Dictée vocale",
-    desc:"Appuie sur ce bouton et dicte ta prestation à voix haute. Artio extrait automatiquement le client, la description, la date et les articles.",
-    target:".voice-box", tab:"devis", pro:false, pos:"bottom"
-  },
-  {
-    title:"✍️ Saisie manuelle",
-    desc:"Pas envie de dicter ? Remplis le formulaire directement. Nom du client, description, heures, articles — tout est là.",
-    target:".section-head", tab:"devis", pro:false, pos:"bottom"
+    title:"🎙 Dictée vocale — essaie !",
+    desc:"Clique sur le bouton micro et dis par exemple :<br><span class=\"tour-example\">« Monsieur Martin veut une intervention de coaching sport mardi à 14h, j'en ai pour 3 heures de travail, plus matériel à 30 euros »</span>Artio extrait automatiquement le client, la prestation, la date, les heures et les articles.<br><br><span class=\"tour-warn\">⚠️ La dictée vocale ne fonctionne pas sur Firefox ni Brave. Sur ces navigateurs, utilise le bouton ci-dessous pour pré-remplir un exemple.</span>",
+    target:".voice-box", tab:"devis", pro:false, pos:"bottom",
+    action:{label:"📝 Pré-remplir un exemple", fn:"_tourDemoFill"}
   },
   {
     title:"👥 Annuaire clients",
-    desc:"Tape les premières lettres d'un client enregistré : Artio le retrouve et remplit tout automatiquement — nom, email, téléphone, adresse.",
+    desc:"Tape les premières lettres d'un client enregistré et il apparaît automatiquement. Un clic dessus et nom, email, téléphone, adresse — tout est rempli. Tu peux aussi cliquer sur 👥 pour voir tous tes clients.",
     target:"input[data-fid=\"client_nom\"]", tab:"devis", pro:false, pos:"bottom"
   },
   {
-    title:"⚡ Générer le document",
-    desc:"Un clic sur \"Générer\" et Artio produit un devis ou une facture professionnel(le) en quelques secondes, avec la description rédigée par l'IA.",
+    title:"📋 Description et articles",
+    desc:"La description de la prestation est rédigée à la main ou via la dictée. Plus bas, tu ajoutes les articles (matériel, fournitures) avec quantité et prix unitaire. Artio calcule HT, TVA et TTC automatiquement.",
+    target:null, tab:"devis", pro:false, pos:"center"
+  },
+  {
+    title:"⚡ Le bouton Générer",
+    desc:"Voici le bouton qui produit ton devis. Une fois les infos remplies, un clic dessus :<br>• L'IA rédige la description finale<br>• Le PDF est généré<br>• Le devis est numéroté automatiquement (DEV-2026-XXX)<br>• Tout est ajouté à tes dossiers<br><br><small style=\"color:var(--muted)\">Inutile de cliquer maintenant — c'est juste pour te montrer où il est.</small>",
     target:".btn-primary", tab:"devis", pro:false, pos:"top"
   },
   {
     title:"✍️ Signature électronique",
-    desc:"Depuis l'historique, envoie un lien de signature à ton client. Il signe directement depuis son téléphone — sans compte, sans installation.",
+    desc:"Depuis tes dossiers, tu envoies un lien de signature au client. Il signe directement depuis son téléphone — sans compte, sans installation. Tu reçois une notification en temps réel quand c'est signé.",
     target:null, tab:"historique", pro:false, pos:"center"
   },
   {
     title:"💶 Convertir en facture",
-    desc:"Devis signé et prestation terminée ? Convertis-le en facture d'un clic. La numérotation séquentielle est automatique.",
+    desc:"Devis signé et prestation terminée ? Un clic sur « Créer la facture » et c'est fait. La numérotation séquentielle FAC-2026-XXX est automatique, le devis original est archivé.",
     target:null, tab:"historique", pro:false, pos:"center"
   },
   {
     title:"📋 Modèles récurrents",
-    desc:"Tu as des clients réguliers avec les mêmes prestations ? Sauvegarde un modèle complet. La prochaine fois, charge-le en un clic — ou dicte \"comme d'habitude pour Mme Martin\" et Artio le charge tout seul.",
+    desc:"Tu as des clients réguliers avec les mêmes prestations chaque mois ? Sauvegarde un modèle complet (prestation + client). La prochaine fois, charge-le en un clic — ou dicte juste <em style=\"color:var(--amber)\">« comme d'habitude pour Mme Martin »</em> et Artio s'en charge tout seul.",
     target:null, tab:"devis", pro:true, pos:"center"
   },
   {
     title:"🗂 Tes dossiers",
-    desc:"Tous tes devis et factures sont ici. Statuts en temps réel, montants, relances automatiques pour les impayés, téléchargement PDF — tout au même endroit.",
+    desc:"Tous tes devis et factures sont classés par dossier client. Statuts en temps réel, relances automatiques pour les impayés, téléchargement PDF, facturation électronique pour le B2B — tout au même endroit.",
     target:".tabs", tab:"historique", pro:false, pos:"bottom"
   },
   {
-    title:"🎉 Tu maîtrises Artio !",
-    desc:"C'est tout. Retrouve ce tutoriel depuis la page Aide à tout moment. Maintenant, crée ton premier devis !",
+    title:"🎉 Tu es prêt !",
+    desc:"Bravo, tu as fait le tour. Tu retrouves ce tutoriel depuis la page Aide à tout moment.<br><br><small style=\"color:var(--muted)\">La création de devis et factures nécessite un abonnement Solo ou Pro. En attendant, tu peux explorer l'app en mode lecture.</small>",
     target:null, tab:"devis", pro:false, pos:"center"
   }
 ];
+
+// Pré-remplit le formulaire avec un exemple pour les utilisateurs sans dictée vocale
+window._tourDemoFill = function(){
+  S.fields = Object.assign({}, S.fields, {
+    client_nom: "M. Martin",
+    client_adresse: "12 rue de la Paix, 75001 Paris",
+    client_tel: "06 12 34 56 78",
+    client_email: "martin@example.com",
+    travaux: "Séance de coaching sportif personnalisé — programme musculation et cardio",
+    date_prestation: "2026-06-15",
+    heure_prestation: "14:00",
+    heure_fin_prestation: "17:00",
+    nb_heures: "3",
+    tva: S.entreprise && S.entreprise.assujetti_tva ? "20" : ""
+  });
+  S.pieces = [
+    {description:"Matériel sportif (élastiques, kettlebell)", quantite:"1", prix_unitaire:"30"}
+  ];
+  renderApp();
+  setTimeout(function(){ if(S.tourActive) _tourRender(); }, 80);
+  showToast("✨ Exemple pré-rempli — explore le formulaire !");
+};
 
 window.startTour = function(){
   // Changer d'onglet si nécessaire pour la première étape
@@ -770,14 +798,21 @@ function _tourRender(){
   // Pro badge
   var proBadge = step.pro ? '<div class="tour-card-pro">✨ Fonctionnalité Pro</div>' : '';
 
-  // Buttons
+  // Action button optionnel (ex: pré-remplir un exemple)
+  var actionBtn = '';
+  if(step.action){
+    actionBtn = '<button class="tour-action-btn" onclick="' + step.action.fn + '()">' + step.action.label + '</button>';
+  }
+
+  // Boutons navigation
   var prevBtn = S.tourStep > 0
     ? '<button class="tour-btn-prev" onclick="tourPrev()">←</button>'
     : '';
   var nextLabel = S.tourStep === TOUR_STEPS.length - 1 ? "Terminer 🎉" : "Suivant →";
   var nextBtn = '<button class="tour-btn-next" onclick="tourNext()">' + nextLabel + '</button>';
+  // Bouton quitter (toujours visible sauf dernière étape)
   var skipBtn = S.tourStep < TOUR_STEPS.length - 1
-    ? '<button class="tour-btn-skip" onclick="tourEnd()">Passer</button>'
+    ? '<button class="tour-btn-skip" onclick="tourEnd()">Quitter le tutoriel</button>'
     : '';
 
   var cardHtml = '<div class="tour-card" id="tour-card">'
@@ -788,9 +823,11 @@ function _tourRender(){
     + '<div class="tour-progress">' + dots + '</div>'
     + proBadge
     + '<div class="tour-card-desc">' + step.desc + '</div>'
+    + actionBtn
     + '<div class="tour-actions">'
-    +   prevBtn + nextBtn + skipBtn
+    +   prevBtn + nextBtn
     + '</div>'
+    + skipBtn
     + '</div>';
 
   overlay.innerHTML = cardHtml;
