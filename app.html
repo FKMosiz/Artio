@@ -638,53 +638,53 @@ Signe "${e.nom||""}".`,800);
 const TOUR_STEPS = [
   {
     title:"👋 Bienvenue sur Artio !",
-    desc:"En quelques minutes, découvre tout ce qu'Artio peut faire — la dictée vocale, l'annuaire clients, la signature électronique...<br><br>Tu peux passer une étape avec « Suivant » ou quitter à tout moment avec « Quitter ».",
+    desc:"En quelques minutes, découvre tout ce qu'Artio peut faire — la dictée vocale, l'annuaire clients, la signature électronique et plus encore.<br><br>Tu peux sauter une étape avec « Suivant » ou quitter à tout moment.",
     target:null, tab:null, pro:false, pos:"center"
   },
   {
     title:"🎙 Dictée vocale — essaie !",
-    desc:"Clique sur le bouton micro et dis par exemple :<br><span class=\"tour-example\">« Monsieur Martin veut une intervention de coaching sport mardi à 14h, j'en ai pour 3 heures de travail, plus matériel à 30 euros »</span>Artio extrait automatiquement le client, la prestation, la date, les heures et les articles.<br><br><span class=\"tour-warn\">⚠️ La dictée vocale ne fonctionne pas sur Firefox ni Brave. Sur ces navigateurs, utilise le bouton ci-dessous pour pré-remplir un exemple.</span>",
+    desc:"Clique sur le micro et dis :<br><span class=\"tour-example\">« Monsieur Martin veut une intervention de coaching sport mardi à 14h, j'en ai pour 3 heures, plus matériel à 30 euros »</span>Artio extrait automatiquement client, prestation, date et articles.<br><span class=\"tour-warn\">⚠️ La dictée ne fonctionne pas sur Firefox/Brave. Utilise le bouton ci-dessous pour pré-remplir un exemple.</span>",
     target:".voice-box", tab:"devis", pro:false, pos:"bottom",
     action:{label:"📝 Pré-remplir un exemple", fn:"_tourDemoFill"}
   },
   {
     title:"👥 Annuaire clients",
-    desc:"Tape les premières lettres d'un client enregistré et il apparaît automatiquement. Un clic dessus et nom, email, téléphone, adresse — tout est rempli. Tu peux aussi cliquer sur 👥 pour voir tous tes clients.",
+    desc:"Tape les premières lettres d'un client enregistré : il apparaît dans la liste. Un clic remplit automatiquement nom, email, téléphone et adresse.<br><br>Le bouton 👥 permet d'ouvrir la liste complète de tes clients.",
     target:"input[data-fid=\"client_nom\"]", tab:"devis", pro:false, pos:"bottom"
   },
   {
-    title:"📋 Description et articles",
-    desc:"La description de la prestation est rédigée à la main ou via la dictée. Plus bas, tu ajoutes les articles (matériel, fournitures) avec quantité et prix unitaire. Artio calcule HT, TVA et TTC automatiquement.",
+    title:"📝 Description & articles",
+    desc:"Décris la prestation manuellement ou via la dictée. En dessous, ajoute les articles (matériel, fournitures) avec quantité et prix unitaire.<br><br>Artio calcule automatiquement le total HT, la TVA et le TTC.",
     target:null, tab:"devis", pro:false, pos:"center"
   },
   {
-    title:"⚡ Le bouton Générer",
-    desc:"Voici le bouton qui produit ton devis. Une fois les infos remplies, un clic dessus :<br>• L'IA rédige la description finale<br>• Le PDF est généré<br>• Le devis est numéroté automatiquement (DEV-2026-XXX)<br>• Tout est ajouté à tes dossiers<br><br><small style=\"color:var(--muted)\">Inutile de cliquer maintenant — c'est juste pour te montrer où il est.</small>",
+    title:"⚡ Générer le document",
+    desc:"Ce bouton produit ton devis. Une fois les infos remplies :<br>• L'IA rédige la description finale<br>• Le PDF est prêt à envoyer<br>• La numérotation est automatique (DEV-2026-XXX)<br>• Le dossier est créé dans l'historique<br><br><small style=\"color:var(--muted)\">Étape suivante : on va voir cet historique.</small>",
     target:".btn-primary", tab:"devis", pro:false, pos:"top"
   },
   {
+    title:"🗂 Tes dossiers",
+    desc:"C'est ici que tous tes devis et factures sont classés. Tu peux :<br>• Voir le statut en temps réel (en attente, signé, payé)<br>• Télécharger le PDF<br>• Visualiser le document généré<br>• Relancer un client impayé<br><br>Chaque devis créé apparaît automatiquement dans cette liste.",
+    target:".tabs", tab:"historique", pro:false, pos:"bottom"
+  },
+  {
     title:"✍️ Signature électronique",
-    desc:"Depuis tes dossiers, tu envoies un lien de signature au client. Il signe directement depuis son téléphone — sans compte, sans installation. Tu reçois une notification en temps réel quand c'est signé.",
+    desc:"Depuis un dossier, envoie un lien de signature à ton client. Il signe directement depuis son téléphone — sans compte, sans installation.<br><br>Tu reçois une notification dès que c'est signé, et le statut passe automatiquement à ✅ Signé.",
     target:null, tab:"historique", pro:false, pos:"center"
   },
   {
     title:"💶 Convertir en facture",
-    desc:"Devis signé et prestation terminée ? Un clic sur « Créer la facture » et c'est fait. La numérotation séquentielle FAC-2026-XXX est automatique, le devis original est archivé.",
+    desc:"Prestation terminée ? Un clic sur <strong style=\"color:var(--amber)\">💶 Créer la facture</strong> depuis le dossier et c'est fait.<br><br>La numérotation FAC-2026-XXX est automatique, le devis original est archivé, et la facture est prête à être envoyée.",
     target:null, tab:"historique", pro:false, pos:"center"
   },
   {
-    title:"📋 Modèles récurrents",
-    desc:"Tu as des clients réguliers avec les mêmes prestations chaque mois ? Sauvegarde un modèle complet (prestation + client). La prochaine fois, charge-le en un clic — ou dicte juste <em style=\"color:var(--amber)\">« comme d'habitude pour Mme Martin »</em> et Artio s'en charge tout seul.",
+    title:"📋 Modèles récurrents ✨",
+    desc:"Clients réguliers avec la même prestation chaque mois ? Sauvegarde un modèle :<br><span class=\"tour-example\">① Remplis le formulaire normalement<br>② Nomme le modèle : « Coaching Martin »<br>③ Coche 📌 Client récurrent<br>④ Clique 💾 Sauvegarder</span>La prochaine fois, charge-le en un clic — ou dicte <em style=\"color:var(--amber)\">« comme d'habitude pour Martin »</em> et Artio s'en charge seul.",
     target:null, tab:"devis", pro:true, pos:"center"
   },
   {
-    title:"🗂 Tes dossiers",
-    desc:"Tous tes devis et factures sont classés par dossier client. Statuts en temps réel, relances automatiques pour les impayés, téléchargement PDF, facturation électronique pour le B2B — tout au même endroit.",
-    target:".tabs", tab:"historique", pro:false, pos:"bottom"
-  },
-  {
     title:"🎉 Tu es prêt !",
-    desc:"Bravo, tu as fait le tour. Tu retrouves ce tutoriel depuis la page Aide à tout moment.<br><br><small style=\"color:var(--muted)\">La création de devis et factures nécessite un abonnement Solo ou Pro. En attendant, tu peux explorer l'app en mode lecture.</small>",
+    desc:"Bravo, tu as fait le tour complet d'Artio !<br><br>Retrouve ce tutoriel depuis la page <strong style=\"color:var(--amber)\">Aide</strong> à tout moment.<br><br><small style=\"color:var(--muted)\">La création de devis et factures nécessite un abonnement Solo ou Pro.</small>",
     target:null, tab:"devis", pro:false, pos:"center"
   }
 ];
@@ -842,6 +842,8 @@ function _tourRender(){
     card.style.left = '50%';
     card.style.transform = 'translate(-50%,-50%)';
     card.style.position = 'fixed';
+    card.style.opacity = '0';
+    setTimeout(function(){ if(card) card.style.opacity = '1'; }, 20);
   } else {
     // D'abord scroller l'élément en vue, puis positionner après le scroll
     targetEl.scrollIntoView({behavior:'smooth', block:'center'});
@@ -875,6 +877,7 @@ function _tourRender(){
       var left2 = rect2.left + rect2.width / 2 - cw2 / 2;
       left2 = Math.max(12, Math.min(left2, vw2 - cw2 - 12));
       card.style.left = left2 + 'px';
+      card.style.opacity = '1';
     }, 350); // Attendre la fin du scroll smooth
   }
 }
