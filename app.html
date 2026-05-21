@@ -1790,6 +1790,7 @@ window.selectClient = function(idx){
   S.fields.client_tel     = c.tel     || "";
   S.fields.client_adresse = c.adresse || "";
   S._showClientPicker = false;
+  S._clientFilter = "";
   set({});
 };
 
@@ -1824,12 +1825,19 @@ function renderClientPicker(){
       + '<div style="' + listStyle + '">'
       + '<div style="' + headerStyle + '">CLIENTS ENREGISTR\u00c9S</div>';
 
+    var filter = (S._clientFilter || "").toLowerCase().trim();
+    var shown = 0;
     for(var i = 0; i < S.clients.length; i++){
       var c = S.clients[i];
+      if(filter && !c.nom.toLowerCase().includes(filter)) continue;
+      shown++;
       var nameHtml = '<div style="font-size:13px;font-weight:500;color:var(--text);">' + esc(c.nom) + '</div>';
       var emailHtml = c.email ? '<div style="font-size:11px;color:var(--muted);">' + esc(c.email) + '</div>' : '';
       html += '<div onclick="selectClient(' + i + ')" style="' + rowStyle + '">'
         + nameHtml + emailHtml + '</div>';
+    }
+    if(shown === 0){
+      html += '<div style="padding:10px;font-size:12px;color:var(--muted);font-style:italic;">Aucun client trouvé</div>';
     }
 
     html += '<div onclick="window.location.href=\'clients.html\'" style="' + manageStyle + '">+ G\u00e9rer les clients \u2192</div>'
