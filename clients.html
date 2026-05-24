@@ -620,7 +620,14 @@ window.createClient = async function() {
     siret: is_professionnel ? (document.getElementById("new-siret")?.value.trim()||"") : "",
   }]).select();
   if (error) { alert("Erreur : "+error.message); return; }
-  if (data?.[0]) { clients.push(data[0]); closePanel(); render(); showToast("✓ Client "+nom+" créé"); }
+  // Supabase v2 peut retourner data:[] sans erreur — on recharge si nécessaire
+  if (data?.[0]) {
+    clients.push(data[0]);
+  } else {
+    const { data: cli } = await sb.from("clients").select("*").eq("user_id", user.id).order("nom");
+    clients = cli || [];
+  }
+  closePanel(); render(); showToast("✓ Client "+nom+" créé");
 };
 
 window.registerImplicitClient = async function(nom) {
