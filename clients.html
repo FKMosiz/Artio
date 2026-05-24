@@ -405,6 +405,7 @@ function render() {
       </div>`;
     });
   }
+  document.getElementById("root").removeAttribute("style");
   document.getElementById("root").innerHTML = html;
 }
 
@@ -593,7 +594,7 @@ function openForm() {
       <div class="field"><label class="field-label">NOTES <span style="font-weight:400;color:var(--muted)">(optionnel)</span></label><textarea id="new-notes" class="field-input" placeholder="Informations utiles…"></textarea></div>
       <div class="field"><label class="check-row"><input id="new-professionnel" type="checkbox" onchange="document.getElementById('new-siret-field').style.display=this.checked?'block':'none'"/><span>Client professionnel (B2B — facturation électronique)</span></label></div>
       <div class="field" id="new-siret-field" style="display:none"><label class="field-label">SIRET DU CLIENT <span style="font-weight:400;color:var(--muted)">(obligatoire pour facture électronique)</span></label><input id="new-siret" class="field-input" type="text" placeholder="123 456 789 00012"/></div>
-      <button class="btn-panel-primary" onclick="createNewClient()">Créer le client</button>
+      <button class="btn-panel-primary" onclick="createClient()">Créer le client</button>
     </div>`;
   document.getElementById("panel").classList.add("open");
   document.getElementById("ov").classList.add("open");
@@ -605,7 +606,7 @@ function closePanel() {
 }
 
 /* ── CRUD ── */
-window.createNewClient = async function() {
+window.createClient = async function() {
   const nom = document.getElementById("new-nom")?.value.trim();
   if (!nom) { document.getElementById("new-nom")?.focus(); return; }
   const is_professionnel = document.getElementById("new-professionnel")?.checked||false;
