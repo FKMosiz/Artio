@@ -486,7 +486,7 @@ async function requestPasswordReset() {
     const { data: { session } } = await sb.auth.getSession();
     if (!session?.user?.email) { msg.textContent = '❌ Session introuvable.'; msg.style.color = '#f87171'; return; }
     const { error } = await sb.auth.resetPasswordForEmail(session.user.email, {
-      redirectTo: 'https://www.monartio.fr/reset-password.html'
+      redirectTo: window.location.origin + '/reset-password.html'
     });
     if (!error) {
       msg.textContent = '✅ Lien envoyé à ' + session.user.email + ' — vérifie ta boîte mail.';

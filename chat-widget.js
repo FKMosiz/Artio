@@ -51,6 +51,7 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
 
   // ── STATE ─────────────────────────────────────────────
   let apiKey          = null;
+  let accessToken     = null;
   let contexteIA      = null; // contexte métier de l'utilisateur
   let userId          = null; // pour le logging des tokens
   let userEmail       = null;
@@ -118,7 +119,7 @@ RÈGLE IMPORTANTE : Quand tu sens que la question de l'utilisateur est résolue 
             ${m.role === 'user' ? 'Vous' : 'Artio'}
           </td>
           <td style="padding:8px 12px;font-size:13px;color:#e2e5f1;line-height:1.6">
-            ${m.content.replace(/\n/g, '<br>')}
+            ${String(m.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
           </td>
         </tr>`
       ).join("");

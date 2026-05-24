@@ -413,7 +413,7 @@ function render() {
     ? `<div class="empty-row">Aucune facture pour cette période</div>`
     : kpi.factures.map(d => `<div class="table-row-item">
         <span class="dos-name">${esc(d._dosNom||"—")}</span>
-        <span class="doc-date">${d.date||"—"}</span>
+        <span class="doc-date">${esc(d.date)||"—"}</span>
         <span class="ttc">${fmt(d.ttc)}</span>
         <span class="ht">${fmt(d.totalHT)}</span>
       </div>`).join("");

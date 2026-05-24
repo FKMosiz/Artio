@@ -567,6 +567,10 @@ function openClient(id) {
 
 /* ── OPEN FORM PANEL ── */
 function openForm() {
+  // Attendre que PlanGuard ait fini son init async avant de vérifier le plan
+  if (window.PlanGuard && window.PlanGuard.getPlan() === null) {
+    window.PlanGuard.onReady(() => openForm()); return;
+  }
   // ── Plan Guard ──
   if(window.PlanGuard && window.PlanGuard.isFree()){
     const el=document.createElement("div");
