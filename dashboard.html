@@ -247,13 +247,13 @@ body { font-family: var(--fb); background: var(--bg); color: var(--text); min-he
     <a class="nav-link" href="clients.html">Clients</a>
   </nav>
   <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn-logout" onclick="location.href='aide.html'">Aide</button>
+    <button class="btn-logout" onclick="location.href='settings.html'">Paramètres</button>
+    <button class="btn-logout" id="btn-logout">Déconnexion</button>
     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Changer de thème" title="Changer de thème">
       <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
     </button>
-    <button class="btn-logout" onclick="location.href='aide.html'">Aide</button>
-    <button class="btn-logout" onclick="location.href='settings.html'">Paramètres</button>
-    <button class="btn-logout" id="btn-logout">Déconnexion</button>
   </div>
 </header>
 
@@ -413,7 +413,7 @@ function render() {
     ? `<div class="empty-row">Aucune facture pour cette période</div>`
     : kpi.factures.map(d => `<div class="table-row-item">
         <span class="dos-name">${esc(d._dosNom||"—")}</span>
-        <span class="doc-date">${esc(d.date)||"—"}</span>
+        <span class="doc-date">${d.date||"—"}</span>
         <span class="ttc">${fmt(d.ttc)}</span>
         <span class="ht">${fmt(d.totalHT)}</span>
       </div>`).join("");
