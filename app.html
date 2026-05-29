@@ -255,7 +255,7 @@ let S={
   signatureLinkCopied:false,
   emettreId:null,
   copied:false,
-  entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",api_key:"",assujetti_tva:false,secteur:"",conditions_paiement:"",delai_paiement:"30",validite_devis:3},
+  entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",assujetti_tva:false,secteur:"",conditions_paiement:"",delai_paiement:"30",validite_devis:3},
   dossiers:[],
   templates:[],
   clients:[],
@@ -285,7 +285,7 @@ async function loadUserData(userId){
       S.entreprise={
         nom:profil.nom||"",adresse:profil.adresse||"",tel:profil.tel||"",
         email:profil.email||"",siret:profil.siret||"",taux_horaire:profil.taux_horaire||"",
-        api_key:profil.api_key||"",assujetti_tva:profil.assujetti_tva||false,
+        assujetti_tva:profil.assujetti_tva||false,
         secteur:profil.secteur||"",
         conditions_paiement:profil.conditions_paiement||"",
         delai_paiement:profil.delai_paiement||"30",
@@ -338,7 +338,6 @@ async function saveProfil(){
   });
   const e=S.entreprise;
   if(!e.nom||!e.siret||!e.taux_horaire){alert("Nom, SIRET et taux horaire obligatoires.");return}
-  if(!e.api_key){alert("La clé API Anthropic est obligatoire.");return}
   set({syncing:true});
   const{error}=await sb.from("profils").upsert({user_id:S.user.id,...e,assujetti_tva:e.assujetti_tva||false,secteur:e.secteur||"",conditions_paiement:e.conditions_paiement||"",delai_paiement:e.delai_paiement||"30",updated_at:new Date().toISOString()},{onConflict:"user_id"});
   if(error){alert("Erreur sauvegarde : "+error.message)}
@@ -953,39 +952,48 @@ async function callClaude(prompt,maxTokens=400,retries=5){
     _showReadonlyAlert("La génération par IA nécessite un abonnement actif.");
     throw new Error("plan_required");
   }
-  // Models list: essayer Sonnet puis fallback Haiku si surchargé
-  const models=["claude-sonnet-4-20250514","claude-haiku-4-5-20251001"];
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session){throw new Error("Session expirée, reconnecte-toi.");}
   for(let attempt=1;attempt<=retries;attempt++){
-    const model=attempt>=3?models[1]:models[0]; // Fallback Haiku à partir de la 3ème tentative
     try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{
+      const res=await fetch(FUNCTIONS_URL+"/claude-proxy",{
         method:"POST",
-        headers:{"Content-Type":"application/json","x-api-key":S.entreprise.api_key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":"Bearer "+session.access_token
+        },
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:maxTokens,
+          messages:[{role:"user",content:prompt}]
+        })
       });
       const d=await res.json();
-      if(d.error){
-        if((d.error.type==="overloaded_error"||d.error.type==="rate_limit_error")&&attempt<retries){
+      if(!res.ok){
+        if((d.code==="plan_required")||res.status===403){
+          _showReadonlyAlert("Abonnement requis pour utiliser l'IA.");
+          throw new Error("plan_required");
+        }
+        if((res.status===529||res.status===503||res.status===429)&&attempt<retries){
           const wait=1500*Math.pow(1.5,attempt);
-          console.warn(`IA surchargée, retry ${attempt}/${retries} dans ${Math.round(wait)}ms (modèle: ${model})`);
+          console.warn(`Proxy surchargé, retry ${attempt}/${retries} dans ${Math.round(wait)}ms`);
           await new Promise(r=>setTimeout(r,wait));
           continue;
         }
-        throw new Error(d.error.message);
+        throw new Error(d.error||d.message||"Erreur proxy IA");
       }
-      // Retourne texte ET usage pour le logging (usage invisible pour l'utilisateur)
-      return {
-        text: d.content?.map(b=>b.text||"").join("")||"",
-        usage: d.usage||null
+      return{
+        text:d.content?.map(b=>b.text||"").join("")||"",
+        usage:d.usage||null
       };
     }catch(e){
       if(attempt===retries){
-        if(e.message&&(e.message.includes("overloaded")||e.message.includes("Overloaded"))){
-          throw new Error("L'IA est momentanément surchargée. Réessayez dans quelques instants.");
-        }
-        throw e;
+        if(e.message==="plan_required")throw e;
+        throw new Error("L'IA est momentanément surchargée. Réessayez dans quelques instants.");
       }
-      await new Promise(r=>setTimeout(r,1500*attempt));
+      if(e.message==="plan_required")throw e;
+      const wait=1500*Math.pow(1.5,attempt);
+      await new Promise(r=>setTimeout(r,wait));
     }
   }
 }
@@ -1212,7 +1220,6 @@ window.handleGenerate=async()=>{
     if(!S.pieces[i])S.pieces[i]={};S.pieces[i][k]=el.value;
   });
   const e=S.entreprise,f=S.fields,tab=S.tab;
-  if(!e.api_key){alert("Configure d'abord ta clé API.");return}
   if(tab==="email"){
     const req=S.emailMode==="reponse"?["client_nom","message"]:["client_nom","avancement"];
     const miss=req.filter(id=>!(f[id]||"").trim());
@@ -1345,11 +1352,13 @@ window.markTermine=async id=>{
   dos.statut="termine";await upsertDossier(dos);set({});
 };
 window.markAccepte=async(dosId,docNum)=>{
+    if(window.PlanGuard&&window.PlanGuard.isFree()){_showReadonlyAlert("Action impossible en mode lecture.");return;}
   const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
   dos.statut="devis_accepte";dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,accepte:true}:d);
   await upsertDossier(dos);set({});
 };
 window.markPaye=async(dosId,docNum)=>{
+    if(window.PlanGuard&&window.PlanGuard.isFree()){_showReadonlyAlert("Action impossible en mode lecture.");return;}
   const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
   const datePaye=new Date().toLocaleDateString("fr-FR");
   dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,paye:true,date_paye:datePaye}:d);
@@ -1359,6 +1368,9 @@ window.markPaye=async(dosId,docNum)=>{
 };
 
 async function genererRappelPaiement(dosId,docNum){
+    if(window.PlanGuard&&!window.PlanGuard.isPro()){
+      window.PlanGuard.showProModal("Rappels de paiement IA");return;
+    }
   const dos=S.dossiers.find(d=>d.id===dosId);
   const doc=dos?.documents?.find(d=>d.docNumber===docNum);
   if(!doc){alert("Document introuvable.");return}
@@ -1403,6 +1415,9 @@ async function genererRappelPaiement(dosId,docNum){
 }
 
 async function genererRelance(dosId,docNum){
+    if(window.PlanGuard&&!window.PlanGuard.isPro()){
+      window.PlanGuard.showProModal("Relances clients IA");return;
+    }
   const dos=S.dossiers.find(d=>d.id===dosId);
   const doc=dos?.documents?.find(d=>d.docNumber===docNum);
   if(!doc){alert("Document introuvable.");return}
@@ -1438,6 +1453,9 @@ async function hashDoc(obj) {
 }
 
 sendForSignature=async(dosId,docNum)=>{
+    if(window.PlanGuard&&!window.PlanGuard.isPro()){
+      window.PlanGuard.showProModal("Signature électronique");return;
+    }
   const dos=S.dossiers.find(d=>d.id===dosId);
   const doc=dos?.documents?.find(d=>d.docNumber===docNum);
   if(!doc){alert("Document introuvable.");return}
@@ -1543,6 +1561,7 @@ function isoToFR(iso){
 }
 
 convertToFacture=async(dosId,docNum)=>{
+    if(window.PlanGuard&&window.PlanGuard.isFree()){_showReadonlyAlert("Action impossible en mode lecture.");return;}
   const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
   const devis=dos.documents.find(d=>d.docNumber===docNum);if(!devis)return;
   // Option C : date prestation presente -> on l'utilise, sinon -> popup
@@ -1626,6 +1645,9 @@ window.setTab=t=>{
     _showReadonlyAlert("La création de documents nécessite un abonnement actif. Consultez votre historique ci-dessous.");
     return;
   }
+    if(t==="emails_gmail"&&window.PlanGuard&&!window.PlanGuard.isPro()){
+      window.PlanGuard.showProModal("Messagerie Gmail");return;
+    }
   set({tab:t,fields:{validite_jours:String(S.entreprise.validite_devis||3)},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null});
 };
 window.setEmailMode=m=>set({emailMode:m,fields:{},generatedText:""});
@@ -1925,7 +1947,7 @@ function renderApp(){
   </nav>
   <div class="app">
     <div class="tabs">
-      ${[["devis",L("devis")],["facture",L("facture")],["email",L("email")],["historique",L("historique")+(S.dossiers.length?" ("+S.dossiers.length+")":"")],["emails_gmail",S.gmailEmail?"📬 Messagerie"+(S.emails.length?" ("+S.emails.length+")":""):"📬 Messagerie"]].map(([id,label])=>`<button class="tab-btn ${S.tab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}
+      ${[["devis",L("devis")],["facture",L("facture")],["email",L("email")],["historique",L("historique")+(S.dossiers.length?" ("+S.dossiers.length+")":"")],...(window.PlanGuard?.isPro()?[["emails_gmail",S.gmailEmail?"📬 Messagerie"+(S.emails.length?" ("+S.emails.length+")":""):"📬 Messagerie"]]:[[]])].map(([id,label])=>`<button class="tab-btn ${S.tab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}
     </div>
     ${S.tab==="emails_gmail"?renderEmailsGmail():S.tab==="historique"?renderHistorique():S.tab==="email"?renderEmail():renderDevisFacture()}
   </div>
@@ -2468,14 +2490,14 @@ function renderHistorique(){
                 <button class="btn-small" style="background:var(--surface-2);border-color:var(--border);color:var(--text);" onclick="downloadPDF('${doc.docNumber}')">⬇ PDF</button>
                 ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(62,207,207,.12);color:var(--teal);border-color:rgba(62,207,207,.3);" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}
                 ${doc.type==="devis"&&doc.accepte?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);font-size:11px;" onclick="downloadSignedProof('${doc.docNumber}')">📄 Preuve signée</button>`:""}\n                ${doc.type==="devis"&&doc.accepte&&!hasF?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
-                ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:""}
-                ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:""}
+                ${doc.type==="devis"&&!doc.accepte&&window.PlanGuard?.isPro()?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:`${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);opacity:0.45;" onclick="window.PlanGuard?.showProModal('Signature électronique')">🔒 Signature</button>`:""}`}
+                ${doc.type==="devis"&&!doc.accepte&&window.PlanGuard?.isPro()?`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);opacity:0.45;" onclick="window.PlanGuard?.showProModal('Relances clients IA')">🔒 Relance</button>`:""}
                 ${doc.type==="facture"?`
                   ${doc.paye
                     ?`<span class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;">✓ Payée le ${doc.date_paye}</span>`
                     :`<button class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border-color:rgba(74,222,128,.3);" onclick="markPaye('${dos.id}','${doc.docNumber}')">💶 Marquer payée</button>`
                   }
-                  ${!doc.paye?(S.rappelLoadingId===doc.docNumber?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);cursor:default;" disabled>⏳ Génération...</button>`:`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);" onclick="genererRappelPaiement('${dos.id}','${doc.docNumber}')">📨 Rappel</button>`):""}
+                  ${!doc.paye?(S.rappelLoadingId===doc.docNumber?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);cursor:default;" disabled>⏳ Génération...</button>`:window.PlanGuard?.isPro()?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);" onclick="genererRappelPaiement('${dos.id}','${doc.docNumber}')">📨 Rappel</button>`:`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);opacity:0.45;" onclick="window.PlanGuard?.showProModal('Rappels de paiement IA')">🔒 Rappel</button>`):""}
                   <button class="btn-small" style="background:${doc.factpulse_id?'rgba(74,222,128,.12)':'rgba(83,74,183,.15)'};color:${doc.factpulse_id?'var(--green)':'#9d95f5'};border-color:${doc.factpulse_id?'rgba(74,222,128,.3)':'rgba(83,74,183,.3)'};" onclick="emettreFacture('${dos.id}','${doc.docNumber}')">${S.emettreId===doc.docNumber?'⏳ Envoi...':(doc.factpulse_id?'✅ Émise':'⚡ Émettre')}</button>
                 `:""  }
                 ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button>`:`<button class="btn-small" style="color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
