@@ -215,6 +215,47 @@
     }
     .link-btn:hover { opacity: .75; }
 
+    /* ── PASSWORD STRENGTH ── */
+    .pw-strength-bar {
+      height: 4px; border-radius: 99px;
+      background: var(--border); margin-top: 8px;
+      overflow: hidden;
+    }
+    .pw-strength-fill {
+      height: 100%; border-radius: 99px;
+      transition: width .3s, background .3s;
+    }
+    .pw-strength-label {
+      font-size: 11px; font-weight: 600;
+      margin-top: 5px; letter-spacing: .03em;
+      transition: color .3s;
+    }
+    .pw-criteria {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 5px 8px; margin-top: 10px;
+    }
+    .pw-criterion {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--muted);
+      transition: color .2s;
+    }
+    .pw-criterion.ok { color: var(--success, #4ade80); }
+    .pw-criterion .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--border-hi); flex-shrink: 0;
+      transition: background .2s;
+    }
+    .pw-criterion.ok .dot { background: var(--success, #4ade80); }
+
+    .field-input.mismatch { border-color: var(--error) !important; box-shadow: 0 0 0 3px var(--error-dim) !important; }
+    .field-input.match    { border-color: var(--success) !important; box-shadow: 0 0 0 3px var(--success-dim) !important; }
+    .confirm-hint {
+      font-size: 11px; margin-top: 5px;
+      transition: color .2s;
+    }
+    .confirm-hint.ok  { color: var(--success, #4ade80); }
+    .confirm-hint.bad { color: var(--error, #f87171); }
+
     /* ── FORGOT SENT ── */
     .sent-box {
       text-align: center; padding: 32px 16px;
@@ -324,6 +365,20 @@ const LABELS = {
   back_login:     { fr:"← Retour à la connexion", en:"← Back to login", es:"← Volver al inicio de sesión", zh:"← 返回登录" },
   legal:          { fr:"Solution Compatible — réforme facturation électronique DGFiP 2026", en:"Compatible Solution — DGFiP 2026 e-invoicing reform", es:"Solución Compatible — DGFiP 2026", zh:"兼容解决方案 — DGFiP 2026" },
   err_required:   { fr:"Email et mot de passe requis.", en:"Email and password required.", es:"Email y contraseña requeridos.", zh:"请填写邮箱和密码。" },
+  err_pass_mismatch:{ fr:"Les mots de passe ne correspondent pas.", en:"Passwords do not match.", es:"Las contraseñas no coinciden.", zh:"两次密码不一致。" },
+  pwd_confirm_lbl:  { fr:"Confirmer le mot de passe", en:"Confirm password", es:"Confirmar contraseña", zh:"确认密码" },
+  pwd_confirm_ph:   { fr:"••••••••", en:"••••••••", es:"••••••••", zh:"••••••••" },
+  confirm_ok:       { fr:"✓ Les mots de passe correspondent", en:"✓ Passwords match", es:"✓ Las contraseñas coinciden", zh:"✓ 密码一致" },
+  confirm_bad:      { fr:"✗ Les mots de passe ne correspondent pas", en:"✗ Passwords do not match", es:"✗ Las contraseñas no coinciden", zh:"✗ 密码不一致" },
+  pw_weak:          { fr:"Faible", en:"Weak", es:"Débil", zh:"弱" },
+  pw_medium:        { fr:"Moyen", en:"Medium", es:"Medio", zh:"中" },
+  pw_strong:        { fr:"Fort", en:"Strong", es:"Fuerte", zh:"强" },
+  pw_very_strong:   { fr:"Très fort", en:"Very strong", es:"Muy fuerte", zh:"非常强" },
+  crit_length:      { fr:"8 caractères min.", en:"8+ characters", es:"8+ caracteres", zh:"至少8字符" },
+  crit_upper:       { fr:"Majuscule", en:"Uppercase", es:"Mayúscula", zh:"大写字母" },
+  crit_lower:       { fr:"Minuscule", en:"Lowercase", es:"Minúscula", zh:"小写字母" },
+  crit_digit:       { fr:"Chiffre", en:"Number", es:"Número", zh:"数字" },
+  crit_special:     { fr:"Caractère spécial", en:"Special char", es:"Carácter especial", zh:"特殊字符" },
   err_pass_length:  { fr:"8 caractères minimum.", en:"Minimum 8 characters.", es:"Mínimo 8 caracteres.", zh:"最少8个字符。" },
   err_pass_upper:   { fr:"Au moins une majuscule requise.", en:"At least one uppercase letter required.", es:"Se requiere al menos una mayúscula.", zh:"需要至少一个大写字母。" },
   err_pass_lower:   { fr:"Au moins une minuscule requise.", en:"At least one lowercase letter required.", es:"Se requiere al menos una minúscula.", zh:"需要至少一个小写字母。" },
@@ -344,6 +399,70 @@ function setLang(code) {
   S.langOpen = false;
   localStorage.setItem('artio_langue', code);
   render();
+}
+
+/* ── PASSWORD STRENGTH ── */
+function pwStrength(pass) {
+  const checks = {
+    length:  pass.length >= 8,
+    upper:   /[A-Z]/.test(pass),
+    lower:   /[a-z]/.test(pass),
+    digit:   /[0-9]/.test(pass),
+    special: /[^A-Za-z0-9]/.test(pass),
+  };
+  const score = Object.values(checks).filter(Boolean).length;
+  return { checks, score };
+}
+
+function pwStrengthColor(score) {
+  return ['', '#f87171', '#fb923c', '#facc15', '#4ade80'][score] || '#4ade80';
+}
+
+function updatePasswordUI() {
+  const pass = document.getElementById('auth-pass')?.value || '';
+  const confirm = document.getElementById('auth-confirm')?.value || '';
+  if (S.tab !== 'register') return;
+
+  // Strength bar
+  const { checks, score } = pwStrength(pass);
+  const fill = document.getElementById('pw-fill');
+  const label = document.getElementById('pw-label');
+  if (fill) {
+    fill.style.width = (score / 5 * 100) + '%';
+    fill.style.background = pwStrengthColor(score);
+  }
+  if (label && pass.length > 0) {
+    const labels = ['', L('pw_weak'), L('pw_weak'), L('pw_medium'), L('pw_strong'), L('pw_very_strong')];
+    label.textContent = labels[score];
+    label.style.color = pwStrengthColor(score);
+  } else if (label) {
+    label.textContent = '';
+  }
+
+  // Criteria dots
+  const ids = { length:'crit-length', upper:'crit-upper', lower:'crit-lower', digit:'crit-digit', special:'crit-special' };
+  for (const [key, id] of Object.entries(ids)) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('ok', checks[key]);
+  }
+
+  // Confirm field hint
+  const hint = document.getElementById('confirm-hint');
+  const confirmInput = document.getElementById('auth-confirm');
+  if (hint && confirmInput && confirm.length > 0) {
+    if (confirm === pass) {
+      hint.textContent = L('confirm_ok');
+      hint.className = 'confirm-hint ok';
+      confirmInput.classList.remove('mismatch'); confirmInput.classList.add('match');
+    } else {
+      hint.textContent = L('confirm_bad');
+      hint.className = 'confirm-hint bad';
+      confirmInput.classList.remove('match'); confirmInput.classList.add('mismatch');
+    }
+  } else if (hint) {
+    hint.textContent = '';
+    confirmInput?.classList.remove('match','mismatch');
+  }
 }
 
 /* ── PASSWORD VALIDATION ── */
@@ -369,6 +488,8 @@ async function handleAuth() {
   } else {
     const passErr = validatePassword(pass);
     if (passErr) { set({ loading: false, error: passErr }); return; }
+    const confirm = document.getElementById('auth-confirm')?.value;
+    if (pass !== confirm) { set({ loading: false, error: L('err_pass_mismatch') }); return; }
     const { data, error } = await sb.auth.signUp({ email, password: pass });
     if (error) set({ loading: false, error: error.message });
     else if (data.user && !data.session) set({ loading: false, success: L('suc_register') });
@@ -472,8 +593,27 @@ function render() {
       <div class="field">
         <label class="field-label">${L('pwd_lbl')}</label>
         <input id="auth-pass" class="field-input" type="password" placeholder="••••••••"
-          onkeydown="if(event.key==='Enter')handleAuth()"/>
+          oninput="updatePasswordUI()"
+          onkeydown="if(event.key==='Enter')${S.tab === 'register' ? "document.getElementById('auth-confirm').focus()" : 'handleAuth()'}"/>
+        ${S.tab === 'register' ? `
+        <div class="pw-strength-bar"><div class="pw-strength-fill" id="pw-fill" style="width:0%"></div></div>
+        <div class="pw-strength-label" id="pw-label"></div>
+        <div class="pw-criteria">
+          <div class="pw-criterion" id="crit-length"><div class="dot"></div>${L('crit_length')}</div>
+          <div class="pw-criterion" id="crit-upper"><div class="dot"></div>${L('crit_upper')}</div>
+          <div class="pw-criterion" id="crit-lower"><div class="dot"></div>${L('crit_lower')}</div>
+          <div class="pw-criterion" id="crit-digit"><div class="dot"></div>${L('crit_digit')}</div>
+          <div class="pw-criterion" id="crit-special"><div class="dot"></div>${L('crit_special')}</div>
+        </div>` : ''}
       </div>
+      ${S.tab === 'register' ? `
+      <div class="field">
+        <label class="field-label">${L('pwd_confirm_lbl')}</label>
+        <input id="auth-confirm" class="field-input" type="password" placeholder="${L('pwd_confirm_ph')}"
+          oninput="updatePasswordUI()"
+          onkeydown="if(event.key==='Enter')handleAuth()"/>
+        <div class="confirm-hint" id="confirm-hint"></div>
+      </div>` : ''}
       <button class="btn-primary" ${S.loading ? 'disabled' : ''} onclick="handleAuth()">
         ${S.loading ? L('btn_loading') : (S.tab === 'login' ? L('btn_login') : L('btn_register'))}
       </button>
