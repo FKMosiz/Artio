@@ -477,8 +477,9 @@ function validatePassword(pass) {
 
 /* ── AUTH HANDLERS ── */
 async function handleAuth() {
-  const email = document.getElementById('auth-email')?.value.trim();
-  const pass  = document.getElementById('auth-pass')?.value;
+  const email   = document.getElementById('auth-email')?.value.trim();
+  const pass    = document.getElementById('auth-pass')?.value;
+  const confirm = document.getElementById('auth-confirm')?.value; // lu AVANT render()
   if (!email || !pass) { set({ error: L('err_required') }); return; }
   set({ loading: true, error: '', success: '' });
   if (S.tab === 'login') {
@@ -488,7 +489,6 @@ async function handleAuth() {
   } else {
     const passErr = validatePassword(pass);
     if (passErr) { set({ loading: false, error: passErr }); return; }
-    const confirm = document.getElementById('auth-confirm')?.value;
     if (pass !== confirm) { set({ loading: false, error: L('err_pass_mismatch') }); return; }
     const { data, error } = await sb.auth.signUp({ email, password: pass });
     if (error) set({ loading: false, error: error.message });
