@@ -215,6 +215,20 @@
     }
     .link-btn:hover { opacity: .75; }
 
+    .field-pass-wrap {
+      position: relative;
+    }
+    .field-pass-wrap .field-input {
+      padding-right: 42px;
+    }
+    .pw-eye {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); padding: 4px; line-height: 0;
+      transition: color .2s;
+    }
+    .pw-eye:hover { color: var(--text); }
+
     /* ── PASSWORD STRENGTH ── */
     .pw-strength-bar {
       height: 4px; border-radius: 99px;
@@ -491,7 +505,14 @@ async function handleAuth() {
     if (passErr) { set({ loading: false, error: passErr }); return; }
     if (pass !== confirm) { set({ loading: false, error: L('err_pass_mismatch') }); return; }
     const { data, error } = await sb.auth.signUp({ email, password: pass });
-    if (error) set({ loading: false, error: error.message });
+    if (error) {
+      // Si l'erreur concerne l'envoi de l'email de confirmation, le compte est quand même créé
+      if (error.message && error.message.toLowerCase().includes('sending confirmation email')) {
+        set({ loading: false, success: L('suc_register') });
+      } else {
+        set({ loading: false, error: error.message });
+      }
+    }
     else if (data.user && !data.session) set({ loading: false, success: L('suc_register') });
     else if (data.user) window.location.href = 'home.html';
   }
@@ -504,6 +525,23 @@ async function handleForgot() {
   const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/index.html' });
   if (error) set({ loading: false, error: error.message });
   else set({ loading: false, view: 'forgot_sent' });
+}
+
+/* ── TOGGLE PASSWORD VISIBILITY ── */
+function togglePw(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn   = document.getElementById(btnId);
+  if (!input || !btn) return;
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  btn.innerHTML = isHidden ? eyeOffSVG() : eyeSVG();
+}
+
+function eyeSVG() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+}
+function eyeOffSVG() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
 }
 
 /* ── RENDER ── */
@@ -592,9 +630,12 @@ function render() {
       </div>
       <div class="field">
         <label class="field-label">${L('pwd_lbl')}</label>
-        <input id="auth-pass" class="field-input" type="password" placeholder="••••••••"
-          oninput="updatePasswordUI()"
-          onkeydown="if(event.key==='Enter')${S.tab === 'register' ? "document.getElementById('auth-confirm').focus()" : 'handleAuth()'}"/>
+        <div class="field-pass-wrap">
+          <input id="auth-pass" class="field-input" type="password" placeholder="••••••••"
+            oninput="updatePasswordUI()"
+            onkeydown="if(event.key==='Enter')${S.tab === 'register' ? "document.getElementById('auth-confirm').focus()" : 'handleAuth()'}"/>
+          <button class="pw-eye" id="eye-pass" type="button" onclick="togglePw('auth-pass','eye-pass')" tabindex="-1">${eyeSVG()}</button>
+        </div>
         ${S.tab === 'register' ? `
         <div class="pw-strength-bar"><div class="pw-strength-fill" id="pw-fill" style="width:0%"></div></div>
         <div class="pw-strength-label" id="pw-label"></div>
@@ -609,9 +650,12 @@ function render() {
       ${S.tab === 'register' ? `
       <div class="field">
         <label class="field-label">${L('pwd_confirm_lbl')}</label>
-        <input id="auth-confirm" class="field-input" type="password" placeholder="${L('pwd_confirm_ph')}"
-          oninput="updatePasswordUI()"
-          onkeydown="if(event.key==='Enter')handleAuth()"/>
+        <div class="field-pass-wrap">
+          <input id="auth-confirm" class="field-input" type="password" placeholder="${L('pwd_confirm_ph')}"
+            oninput="updatePasswordUI()"
+            onkeydown="if(event.key==='Enter')handleAuth()"/>
+          <button class="pw-eye" id="eye-confirm" type="button" onclick="togglePw('auth-confirm','eye-confirm')" tabindex="-1">${eyeSVG()}</button>
+        </div>
         <div class="confirm-hint" id="confirm-hint"></div>
       </div>` : ''}
       <button class="btn-primary" ${S.loading ? 'disabled' : ''} onclick="handleAuth()">
