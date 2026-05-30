@@ -334,8 +334,7 @@ textarea.field-input { resize: vertical; min-height: 70px; }
 <script>
 const SUPABASE_URL = "https://mwmexkoeqeyueqgdkkni.supabase.co";
 const SUPABASE_KEY = "sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let user = null, dossiers = [], clients = [], search = "";
 const openApercu = {};
