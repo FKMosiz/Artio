@@ -252,6 +252,7 @@ let S={
   convertingId:null,
   devisAConvertir:[],
   showDatePrestModal:false,
+  showSiretModal:null,
   pendingConvert:null,
   signatureLink:null,
   signatureLinkCopied:false,
@@ -1500,7 +1501,7 @@ window.emettreFacture=async function(dosId,docNum,opts){
   const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
   const doc=dos.documents.find(d=>d.docNumber===docNum);if(!doc)return;
   if(!S.entreprise?.siret){
-    if(!silent)alert("SIRET manquant dans ton profil. Va dans Paramètres → Mon entreprise.");
+    if(!silent)showToast("⚠️ SIRET manquant dans ton profil — va dans Paramètres.");
     return;
   }
   // Validation client : SIRET obligatoire pour la facturation électronique B2B.
@@ -1509,20 +1510,14 @@ window.emettreFacture=async function(dosId,docNum,opts){
   let clientSiret=(doc.client?.siret||"").replace(/\s/g,"");
   if(!clientSiret){
     if(silent)return;
-    const raw=prompt("SIRET du client (B2B obligatoire) :\nEx: 35600000000048\n\nAnnule si client particulier (B2C non concerné).");
-    if(!raw)return;
-    clientSiret=raw.replace(/\s/g,"");
-    // On met à jour le document localement pour que l'Edge Function le voie
-    doc.client=doc.client||{};
-    doc.client.siret=clientSiret;
-    // Et on persiste en base avant l'appel
-    try{await upsertDossier(dos);}catch(e){console.warn("upsertDossier:",e);}
+    set({showSiretModal:{dosId,docNum}});
+    return;
   }
   set({emettreId:docNum});
   try{
     const{data:{session}}=await sb.auth.getSession();
     if(!session){
-      if(!silent)alert("⚠️ Session expirée. Reconnecte-toi.");
+      if(!silent)showToast("⚠️ Session expirée. Reconnecte-toi.");
       set({emettreId:null});return;
     }
     const resp=await fetch(FUNCTIONS_URL+"/index-factpulse",{
@@ -1536,7 +1531,7 @@ window.emettreFacture=async function(dosId,docNum,opts){
     const result=await resp.json();
     if(!resp.ok||!result.success){
       const msg=result?.error||result?.message||"Erreur inconnue";
-      if(!silent)alert("❌ Erreur FactPulse :\n"+msg);
+      if(!silent)showToast("❌ FactPulse : "+msg);
       else console.warn("FactPulse silent:",msg);
       set({emettreId:null});return;
     }
@@ -1548,9 +1543,9 @@ window.emettreFacture=async function(dosId,docNum,opts){
       if(idx>=0)S.dossiers[idx]=freshDos;
     }
     set({emettreId:null,dossiers:[...S.dossiers]});
-    if(!silent)alert("✅ Facture émise électroniquement !\nFlow ID : "+(result.flow_id||result.factpulse_id||"émis"));
+    if(!silent)showToast("✅ Facture émise électroniquement ! Flow ID : "+(result.flow_id||result.factpulse_id||"émis"));
   }catch(e){
-    if(!silent)alert("❌ Erreur réseau : "+e.message);
+    if(!silent)showToast("❌ Erreur réseau : "+e.message);
     set({emettreId:null});
   }
 };
@@ -1632,6 +1627,8 @@ window.renameDossier=async function(id){
 window.confirmDeleteDossier=async id=>{
   await deleteDossierDB(id);
   S.dossiers=S.dossiers.filter(d=>d.id!==id);
+  const{data:cls}=await sb.from("clients").select("id,nom,email,tel,adresse").eq("user_id",S.user.id).order("nom",{ascending:true});
+  if(cls)S.clients=cls;
   set({deleteConfirm:null,openDossier:null,previewDocNum:null});
 };
 window.confirmDeleteDoc=async(dosId,docNum)=>{
@@ -1639,6 +1636,8 @@ window.confirmDeleteDoc=async(dosId,docNum)=>{
   dos.documents=dos.documents.filter(d=>d.docNumber!==docNum);
   if(dos.documents.length===0){await deleteDossierDB(dosId);S.dossiers=S.dossiers.filter(d=>d.id!==dosId)}
   else{await upsertDossier(dos)}
+  const{data:cls}=await sb.from("clients").select("id,nom,email,tel,adresse").eq("user_id",S.user.id).order("nom",{ascending:true});
+  if(cls)S.clients=cls;
   set({deleteConfirm:null,previewDocNum:null});
 };
 window.copyText=text=>{navigator.clipboard.writeText(text);set({copied:true});setTimeout(()=>set({copied:false}),2000)};
@@ -2035,6 +2034,29 @@ function renderApp(){
       <div style="display:flex;gap:10px;">
         <button onclick="set({signatureLink:null,signatureLinkCopied:false})" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:14px;">Fermer</button>
         <button onclick="copySignatureLink()" style="flex:1.4;padding:11px;border-radius:10px;background:${S.signatureLinkCopied?"var(--green)":"var(--amber)"};color:#080b14;border:none;cursor:pointer;font-size:14px;font-weight:700;transition:background .2s;">${S.signatureLinkCopied?"✓ Copié !":"📋 Copier le lien"}</button>
+      </div>
+    </div>
+  </div>`:""}
+  ${S.showSiretModal?`
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)set({showSiretModal:null})">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:400px;max-width:100%;">
+      <p style="font-size:16px;font-weight:600;margin-bottom:6px;">⚡ Facturation électronique</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;">Le SIRET du client est requis pour émettre la facture au format électronique (B2B). Laissez vide si le client est un particulier.</p>
+      <label style="font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px;">SIRET DU CLIENT</label>
+      <input id="modal-siret-input" type="text" maxlength="14" placeholder="Ex : 35600000000048" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:14px;font-family:monospace;letter-spacing:.05em;margin-bottom:20px;" />
+      <div style="display:flex;gap:10px;">
+        <button onclick="set({showSiretModal:null})" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:14px;">Annuler — B2C</button>
+        <button onclick="(async()=>{
+          const raw=document.getElementById('modal-siret-input').value.replace(/\\s/g,'');
+          if(!raw||raw.length<9){showToast('⚠️ SIRET invalide — minimum 9 chiffres');return;}
+          const m=S.showSiretModal;
+          const dos=S.dossiers.find(d=>d.id===m.dosId);if(!dos)return;
+          const doc=dos.documents.find(d=>d.docNumber===m.docNum);if(!doc)return;
+          doc.client=doc.client||{};doc.client.siret=raw;
+          try{await upsertDossier(dos);}catch(e){console.warn(e);}
+          set({showSiretModal:null});
+          await window.emettreFacture(m.dosId,m.docNum);
+        })()" style="flex:1.4;padding:11px;border-radius:10px;background:var(--amber);color:#080b14;border:none;cursor:pointer;font-size:14px;font-weight:700;">Émettre la facture</button>
       </div>
     </div>
   </div>`:""}
