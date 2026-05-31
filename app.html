@@ -1125,7 +1125,7 @@ window.startVoice=()=>{
 `Tu es un assistant pour ${S.entreprise.secteur||"un prestataire indépendant"}. L'utilisateur parle en ${({'fr':'français','en':'anglais','es':'espagnol','zh':'chinois'})[S.langue]||'français'}. Analyse cette dictée et retourne UNIQUEMENT un objet JSON valide, sans texte avant ou après, sans balises markdown.
 
 Dictée: "${t}"
-Taux horaire artisan: ${S.entreprise.taux_horaire}€/h
+Taux horaire: ${S.entreprise.taux_horaire}€/h
 
 Instructions d'extraction:
 - client_nom: nom complet du client (ex: "M. Dupont", "Madame Martin")
@@ -1133,7 +1133,7 @@ Instructions d'extraction:
 - client_tel: numéro de téléphone si mentionné
 - client_email: email si mentionné
 - travaux: description complète de la prestation à réaliser
-- nb_heures: nombre d'heures de main d'oeuvre si mentionné (ex: "3 heures" → "3"), null sinon
+- nb_heures: nombre d'heures de travail si mentionné (ex: "3 heures" → "3"), null sinon
 - tva: taux de TVA en chiffre seul sans % si mentionné, null sinon
 - date_prestation: date au format YYYY-MM-DD si mentionnée ("demain", "lundi", "le 15 avril"...), null sinon
 - heure_prestation: heure de début au format HH:MM si mentionnée ("9h", "14h30"...), null sinon
@@ -1185,16 +1185,16 @@ window.startVoiceSuivi=()=>{
   voiceCallback=async t=>{
     try{
       const raw=await callClaude(
-`Tu es un assistant pour un prestataire indépendant français. Analyse ce résumé oral de chantier et retourne UNIQUEMENT un objet JSON valide, sans texte avant ou après.
+`Tu es un assistant pour un prestataire indépendant français. Analyse ce résumé oral de prestation et retourne UNIQUEMENT un objet JSON valide, sans texte avant ou après.
 
 Dictée: "${t}"
 
 Instructions:
 - client_nom: nom du client
-- adresse_travaux: adresse du chantier
-- avancement: résumé professionnel et complet de l'état d'avancement des travaux
+- adresse_travaux: lieu ou adresse de la prestation
+- avancement: résumé professionnel et complet de l'état d'avancement de la prestation
 - suite: prochaine étape prévue
-- contexte: informations importantes à préciser (retards, problèmes, commandes en attente)
+- contexte: informations importantes à préciser (retards, problèmes, éléments en attente)
 
 JSON:
 {"client_nom":null,"adresse_travaux":null,"avancement":null,"suite":null,"contexte":null}`,500);
@@ -1230,7 +1230,7 @@ window.handleGenerate=async()=>{
     try{
       const prompt=S.emailMode==="reponse"
         ?`Rédige une réponse email professionnelle en ${{"fr":"français","en":"English","es":"español","zh":"中文"}[S.langue]||"français"} pour ${e.nom}.\n${e.contexte_ia?`Contexte sur l'activité :\n${e.contexte_ia}\n`:""}\nClient : ${f.client_nom}\nMessage : ${f.message}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`
-        :`Rédige un email de mise à jour pour ${e.nom}.\nTon souhaité: ${(S.emailTons||["vouvoiement"]).join(" + ")}.\nClient : ${f.client_nom}\nChantier : ${f.adresse_travaux||""}\nAvancement : ${f.avancement}\nProchaine étape : ${f.suite||"à définir"}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`;
+        :`Rédige un email de mise à jour pour ${e.nom}.\nTon souhaité: ${(S.emailTons||["vouvoiement"]).join(" + ")}.\nClient : ${f.client_nom}\nPrestation / lieu : ${f.adresse_travaux||""}\nAvancement : ${f.avancement}\nProchaine étape : ${f.suite||"à définir"}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`;
       const {text,usage:ue}=await callClaude(prompt,500);
       logTokens("email", ue);
       set({loading:false,generatedText:text});
@@ -1720,11 +1720,7 @@ function generatePDF(doc){
   pdf.text("Email : "+doc.entreprise.email,m,y);y+=4;
   pdf.text("SIRET : "+doc.entreprise.siret,m,y);y+=4;
   if(doc.entreprise?.iban){pdf.text("IBAN : "+doc.entreprise.iban,m,y);y+=4;}
-  const BTP_PDF_L=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
-  const isBTPdoc=BTP_PDF_L.includes(doc.entreprise?.secteur||"");
   if(doc.entreprise?.rc_pro_assureur){pdf.text("RC Pro : "+doc.entreprise.rc_pro_assureur+(doc.entreprise.rc_pro_police?" — Pol. "+doc.entreprise.rc_pro_police:""),m,y);y+=4;}
-  if(isBTPdoc&&doc.entreprise?.decennale_assureur){pdf.text("Décennale : "+doc.entreprise.decennale_assureur+(doc.entreprise.decennale_police?" — Pol. "+doc.entreprise.decennale_police:""),m,y);y+=4;}
-  if(isBTPdoc&&doc.entreprise?.certifications){pdf.text("Certif. : "+doc.entreprise.certifications,m,y);y+=4;}
   pdf.setFontSize(20).setFont(undefined,"bold").text(doc.type==="devis"?"DEVIS":"FACTURE",rX,m,{align:"right"});
   pdf.setFontSize(10).setFont(undefined,"normal");
   pdf.text("N° "+doc.docNumber,rX,m+9,{align:"right"});
@@ -1742,12 +1738,11 @@ function generatePDF(doc){
   pdf.text(doc.client.adresse,m,y);y+=4;
   if(doc.client.tel){pdf.text("Tél : "+doc.client.tel,m,y);y+=4}
   y+=3;
-  if(doc.adresse_travaux){pdf.setFont(undefined,"bold").text("ADRESSE DES TRAVAUX",m,y);y+=5;pdf.setFont(undefined,"normal").text(doc.adresse_travaux,m,y);y+=8}
-  pdf.setFont(undefined,"bold").text("DESCRIPTION DES TRAVAUX",m,y);y+=5;
+  pdf.setFont(undefined,"bold").text("DESCRIPTION DE LA PRESTATION",m,y);y+=5;
   pdf.setFont(undefined,"normal");
   const dl=pdf.splitTextToSize(doc.description,cW);
   pdf.text(dl,m,y);y+=dl.length*4.5+6;
-  const moRow=doc.nb_heures&&parseFloat(doc.nb_heures)>0?["Main d'\u0153uvre ("+doc.nb_heures+"h \u00d7 "+doc.entreprise.taux_horaire+"\u20ac/h)",doc.nb_heures,parseFloat(doc.entreprise.taux_horaire).toFixed(2)+" \u20ac",doc.moHT.toFixed(2)+" \u20ac"]:null;
+  const moRow=doc.nb_heures&&parseFloat(doc.nb_heures)>0?["Temps de travail ("+doc.nb_heures+"h \u00d7 "+doc.entreprise.taux_horaire+"\u20ac/h)",doc.nb_heures,parseFloat(doc.entreprise.taux_horaire).toFixed(2)+" \u20ac",doc.moHT.toFixed(2)+" \u20ac"]:null;
   const tb=[...(moRow?[moRow]:[]),...doc.pieces.filter(p=>p.description&&p.quantite&&p.prix_unitaire).map(p=>[p.description,p.quantite,parseFloat(p.prix_unitaire).toFixed(2)+" \u20ac",(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)+" \u20ac"])];
   pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tb,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3,overflow:"linebreak",valign:"top"},headStyles:{fillColor:rgb,textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85,overflow:"linebreak"},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});
   y=pdf.lastAutoTable.finalY+6;
@@ -1776,8 +1771,7 @@ function generatePDF(doc){
   };
   const condTxt=condMap[doc.entreprise.conditions_paiement||""]||"Paiement à réception de facture.";
   const delai=doc.entreprise.delai_paiement||"30";
-  const isBTPpdf=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"].includes(doc.entreprise?.secteur||"");
-  const validiteLabel=doc.validite_jours?doc.validite_jours+" jour"+(doc.validite_jours>1?"s":""):"";const fullCondTxt="Conditions : "+condTxt+(validiteLabel?" Devis valable "+validiteLabel+".":" ")+(isBTPpdf?" Garantie décennale applicable.":"");
+  const validiteLabel=doc.validite_jours?doc.validite_jours+" jour"+(doc.validite_jours>1?"s":""):"";const fullCondTxt="Conditions : "+condTxt+(validiteLabel?" Devis valable "+validiteLabel+".":" ");
   const condLines=pdf.splitTextToSize(fullCondTxt,cW);
   pdf.text(condLines,m,y);y+=condLines.length*4+2;
   if(doc.validite_jours){pdf.text("Devis valable "+doc.validite_jours+" jour"+(doc.validite_jours>1?"s":"")+", jusqu'au "+doc.validUntil+".",m,y);}y+=12;
@@ -2092,8 +2086,8 @@ function renderTotaux(){
   if(!f.nb_heures||!e.taux_horaire)return"";
   const t=calcTotaux(f.nb_heures,e.taux_horaire,p,f.tva);
   return`<div class="totaux">
-    <div class="totaux-row"><span>Main d'œuvre (${f.nb_heures}h × ${e.taux_horaire}€)</span><span>${t.moHT.toFixed(2)} € HT</span></div>
-    <div class="totaux-row"><span>Fournitures</span><span>${t.piecesHT.toFixed(2)} € HT</span></div>
+    <div class="totaux-row"><span>Temps de travail (${f.nb_heures}h × ${e.taux_horaire}€)</span><span>${t.moHT.toFixed(2)} € HT</span></div>
+    <div class="totaux-row"><span>Articles / Prestations</span><span>${t.piecesHT.toFixed(2)} € HT</span></div>
     <div class="totaux-total"><span>Total HT</span><span>${t.totalHT.toFixed(2)} €</span></div>
     ${parseFloat(f.tva)>0?`<div class="totaux-total"><span>Total TTC (${f.tva}%)</span><span>${t.ttc.toFixed(2)} €</span></div>`:""}
   </div>`;
@@ -2273,8 +2267,8 @@ function renderDevisFacture(){
     ${fld("nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true)}
     ${e.assujetti_tva?fld("tva","TVA (%)","","select",false):""}
     <div class="section-head">
-      <div class="section-icon">🔩</div>
-      <span class="section-title">Articles / Fournitures</span>
+      <div class="section-icon">📦</div>
+      <span class="section-title">Articles / Prestations complémentaires</span>
       <div class="section-line"></div>
     </div>
     ${renderPieces()}
@@ -2521,12 +2515,12 @@ function renderDocPreview(doc){
       <div style="text-align:right;"><p style="font-weight:500;font-size:16px;margin-bottom:2px;">${doc.type==="devis"?"DEVIS":"FACTURE"}</p><p style="color:#888;font-size:12px;">N° ${doc.docNumber}<br/>Date : ${doc.date}${doc.validUntil?"<br/>Valable jusqu'au : "+doc.validUntil:""}${doc.date_prestation?"<br/>"+(doc.type==="devis"?"Prestation prévue":"Prestation réalisée")+" : "+new Date(doc.date_prestation).toLocaleDateString("fr-FR")+(doc.heure_prestation?" à "+doc.heure_prestation+(doc.heure_fin_prestation?" → "+doc.heure_fin_prestation:""):""):""}</p></div>
     </div>
     <div class="divider"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">CLIENT</p><p>${esc(doc.client.nom)}<br/>${esc(doc.client.adresse)}${doc.client.tel?"<br/>Tél : "+esc(doc.client.tel):""}</p></div>
-    ${doc.adresse_travaux?`<div style="margin-bottom:10px;"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">ADRESSE DES TRAVAUX</p><p>${esc(doc.adresse_travaux)}</p></div>`:""}
-    <div style="margin-bottom:12px;"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">DESCRIPTION</p><p>${esc(doc.description)}</p></div>
+    ${doc.adresse_travaux&&false?"":''}
+    <div style="margin-bottom:12px;"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">DESCRIPTION DE LA PRESTATION</p><p>${esc(doc.description)}</p></div>
     <table class="preview-table">
       <thead><tr><th style="text-align:left;">Description</th><th style="text-align:right;">Qté</th><th style="text-align:right;">Prix unit. HT</th><th style="text-align:right;">Total HT</th></tr></thead>
       <tbody>
-        <tr><td>Main d'œuvre (${doc.nb_heures}h × ${doc.entreprise.taux_horaire} €/h)</td><td style="text-align:right;">${doc.nb_heures}</td><td style="text-align:right;">${parseFloat(doc.entreprise.taux_horaire).toFixed(2)} €</td><td style="text-align:right;">${doc.moHT.toFixed(2)} €</td></tr>
+        <tr><td>Temps de travail (${doc.nb_heures}h × ${doc.entreprise.taux_horaire} €/h)</td><td style="text-align:right;">${doc.nb_heures}</td><td style="text-align:right;">${parseFloat(doc.entreprise.taux_horaire).toFixed(2)} €</td><td style="text-align:right;">${doc.moHT.toFixed(2)} €</td></tr>
         ${doc.pieces.map(p=>`<tr><td>${esc(p.description)}</td><td style="text-align:right;">${p.quantite}</td><td style="text-align:right;">${parseFloat(p.prix_unitaire).toFixed(2)} €</td><td style="text-align:right;">${(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)} €</td></tr>`).join("")}
       </tbody>
     </table>
@@ -2536,13 +2530,10 @@ function renderDocPreview(doc){
       <p style="margin:6px 0 0;font-weight:500;font-size:15px;">${doc.entreprise.assujetti_tva?"Total TTC":"Total"} : ${doc.ttc.toFixed(2)} €</p>
     </div>
     ${doc.type==="devis"?(()=>{
-      const BTP_SEC=["Plombier","Électricien","Chauffagiste / Climatisation","Menuisier / Charpentier","Peintre / Décorateur","Maçon / Gros œuvre","Carreleur / Plaquiste","Couvreur / Étanchéiste","Serrurier / Métallier","Paysagiste / Espaces verts","Artisan BTP (autre)"];
       const cMap={"30_reception":"Paiement à réception de facture.","30_jours":"Paiement à 30 jours.","45_jours":"Paiement à 45 jours.","60_jours":"Paiement à 60 jours.","acompte_30":"30% d'acompte à la commande, solde à réception.","acompte_50":"50% d'acompte à la commande, solde à réception.","3_versements":"3 versements égaux.","custom":"Voir conditions spécifiques."};
       const cTxt=cMap[doc.entreprise?.conditions_paiement||""]||"Paiement à réception de facture.";
       const delai=doc.entreprise?.delai_paiement||"30";
-      const isBTP=BTP_SEC.includes(doc.entreprise?.secteur||"");
-      const extras=(isBTP?" Garantie décennale applicable.":"")+(isBTP&&doc.entreprise?.certifications?" Certif. : "+doc.entreprise.certifications+".":"");
-      return`<div style="margin-top:12px;padding:10px;background:var(--surface-3,var(--surface-2));border-radius:8px;font-size:11px;color:var(--muted);">${cTxt} Devis valable ${delai} jours.${extras}</div>`;
+      return`<div style="margin-top:12px;padding:10px;background:var(--surface-3,var(--surface-2));border-radius:8px;font-size:11px;color:var(--muted);">${cTxt} Devis valable ${delai} jours.</div>`;
     })():""}
   </div>`;
 }
