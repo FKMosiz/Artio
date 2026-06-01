@@ -117,49 +117,14 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
       transition: color 0.2s;
     }
     .artio-legal-footer a:hover { color: var(--amber, #f5a742); }
-/* ── REDESIGN FORMULAIRE 2 COLONNES ── */
-.doc-form-layout{display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start}
-.doc-form-main{}
-.doc-form-aside{position:sticky;top:76px}
-.aside-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:12px}
-.aside-panel-title{font-family:var(--fh);font-size:10px;font-weight:700;color:var(--amber);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px}
-.section-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;margin-top:18px}
+/* ── REDESIGN FORMULAIRE ── */
+.section-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;margin-top:20px}
 .section-head:first-of-type{margin-top:0}
-.section-icon{width:24px;height:24px;border-radius:7px;background:var(--amber-dim);border:1px solid rgba(245,167,66,0.18);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.section-icon{width:26px;height:26px;border-radius:8px;background:var(--amber-dim);border:1px solid rgba(245,167,66,0.18);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
 .section-title{font-family:var(--fh);font-size:10px;font-weight:700;color:var(--amber);letter-spacing:0.07em;text-transform:uppercase}
 .section-line{flex:1;height:1px;background:var(--border)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-/* Fiche client compacte */
-.client-card{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:4px}
-.client-card-name{font-family:var(--fh);font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
-.client-card-meta{font-size:12px;color:var(--muted);line-height:1.6}
-.client-card-clear{float:right;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:0;margin-top:-2px}
-.client-card-clear:hover{color:var(--red)}
-/* Tableau lignes */
-.lines-table{width:100%;border-collapse:collapse;margin-bottom:8px}
-.lines-table thead th{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;padding:0 6px 8px 0;border-bottom:1px solid var(--border);text-align:left}
-.lines-table thead th:last-child{width:32px}
-.lines-table tbody tr+tr td{padding-top:6px}
-.lines-table tbody td{padding:0 6px 0 0;vertical-align:top}
-.lines-table tbody td:last-child{padding-right:0}
-.lines-table input,.lines-table select{padding:8px 10px;font-size:13px}
-.line-desc-input{min-width:0}
-.line-qty-input{width:56px}
-.line-pu-input{width:84px}
-.line-tva-select{width:72px;padding:8px 6px!important}
-.line-total{font-size:13px;font-weight:600;color:var(--text);padding:8px 0;white-space:nowrap}
-/* Totaux panel */
-.totaux-v2{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:13px}
-.totaux-v2 .t-row{display:flex;justify-content:space-between;color:var(--muted);margin-bottom:3px}
-.totaux-v2 .t-total{display:flex;justify-content:space-between;font-weight:700;color:var(--amber);border-top:1px solid var(--border);padding-top:8px;margin-top:6px;font-size:15px}
-.totaux-v2 .t-ttc{display:flex;justify-content:space-between;font-weight:700;color:var(--teal);font-size:13px;margin-top:4px}
-/* Options aside */
-.opt-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.opt-label{font-size:12px;color:var(--text);font-weight:500}
-.opt-sub{font-size:11px;color:var(--muted)}
-.aside-select{width:100%;padding:8px 10px;font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--fb)}
-@media(max-width:720px){.doc-form-layout{grid-template-columns:1fr}.doc-form-aside{position:static}}
 /* ── VOICE BTN AMBER FAB style ── */
 .voice-btn-fab{width:48px;height:48px;border-radius:50%;border:none;color:#080b14;font-size:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:transform .15s;box-shadow:0 0 0 7px rgba(245,167,66,0.12)}
 .voice-btn-fab:hover{transform:scale(1.07)}
@@ -2118,64 +2083,35 @@ function renderVoice(mode){
 }
 
 function renderPieces(){
-  const p=S.pieces,e=S.entreprise;
-  const tvaOpts=(cur)=>{
-    const rates=[["","—"],["0","0 %"],["5.5","5,5 %"],["10","10 %"],["20","20 %"]];
-    return rates.map(([v,l])=>'<option value="'+v+'" '+(cur===v?"selected":"")+'>'+l+'</option>').join("");
-  };
-  const linesHtml=p.map((x,i)=>`<tr>
-    <td><input class="line-desc-input" value="${esc(x.description)}" placeholder="Description de la prestation…" data-pid="${i}_description" oninput="S.pieces[${i}]={...S.pieces[${i}],description:this.value};renderTotauxOnly()" /></td>
-    <td><input type="number" class="line-qty-input" value="${esc(x.quantite)}" min="1" data-pid="${i}_quantite" oninput="S.pieces[${i}]={...S.pieces[${i}],quantite:this.value};renderTotauxOnly()" /></td>
-    <td><input type="number" class="line-pu-input" value="${esc(x.prix_unitaire)}" placeholder="0.00" data-pid="${i}_prix_unitaire" oninput="S.pieces[${i}]={...S.pieces[${i}],prix_unitaire:this.value};renderTotauxOnly()" /></td>
-    ${e.assujetti_tva?`<td><select class="line-tva-select" onchange="S.pieces[${i}]={...S.pieces[${i}],tva:this.value};renderTotauxOnly()">${tvaOpts(x.tva||"")}</select></td>`:""}
-    <td style="text-align:right"><span class="line-total">${((parseFloat(x.quantite)||1)*(parseFloat(x.prix_unitaire)||0)).toFixed(2)} €</span></td>
-    <td><button class="remove-btn" onclick="S.pieces.splice(${i},1);render()">×</button></td>
-  </tr>`).join("");
-  return`<table class="lines-table">
-    <thead><tr>
-      <th>Désignation</th><th>Qté</th><th>Prix HT</th>
-      ${e.assujetti_tva?"<th>TVA</th>":""}
-      <th>Total HT</th><th></th>
-    </tr></thead>
-    <tbody>${linesHtml}</tbody>
-  </table>
-  <button class="btn-small btn-gray" style="font-size:12px;padding:6px 14px;margin-bottom:14px;" onclick="S.pieces.push({description:'',quantite:'1',prix_unitaire:'',tva:''});render()">+ Ajouter une ligne</button>`;
+  const p=S.pieces;
+  return`<div style="margin-bottom:14px;">
+    <label class="label" style="margin-bottom:8px;">Prestations / Articles</label>
+    <div class="pieces-grid" style="margin-bottom:4px;">
+      ${["Description","Qté","Prix HT €",""].map(h=>`<span style="font-size:11px;color:#888;">${h}</span>`).join("")}
+    </div>
+    ${p.map((x,i)=>`<div class="pieces-grid" style="margin-bottom:6px;">
+      <input value="${esc(x.description)}" placeholder="${L('ph_fourniture')}" data-pid="${i}_description" oninput="S.pieces[${i}]={...S.pieces[${i}],description:this.value};renderTotauxOnly()" />
+      <input type="number" value="${esc(x.quantite)}" min="1" data-pid="${i}_quantite" oninput="S.pieces[${i}]={...S.pieces[${i}],quantite:this.value};renderTotauxOnly()" />
+      <input type="number" value="${esc(x.prix_unitaire)}" placeholder="0.00" data-pid="${i}_prix_unitaire" oninput="S.pieces[${i}]={...S.pieces[${i}],prix_unitaire:this.value};renderTotauxOnly()" />
+      <button class="remove-btn" onclick="S.pieces.splice(${i},1);render()">×</button>
+    </div>`).join("")}
+    <button class="btn-small btn-gray" style="font-size:12px;padding:6px 12px;" onclick="S.pieces.push({description:'',quantite:'1',prix_unitaire:''});render()">+ Ajouter une pièce</button>
+  </div>`;
 }
 
 window.renderTotauxOnly=function(){
   const el=document.getElementById("totaux-container");
   if(el) el.innerHTML=renderTotaux();
 }
-function calcTotauxV2(f,e,p){
-  const moHT=(parseFloat(f.nb_heures)||0)*(parseFloat(e.taux_horaire)||0);
-  let piecesHT=0;
-  let tvaMap={};
-  p.forEach(x=>{
-    const ht=(parseFloat(x.quantite)||1)*(parseFloat(x.prix_unitaire)||0);
-    piecesHT+=ht;
-    if(e.assujetti_tva&&x.tva&&parseFloat(x.tva)>0){
-      tvaMap[x.tva]=(tvaMap[x.tva]||0)+ht*(parseFloat(x.tva)/100);
-    }
-  });
-  const moTva=e.assujetti_tva&&f.tva&&parseFloat(f.tva)>0?moHT*(parseFloat(f.tva)/100):0;
-  const totalHT=moHT+piecesHT;
-  const totalTva=moTva+Object.values(tvaMap).reduce((a,b)=>a+b,0);
-  return{moHT,piecesHT,totalHT,totalTva,ttc:totalHT+totalTva,tvaMap,moTva};
-}
 function renderTotaux(){
   const f=S.fields,e=S.entreprise,p=S.pieces;
-  const hasLines=p.some(x=>parseFloat(x.prix_unitaire)>0);
-  const hasHours=f.nb_heures&&parseFloat(f.nb_heures)>0&&e.taux_horaire;
-  if(!hasHours&&!hasLines)return"";
-  const t=calcTotauxV2(f,e,p);
-  const tvaRows=Object.entries(t.tvaMap).map(([r,v])=>`<div class="t-row"><span>TVA ${r}%</span><span>${v.toFixed(2)} €</span></div>`).join("");
-  const moTvaRow=t.moTva>0?`<div class="t-row"><span>TVA ${f.tva}% (heures)</span><span>${t.moTva.toFixed(2)} €</span></div>`:"";
-  return`<div class="totaux-v2" id="totaux-inner">
-    ${hasHours?`<div class="t-row"><span>Temps de travail (${f.nb_heures}h × ${e.taux_horaire}€)</span><span>${t.moHT.toFixed(2)} €</span></div>`:""}
-    ${hasLines?`<div class="t-row"><span>Articles / Prestations</span><span>${t.piecesHT.toFixed(2)} €</span></div>`:""}
-    <div class="t-total"><span>Total HT</span><span>${t.totalHT.toFixed(2)} €</span></div>
-    ${moTvaRow}${tvaRows}
-    ${t.totalTva>0?`<div class="t-ttc"><span>Total TTC</span><span>${t.ttc.toFixed(2)} €</span></div>`:""}
+  if(!f.nb_heures||!e.taux_horaire)return"";
+  const t=calcTotaux(f.nb_heures,e.taux_horaire,p,f.tva);
+  return`<div class="totaux">
+    <div class="totaux-row"><span>Temps de travail (${f.nb_heures}h × ${e.taux_horaire}€)</span><span>${t.moHT.toFixed(2)} € HT</span></div>
+    <div class="totaux-row"><span>Articles / Prestations</span><span>${t.piecesHT.toFixed(2)} € HT</span></div>
+    <div class="totaux-total"><span>Total HT</span><span>${t.totalHT.toFixed(2)} €</span></div>
+    ${parseFloat(f.tva)>0?`<div class="totaux-total"><span>Total TTC (${f.tva}%)</span><span>${t.ttc.toFixed(2)} €</span></div>`:""}
   </div>`;
 }
 
@@ -2183,7 +2119,6 @@ function updateTotaux(){
   const el=document.getElementById('totaux-container');
   if(el)el.innerHTML=renderTotaux();
 }
-
 
 // ── Client picker ─────────────────────────────────────────────────────────────
 // Fonction globale pour sélectionner un client (évite les guillemets dans HTML)
@@ -2260,107 +2195,111 @@ function renderDevisFacture(){
   const f=S.fields,tab=S.tab,e=S.entreprise;
   const heureOpts=(id)=>{
     let opts='<option value="">-- Optionnel --</option>';
-    for(let h=6;h<=21;h++){for(let m=0;m<60;m+=15){const hh=String(h).padStart(2,"0"),mm=String(m).padStart(2,"0");const val=hh+":"+mm,sel=(S.fields[id]||"")==val?"selected":"";opts+='<option value="'+val+'" '+sel+'>'+h+'h'+(m>0?m:"")+'</option>';}}
+    for(let h=6;h<=21;h++){
+      for(let m=0;m<60;m+=15){
+        const hh=String(h).padStart(2,"0"),mm=String(m).padStart(2,"0");
+        const val=hh+":"+mm,sel=(S.fields[id]||"")==val?"selected":"";
+        opts+='<option value="'+val+'" '+sel+'>'+h+'h'+(m>0?m:"")+'</option>';
+      }
+    }
     return opts;
   };
   const inp=(id,type,ph)=>{
     if(type==="textarea") return '<textarea placeholder="'+ph+'" data-fid="'+id+'" oninput="S.fields[this.dataset.fid]=this.value">'+esc(S.fields[id]||"")+'</textarea>';
     if(type==="select_heure") return '<select data-fid="'+id+'" style="width:100%;padding:10px 12px;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);" onchange="S.fields[\''+id+'\']=this.value">'+heureOpts(id)+'</select>';
     if(type==="date") return '<input type="date" value="'+(S.fields[id]||"")+'" data-fid="'+id+'" style="width:100%;padding:10px 12px;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);color-scheme:dark;" oninput="S.fields[\''+id+'\']=this.value"/>';
-    return '<input type="'+type+'" value="'+esc(S.fields[id]||"")+'" placeholder="'+ph+'" data-fid="'+id+'" oninput="S.fields[\''+id+'\']=this.value;'+(id==="nb_heures"?'updateTotaux()':'')+'" />';
+    if(type==="select") return '<select data-fid="'+id+'" style="width:100%;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--fb);" onchange="S.fields[\''+id+'\']=this.value;updateTotaux()">'
+      +'<option value="">-- Choisir le taux --</option>'
+      +'<option value="10" '+(S.fields[id]==="10"?"selected":"")+'>10 % — Taux réduit</option>'
+      +'<option value="20" '+(S.fields[id]==="20"?"selected":"")+'>20 % — Taux normal</option>'
+      +'</select>';
+    return '<input type="'+type+'" value="'+esc(S.fields[id]||"")+'" placeholder="'+ph+'" data-fid="'+id+'" oninput="S.fields[\''+id+'\']=this.value;'+(id==='nb_heures'||id==='tva'?'updateTotaux()':'')+'" />';
   };
-  const fld=(id,label,ph,type,opt)=>'<div class="field"><label class="label">'+label+(opt?'<span class="opt"> (opt.)</span>':'')+' </label>'+inp(id,type,ph)+'</div>';
+  const fld=(id,label,ph,type,opt)=>'<div class="field"><label class="label">'+label+(opt?'<span class="opt">(optionnel)</span>':'')+' </label>'+inp(id,type,ph)+'</div>';
 
-  // ── Templates bar (Pro)
-  let tplBar="";
-  if(window.PlanGuard&&window.PlanGuard.isPro()&&S.templates.filter(t=>t.tab===tab).length>0){
-    const opts=S.templates.filter(t=>t.tab===tab).map(t=>'<option value="'+t.id+'">'+esc(t.nom)+'</option>').join("");
-    tplBar='<div class="tpl-bar"><select class="tpl-select" id="tpl-select"><option value="">&#128203; Charger un template...</option>'+opts+'</select>'
+  // ── Barre templates (Pro) ── précomputée sans template literal imbriqué
+  let tplBar = "";
+  if(window.PlanGuard && window.PlanGuard.isPro() && S.templates.filter(t=>t.tab===tab).length > 0){
+    const opts = S.templates.filter(t=>t.tab===tab).map(t=>'<option value="'+t.id+'">'+esc(t.nom)+'</option>').join("");
+    tplBar = '<div class="tpl-bar">'
+      +'<select class="tpl-select" id="tpl-select"><option value="">&#128203; Charger un template...</option>'+opts+'</select>'
       +'<button class="tpl-btn tpl-btn-load" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)loadTemplate(v)">Charger</button>'
-      +'<button class="tpl-btn" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,.2);" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)deleteTemplate(v)">&#128465;</button></div>';
-  }
-
-  // ── Template save (Pro)
-  let tplSave="";
-  if(window.PlanGuard&&window.PlanGuard.isPro()){
-    const clientNom=(S.fields.client_nom||"").trim();
-    tplSave='<div style="margin-bottom:4px;"><div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">'
-      +'<input type="text" placeholder="Nom du mod\u00e8le (ex: Entretien mensuel Mme Martin)" value="'+esc(S.templateNom||"")+'"'
-      +' style="flex:1;padding:9px 12px;font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);" oninput="S.templateNom=this.value"/>'
-      +'<button class="tpl-btn tpl-btn-save" onclick="saveTemplate()"'+(S.savingTemplate?' disabled':'')+'>&#128190; '+(S.savingTemplate?'...':'Sauvegarder')+'</button></div>'
-      +(clientNom?'<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:6px;cursor:pointer;padding:7px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;">'
-        +'<input type="checkbox" '+(S.templateIncludeClient?'checked':'')
-        +' onchange="S.templateIncludeClient=this.checked;set({})" style="width:15px;height:15px;accent-color:var(--amber);cursor:pointer;flex-shrink:0;"/>'
-        +'<span>\ud83d\udccc Client r\u00e9current \u2014 inclure <strong style="color:var(--text)">'+esc(clientNom)+'</strong> dans ce mod\u00e8le</span></label>':'')
+      +'<button class="tpl-btn" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,.2);" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)deleteTemplate(v)">&#128465;</button>'
       +'</div>';
   }
 
-  // ── Aside panel: validité + TVA + options
-  const validiteVal=S.fields.validite_jours||String(e.validite_devis||3);
-  const validiteAside=tab==="devis"?`<div class="aside-panel">
-    <div class="aside-panel-title">📅 Période de validité</div>
-    <select class="aside-select" onchange="S.fields.validite_jours=this.value;render()">
-      ${[["1","1 jour"],["2","2 jours"],["3","3 jours"],["7","7 jours"],["15","15 jours"],["30","30 jours"],["60","60 jours"]].map(([v,l])=>`<option value="${v}" ${validiteVal===v?"selected":""}>${l}</option>`).join("")}
-    </select>
-    <div style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.4">Le lien de signature expire à cette date.</div>
-  </div>`:"";
-
-  const tvaAside=e.assujetti_tva?`<div class="aside-panel">
-    <div class="aside-panel-title">📊 TVA globale sur heures</div>
-    <select class="aside-select" onchange="S.fields.tva=this.value;updateTotaux()">
-      <option value="" ${!f.tva?"selected":""}>Aucune</option>
-      <option value="10" ${f.tva==="10"?"selected":""}>10 % — Taux réduit</option>
-      <option value="20" ${f.tva==="20"?"selected":""}>20 % — Taux normal</option>
-    </select>
-  </div>`:"";
-
-  const totauxAside=`<div class="aside-panel" id="totaux-container">${renderTotaux()}</div>`;
-
-  // ── Fiche client compacte si client sélectionné
-  const clientFilled=f.client_nom&&f.client_nom.trim();
-  const clientBlock=clientFilled
-    ?`<div class="client-card">
-        <button class="client-card-clear" onclick="S.fields.client_nom='';S.fields.client_email='';S.fields.client_tel='';S.fields.client_adresse='';render()" title="Effacer le client">×</button>
-        <div class="client-card-name">${esc(f.client_nom)}</div>
-        <div class="client-card-meta">${f.client_email?esc(f.client_email)+'<br>':""}${f.client_tel?esc(f.client_tel)+'<br>':""}${f.client_adresse?esc(f.client_adresse):""}</div>
-      </div>`
-    :`<div>${renderClientPicker()}<div class="grid2">
-        ${fld("client_tel","Téléphone",L("ph_client_tel"),"text",true)}
-        ${fld("client_email","Email",L("ph_client_email"),"text",true)}
-      </div>
-      ${fld("client_adresse","Adresse","Ex: 12 rue de la Paix, 75001 Paris","text",true)}
-    </div>`;
+  // ── Section sauvegarder modèle (Pro) ── précomputée
+  let tplSave = "";
+  if(window.PlanGuard && window.PlanGuard.isPro()){
+    const clientNom=(S.fields.client_nom||"").trim();
+    tplSave = '<div style="margin-bottom:4px;">'
+      +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">'
+      +'<input type="text" placeholder="Nom du mod\u00e8le (ex: Entretien mensuel Mme Martin)" value="'+esc(S.templateNom||"")+'"'
+      +' style="flex:1;padding:9px 12px;font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);"'
+      +' oninput="S.templateNom=this.value"/>'
+      +'<button class="tpl-btn tpl-btn-save" onclick="saveTemplate()"'+(S.savingTemplate?' disabled':'')+'>&#128190; '+(S.savingTemplate?'...':'Sauvegarder')+'</button>'
+      +'</div>'
+      +(clientNom
+        ?'<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:6px;cursor:pointer;padding:7px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;">'
+          +'<input type="checkbox" '+(S.templateIncludeClient?'checked':'')
+          +' onchange="S.templateIncludeClient=this.checked;set({})" style="width:15px;height:15px;accent-color:var(--amber);cursor:pointer;flex-shrink:0;"/>'
+          +'<span>\ud83d\udccc Client r\u00e9current \u2014 inclure <strong style=\"color:var(--text)\">'+esc(clientNom)+'</strong> dans ce mod\u00e8le</span>'
+          +'</label>'
+        :'')
+      +'</div>';
+  }
 
   return`<div class="card">
     ${tplBar}
     ${renderVoice("devis")}
-    <div class="doc-form-layout">
-      <div class="doc-form-main">
-        <div class="section-head"><div class="section-icon">👤</div><span class="section-title">Client</span><div class="section-line"></div></div>
-        ${clientBlock}
-        <div class="section-head" style="margin-top:20px"><div class="section-icon">📋</div><span class="section-title">Prestation</span><div class="section-line"></div></div>
-        <div class="grid3">
-          ${fld("date_prestation",tab==="devis"?"Date prévue":"Date de la prestation","","date",true)}
-          ${fld("heure_prestation","Heure début","","select_heure",true)}
-          ${fld("heure_fin_prestation","Heure fin","","select_heure",true)}
-        </div>
-        ${fld("travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false)}
-        ${fld("nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true)}
-        <div class="section-head" style="margin-top:20px"><div class="section-icon">📦</div><span class="section-title">Lignes / Articles</span><div class="section-line"></div></div>
-        ${renderPieces()}
-        ${tplSave}
-        <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":tab==="devis"?"Générer le devis":"Générer la facture"}</button>
-      </div>
-      <div class="doc-form-aside">
-        ${validiteAside}
-        ${tvaAside}
-        ${totauxAside}
-      </div>
+    <div class="section-head">
+      <div class="section-icon">👤</div>
+      <span class="section-title">Client</span>
+      <div class="section-line"></div>
     </div>
+    ${renderClientPicker()}
+    <div class="grid2">
+      ${fld("client_tel","Téléphone",L("ph_client_tel"),"text",true)}
+      ${fld("client_email","Email",L("ph_client_email"),"text",true)}
+    </div>
+    ${fld("client_adresse","Adresse","Ex: 12 rue de la Paix, 75001 Paris","text",true)}
+    <div class="section-head">
+      <div class="section-icon">📋</div>
+      <span class="section-title">Prestation</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="grid3">
+      ${fld("date_prestation",tab==="devis"?"Date prévue":"Date de la prestation","","date",true)}
+      ${fld("heure_prestation",tab==="devis"?"Heure début":"Heure début","","select_heure",true)}
+      ${fld("heure_fin_prestation","Heure fin","","select_heure",true)}
+    </div>
+    ${tab==="devis"?`<div class="field" style="margin-bottom:12px;">
+      <label class="label">Validité du devis <span class="opt">(optionnel)</span></label>
+      <select id="validite_jours_select" class="field-input" onchange="S.fields.validite_jours=this.value;render()">
+        <option value="1"  ${(S.fields.validite_jours||String(e.validite_devis||3))==="1" ?"selected":""}>1 jour</option>
+        <option value="2"  ${(S.fields.validite_jours||String(e.validite_devis||3))==="2" ?"selected":""}>2 jours</option>
+        <option value="3"  ${(S.fields.validite_jours||String(e.validite_devis||3))==="3" ?"selected":""}>3 jours</option>
+        <option value="7"  ${(S.fields.validite_jours||String(e.validite_devis||3))==="7" ?"selected":""}>7 jours</option>
+        <option value="15" ${(S.fields.validite_jours||String(e.validite_devis||3))==="15"?"selected":""}>15 jours</option>
+        <option value="30" ${(S.fields.validite_jours||String(e.validite_devis||3))==="30"?"selected":""}>30 jours</option>
+      </select>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Durée de validité commerciale du devis. Le lien de signature expire à la même date. Défaut issu de vos paramètres.</div>
+    </div>`:""}
+    ${fld("travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false)}
+    ${fld("nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true)}
+    ${e.assujetti_tva?fld("tva","TVA (%)","","select",false):""}
+    <div class="section-head">
+      <div class="section-icon">📦</div>
+      <span class="section-title">Articles / Prestations complémentaires</span>
+      <div class="section-line"></div>
+    </div>
+    ${renderPieces()}
+    <div id="totaux-container">${renderTotaux()}</div>
+    ${tplSave}
+    <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":tab==="devis"?"Générer le devis":"Générer la facture"}</button>
   </div>
   ${S.generatedDoc?`<div class="card">${renderDocPreview(S.generatedDoc)}</div>`:""}`;
 }
-
 
 
 function renderEmail(){
