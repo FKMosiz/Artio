@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Artio — Application</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="plan-guard.js"></script>
+<script src="plan-guard.js?v=1"></script>
 <script>const PAGE_PLAN_REQUIRED = "solo";</script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -174,6 +174,120 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .tour-action-btn{display:block;width:100%;padding:9px;margin:10px 0 0;background:rgba(245,167,66,.12);color:var(--amber);border:1px solid rgba(245,167,66,.3);border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--fb);transition:all .15s;}
 .tour-action-btn:hover{background:rgba(245,167,66,.2);border-color:rgba(245,167,66,.5);}
 .tour-highlight{outline:3px solid var(--amber)!important;outline-offset:4px;border-radius:10px;position:relative;z-index:9501;}
+
+/* ============================================================
+   REFONTE MOBILE-FIRST — bottombar · vocal-first · responsive
+   ============================================================ */
+/* App padding : place pour la bottombar sur mobile */
+.app{padding:16px 16px 92px}
+@media(min-width:768px){.app{padding:22px 20px 48px;max-width:760px;margin:0 auto}}
+
+/* Topnav : liens cachés sur mobile (remplacés par la bottombar) */
+.nav-section{cursor:pointer}
+@media(max-width:767px){
+  .nav-links{display:none !important}
+  .nav-hide-mobile{display:none !important}
+  .artio-nav{padding:0 14px;gap:10px}
+}
+
+/* ---------- Bottombar (mobile uniquement) ---------- */
+.bottombar{display:none}
+@media(max-width:767px){
+  .bottombar{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:300;gap:2px;
+    background:rgba(8,11,20,0.94);backdrop-filter:blur(20px);
+    border-top:1px solid var(--border);
+    padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+  }
+}
+[data-theme="light"] .bottombar{background:rgba(250,248,243,0.96)}
+.bb-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:5px 2px;border:none;background:none;color:var(--muted);
+  font-family:var(--fb);font-size:10.5px;font-weight:600;cursor:pointer;transition:color .15s}
+.bb-ic{display:flex;align-items:center;justify-content:center;padding:3px 16px;border-radius:13px;transition:background .15s}
+.bb-item svg{width:22px;height:22px}
+.bb-item.active{color:var(--amber)}
+.bb-item.active .bb-ic{background:var(--amber-dim)}
+
+/* ---------- Drawer "Plus" ---------- */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);z-index:340}
+.drawer{position:fixed;left:0;right:0;bottom:0;z-index:350;background:var(--surface);
+  border-top-left-radius:22px;border-top-right-radius:22px;border-top:1px solid var(--border-hi);
+  padding:8px 14px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -16px 48px rgba(0,0,0,.45);
+  animation:drawerUp .22s ease}
+@keyframes drawerUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.drawer-handle{width:38px;height:4px;border-radius:2px;background:var(--border-hi);margin:6px auto 14px}
+.drawer-item{display:flex;align-items:center;gap:15px;width:100%;text-align:left;
+  padding:13px 12px;border:none;background:none;color:var(--text);font-family:var(--fb);
+  font-size:14.5px;font-weight:500;cursor:pointer;border-radius:12px}
+.drawer-item:hover{background:var(--surface-2)}
+.drawer-item svg{width:20px;height:20px;color:var(--muted);flex-shrink:0}
+.drawer-item .lock{margin-left:auto;font-size:11px;color:var(--muted)}
+.drawer-item.danger{color:var(--red)}.drawer-item.danger svg{color:var(--red)}
+.drawer-sep{height:1px;background:var(--border);margin:7px 4px}
+
+/* ---------- Pills contextuelles ---------- */
+.seg-pills{display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:2px}
+.seg-pill{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:100px;
+  white-space:nowrap;font-size:13.5px;font-weight:600;font-family:var(--fb);cursor:pointer;
+  background:var(--surface);border:1px solid var(--border);color:var(--muted);transition:all .15s}
+.seg-pill svg{width:15px;height:15px}
+.seg-pill:hover{color:var(--text);border-color:var(--border-hi)}
+.seg-pill.active{background:var(--amber-dim);border-color:rgba(245,167,66,.4);color:var(--amber)}
+.seg-pill.locked{opacity:.6}
+
+.section-h1{font-family:var(--fh);font-size:22px;font-weight:600;letter-spacing:-0.02em;margin-bottom:4px}
+.section-h1-sub{font-size:13px;color:var(--muted);margin-bottom:18px}
+
+/* ---------- Écran Créer — vocal-first ---------- */
+.create-hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 16px 28px}
+.create-orb-wrap{position:relative;width:150px;height:150px;display:flex;align-items:center;justify-content:center;margin:6px 0 24px;cursor:pointer}
+.create-orb-pulse{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle, rgba(245,167,66,0.42) 0%, transparent 65%);animation:orbPulse 2.4s ease-in-out infinite}
+.create-orb-pulse:nth-child(2){animation-delay:-1.2s}
+@keyframes orbPulse{0%,100%{transform:scale(.85);opacity:.35}50%{transform:scale(1.18);opacity:.8}}
+.create-orb{position:relative;width:104px;height:104px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #ffc879 0%, var(--amber) 46%, #c46a18 100%);
+  box-shadow:0 18px 48px var(--amber-glow);display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.create-orb-wrap:hover .create-orb{transform:scale(1.05)}
+.create-orb svg{width:40px;height:40px;color:#1a1208}
+.create-orb-wrap.rec .create-orb{background:radial-gradient(circle at 35% 30%, #ffb1b1 0%, #E24B4A 45%, #a02f2f 100%);box-shadow:0 18px 48px rgba(226,75,74,.45)}
+.create-orb-wrap.rec .create-orb-pulse{background:radial-gradient(circle, rgba(226,75,74,.5) 0%, transparent 65%)}
+.create-orb-wrap.proc .create-orb{background:radial-gradient(circle at 35% 30%, #9af0d8 0%, #1D9E75 45%, #0f6b50 100%);box-shadow:0 18px 48px rgba(29,158,117,.4)}
+.create-orb-wrap.proc .create-orb-pulse{display:none}
+.create-title{font-family:var(--fh);font-size:24px;font-weight:600;letter-spacing:-0.02em;margin-bottom:8px}
+.create-sub{font-size:13.5px;color:var(--muted);max-width:300px;line-height:1.5;margin-bottom:22px}
+.create-manual{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;padding:8px}
+.create-manual:hover{color:var(--amber)}
+
+/* Écoute / analyse */
+.listen-status{display:inline-flex;align-items:center;gap:9px;font-family:var(--fh);font-size:13px;font-weight:600;letter-spacing:.03em;margin-bottom:16px}
+.listen-status.rec{color:var(--red)}.listen-status.proc{color:var(--teal)}
+.listen-status .dot{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor;animation:recPulse 1.2s ease-in-out infinite}
+@keyframes recPulse{0%,100%{opacity:1}50%{opacity:.3}}
+.listen-transcript{font-size:19px;line-height:1.5;font-weight:500;color:var(--text);max-width:540px;margin-bottom:4px;min-height:28px;font-style:italic}
+.listen-transcript .ph{color:var(--muted);font-style:normal}
+.listen-hint{font-size:12.5px;color:var(--muted);margin-top:16px}
+
+/* Barre formulaire / brouillon */
+.form-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.mini-mic{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:100px;
+  font-size:12.5px;font-weight:600;font-family:var(--fb);cursor:pointer;
+  background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,167,66,.3)}
+.mini-mic svg{width:14px;height:14px}
+.mini-mic.ghost{background:var(--surface);color:var(--muted);border-color:var(--border)}
+.mini-mic.ghost:hover{color:var(--text);border-color:var(--border-hi)}
+
+/* Champs requis manquants */
+.field-miss input,.field-miss textarea,.field-miss #client-picker-container+*{border-color:rgba(245,167,66,.55)!important}
+.field-miss>.label,.field-miss label.label{color:var(--amber)}
+.miss-tag{font-size:10px;font-weight:700;color:var(--amber);margin-left:6px;letter-spacing:.03em;text-transform:none}
+
+/* Grilles responsives + stats */
+@media(max-width:767px){
+  .grid2,.grid3{grid-template-columns:1fr !important}
+  .stats-grid{grid-template-columns:1fr 1fr !important}
+  .card{padding:18px 16px}
+}
 </style>
 <script>
   /* ── THEME INIT (head) ── */
@@ -274,6 +388,27 @@ let S={
   tourStep:0,
   profilSaved:false,
   syncing:false,
+  showMoreDrawer:false,
+  manualMode:false,
+};
+
+// ——— ICÔNES (SVG inline, trait fin) ———
+const IC={
+  mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>',
+  folder:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h5l2 3h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  more:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+  doc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>',
+  receipt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2L18 4l-3-2-3 2-3-2-3 2L4 2Z"/><path d="M8 8h8M8 12h6"/></svg>',
+  mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+  inbox:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>',
+  chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-5"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+  cog:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.36.16.66.42.87.74.21.32.31.7.27 1.08"/></svg>',
+  help:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+  logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>',
+  pen:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M9 22V12h6v10"/></svg>',
 };
 
 function set(patch){Object.assign(S,patch);render()}
@@ -900,6 +1035,10 @@ function _tourAutoStart(){
 }
 
 async function initAuth(){
+  // ── Aperçu design sans connexion : app.html#demo ──
+  if(typeof location!=="undefined" && location.hash && location.hash.indexOf("demo")>=0){
+    return mountDemo();
+  }
   const{data:{session}}=await sb.auth.getSession();
   if(session?.user){
     S.user=session.user;
@@ -1649,7 +1788,7 @@ window.setTab=t=>{
     if(t==="emails_gmail"&&window.PlanGuard&&!window.PlanGuard.isPro()){
       window.PlanGuard.showProModal("Messagerie Gmail");return;
     }
-  set({tab:t,fields:{validite_jours:String(S.entreprise.validite_devis||3)},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null});
+  set({tab:t,fields:{validite_jours:String(S.entreprise.validite_devis||3)},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null,manualMode:false,showMoreDrawer:false});
 };
 window.setEmailMode=m=>set({emailMode:m,fields:{},generatedText:""});
 window.startVoiceContexte=function(fieldId){
@@ -1923,29 +2062,54 @@ function render(){
 
 function renderApp(){
   const e=S.entreprise;
+  const _t=S.tab;
+  const isCreer=_t==='devis'||_t==='facture';
+  const isDoss=_t==='historique';
+  const isRed=_t==='email'||_t==='emails_gmail';
+  const _isPro=!!(window.PlanGuard&&window.PlanGuard.isPro());
   document.getElementById("root").innerHTML=`
   <nav class="artio-nav">
     <a class="nav-logo" href="home.html"><img src="artio-icon.png" alt=""><span>Artio</span></a>
     <div class="nav-links">
-      <a class="nav-link" href="home.html">Accueil</a>
-      <a class="nav-link active" href="app.html">Application</a>
+      <button class="nav-link nav-section ${isCreer?'active':''}" onclick="setTab('devis')">Créer</button>
+      <button class="nav-link nav-section ${isDoss?'active':''}" onclick="setTab('historique')">Dossiers${S.dossiers.length?" ("+S.dossiers.length+")":""}</button>
+      <button class="nav-link nav-section ${isRed?'active':''}" onclick="setTab('email')">Rédiger</button>
+      <a class="nav-link" href="clients.html">Clients</a>
       <a class="nav-link" href="dashboard.html">Tableau de bord</a>
       <a class="nav-link" href="calendar.html">Calendrier</a>
-      <a class="nav-link" href="clients.html">Clients</a>
     </div>
     <div class="nav-right">
-      <button class="nav-btn" onclick="location.href='aide.html'">Aide</button>
-      <button class="nav-btn" onclick="location.href='settings.html'">Paramètres</button>
-      <button class="nav-btn" onclick="handleLogout()">Déconnexion</button>
+      <span class="nav-hide-mobile" style="display:flex;gap:8px;">
+        <button class="nav-btn" onclick="location.href='aide.html'">Aide</button>
+        <button class="nav-btn" onclick="location.href='settings.html'">Paramètres</button>
+        <button class="nav-btn" onclick="handleLogout()">Déconnexion</button>
+      </span>
       <button class="theme-toggle" onclick="toggleTheme()" aria-label="Changer de thème" title="Changer de thème"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
     </div>
   </nav>
   <div class="app">
-    <div class="tabs">
-      ${[["devis",L("devis")],["facture",L("facture")],["email",L("email")],["historique",L("historique")+(S.dossiers.length?" ("+S.dossiers.length+")":"")],["emails_gmail",window.PlanGuard?.isPro()?(S.gmailEmail?"📬 Messagerie"+(S.emails.length?" ("+S.emails.length+")":""):"📬 Messagerie"):"📬 Messagerie 🔒"]].map(([id,label])=>{const isLocked=id==="emails_gmail"&&!window.PlanGuard?.isPro();return`<button class="tab-btn ${S.tab===id?"active":""} ${isLocked?"tab-locked":""}" onclick="${isLocked?"window.PlanGuard?.showProModal('Messagerie Gmail')":"setTab('"+id+"')"}">${label}</button>`;}).join("")}
-    </div>
-    ${S.tab==="emails_gmail"?renderEmailsGmail():S.tab==="historique"?renderHistorique():S.tab==="email"?renderEmail():renderDevisFacture()}
+    ${S.tab==="emails_gmail"?renderRedigerSeg()+renderEmailsGmail():S.tab==="historique"?'<div class="section-h1">Dossiers</div><div class="section-h1-sub">Suivi de tes devis et factures.</div>'+renderHistorique():S.tab==="email"?renderRedigerSeg()+renderEmail():renderDevisFacture()}
   </div>
+  <nav class="bottombar">
+    <button class="bb-item ${isCreer?'active':''}" onclick="setTab('devis')"><span class="bb-ic">${IC.mic}</span>Créer</button>
+    <button class="bb-item ${isDoss?'active':''}" onclick="setTab('historique')"><span class="bb-ic">${IC.folder}</span>Dossiers</button>
+    <button class="bb-item" onclick="location.href='clients.html'"><span class="bb-ic">${IC.users}</span>Clients</button>
+    <button class="bb-item ${S.showMoreDrawer?'active':''}" onclick="set({showMoreDrawer:true})"><span class="bb-ic">${IC.more}</span>Plus</button>
+  </nav>
+  ${S.showMoreDrawer?`
+  <div class="drawer-overlay" onclick="set({showMoreDrawer:false})"></div>
+  <div class="drawer">
+    <div class="drawer-handle"></div>
+    <button class="drawer-item ${isRed?'':''}" onclick="setTab('email')">${IC.pen}<span>Rédiger un email</span></button>
+    <button class="drawer-item" onclick="${_isPro?"setTab('emails_gmail')":"set({showMoreDrawer:false});window.PlanGuard?.showProModal('Messagerie Gmail')"}">${IC.inbox}<span>Messagerie</span>${_isPro?"":'<span class="lock">🔒 Pro</span>'}</button>
+    <div class="drawer-sep"></div>
+    <button class="drawer-item" onclick="location.href='dashboard.html'">${IC.chart}<span>Tableau de bord</span></button>
+    <button class="drawer-item" onclick="location.href='calendar.html'">${IC.cal}<span>Calendrier</span></button>
+    <button class="drawer-item" onclick="location.href='settings.html'">${IC.cog}<span>Paramètres</span></button>
+    <button class="drawer-item" onclick="location.href='aide.html'">${IC.help}<span>Aide</span></button>
+    <div class="drawer-sep"></div>
+    <button class="drawer-item danger" onclick="handleLogout()">${IC.logout}<span>Déconnexion</span></button>
+  </div>`:""}
   ${S.showSettings?`
   <div class="settings-overlay" onclick="set({showSettings:false})"></div>
   <div class="settings-panel" style="width:${S.settingsPage==="profil"?"480px":"340px"};overflow-y:auto;">
@@ -2249,15 +2413,57 @@ function renderDevisFacture(){
       +'</div>';
   }
 
-  return`<div class="card">
+  const vs=S.voiceState;
+  const hasData=!!(f.client_nom||f.travaux||f.client_adresse||(S.pieces&&S.pieces.some(p=>p&&p.description))||S.generatedDoc);
+  const showForm=S.manualMode||hasData;
+  const segment=`<div class="seg-pills">
+    <button class="seg-pill ${tab==='devis'?'active':''}" onclick="setTab('devis')">${IC.doc} Devis</button>
+    <button class="seg-pill ${tab==='facture'?'active':''}" onclick="setTab('facture')">${IC.receipt} Facture</button>
+  </div>`;
+
+  // — Étape 2 : écoute / analyse (visuel, piloté par S.voiceState) —
+  if(vs==='recording'||vs==='processing'){
+    const rec=vs==='recording';
+    return segment+`<div class="create-hero">
+      <div class="listen-status ${rec?'rec':'proc'}"><span class="dot"></span>${rec?'En écoute…':'Analyse en cours…'}</div>
+      <div class="listen-transcript">${S.voiceTranscript?('« '+esc(S.voiceTranscript)+' »'):'<span class="ph">Parle naturellement — client, prestation, heures, fournitures…</span>'}</div>
+      <div class="create-orb-wrap ${rec?'rec':'proc'}" onclick="${rec?'stopVoice()':''}">
+        <span class="create-orb-pulse"></span><span class="create-orb-pulse"></span>
+        <div class="create-orb">${rec?IC.mic:'<span style="font-size:32px">⏳</span>'}</div>
+      </div>
+      <div class="listen-hint">${rec?"Touche l'orbe pour arrêter et analyser":'Artio extrait les informations de ta dictée…'}</div>
+    </div>`;
+  }
+
+  // — Étape 1 : accueil vocal-first —
+  if(!showForm){
+    return segment+`<div class="create-hero">
+      <div class="create-orb-wrap" onclick="startVoice()">
+        <span class="create-orb-pulse"></span><span class="create-orb-pulse"></span>
+        <div class="create-orb">${IC.mic}</div>
+      </div>
+      <div class="create-title">Dicter ${tab==='devis'?'le devis':'la facture'}</div>
+      <div class="create-sub">Parle naturellement — client, prestation, heures et fournitures sont reconnus automatiquement.</div>
+      <button class="create-manual" onclick="set({manualMode:true})">ou remplir manuellement →</button>
+    </div>`;
+  }
+
+  // — Étape 3 : brouillon / formulaire à valider —
+  const missCount=[!f.client_nom,!f.travaux,(e.assujetti_tva&&!f.tva)].filter(Boolean).length;
+  const formBar=`<div class="form-bar">
+    <button class="mini-mic" onclick="startVoice()">${IC.mic} ${hasData?'Compléter à la voix':'Dicter'}</button>
+    ${(S.manualMode&&!hasData)?`<button class="mini-mic ghost" onclick="set({manualMode:false})">← Dictée</button>`:''}
+    ${(hasData&&missCount)?`<span style="font-size:12.5px;color:var(--amber);font-weight:600;margin-left:auto;">⚠ ${missCount} champ${missCount>1?'s':''} à compléter</span>`:''}
+  </div>`;
+
+  return segment+formBar+`<div class="card">
     ${tplBar}
-    ${renderVoice("devis")}
-    <div class="section-head">
+    <div class="section-head" style="margin-top:0">
       <div class="section-icon">👤</div>
       <span class="section-title">Client</span>
       <div class="section-line"></div>
     </div>
-    ${renderClientPicker()}
+    <div class="${hasData&&!f.client_nom?'field-miss':''}">${renderClientPicker()}</div>
     <div class="grid2">
       ${fld("client_tel","Téléphone",L("ph_client_tel"),"text",true)}
       ${fld("client_email","Email",L("ph_client_email"),"text",true)}
@@ -2285,9 +2491,9 @@ function renderDevisFacture(){
       </select>
       <div style="font-size:11px;color:var(--muted);margin-top:4px;">Durée de validité commerciale du devis. Le lien de signature expire à la même date. Défaut issu de vos paramètres.</div>
     </div>`:""}
-    ${fld("travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false)}
+    <div class="${hasData&&!f.travaux?'field-miss':''}">${fld("travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false)}</div>
     ${fld("nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true)}
-    ${e.assujetti_tva?fld("tva","TVA (%)","","select",false):""}
+    ${e.assujetti_tva?`<div class="${hasData&&!f.tva?'field-miss':''}">${fld("tva","TVA (%)","","select",false)}</div>`:""}
     <div class="section-head">
       <div class="section-icon">📦</div>
       <span class="section-title">Articles / Prestations complémentaires</span>
@@ -2301,6 +2507,14 @@ function renderDevisFacture(){
   ${S.generatedDoc?`<div class="card">${renderDocPreview(S.generatedDoc)}</div>`:""}`;
 }
 
+
+function renderRedigerSeg(){
+  const _pro=!!(window.PlanGuard&&window.PlanGuard.isPro());
+  return `<div class="seg-pills">
+    <button class="seg-pill ${S.tab==='email'?'active':''}" onclick="setTab('email')">${IC.pen} Rédiger</button>
+    <button class="seg-pill ${S.tab==='emails_gmail'?'active':''} ${_pro?'':'locked'}" onclick="${_pro?"setTab('emails_gmail')":"window.PlanGuard?.showProModal('Messagerie Gmail')"}">${IC.inbox} Messagerie${_pro?'':' 🔒'}</button>
+  </div>`;
+}
 
 function renderEmail(){
   const f=S.fields;
@@ -2450,7 +2664,7 @@ function renderHistorique(){
     return jours>=14;
   }).length;
   const facturesImpayees=S.dossiers.reduce((n,d)=>(d.documents||[]).filter(doc=>doc.type==="facture"&&!doc.paye).length+n,0);
-  const statsBar=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem;">
+  const statsBar=`<div class="stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem;">
     <div class="card" style="padding:12px;text-align:center;">
       <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">CA ce mois</div>
       <div style="font-size:18px;font-weight:700;color:var(--amber);">${caMois.toLocaleString("fr-FR",{minimumFractionDigits:0})} €</div>
@@ -2563,6 +2777,29 @@ function renderDocPreview(doc){
 // ——— INIT ———
 initAuth();
 
+// ── Aperçu design (#demo) : données fictives, aucune connexion Supabase ──
+function mountDemo(){
+  window.PlanGuard={isPro:()=>true,isFree:()=>false,isSolo:()=>true,showProModal:(f)=>alert("Fonction Pro : "+(f||""))};
+  S.user={id:"demo"};
+  S.entreprise={nom:"Jean-Marc Lefèvre",adresse:"22 rue des Lilas, 75011 Paris",tel:"06 81 24 19 02",email:"jm.lefevre@artio.fr",siret:"81234567800019",taux_horaire:"55",assujetti_tva:true,secteur:"Plombier",conditions_paiement:"30_jours",delai_paiement:"30",validite_devis:30,onboarding_done:true};
+  S.profilSaved=true;
+  S.clients=[
+    {id:"c1",nom:"Mme Sophie Petit",email:"s.petit@email.com",tel:"06 81 24 19 02",adresse:"22 rue des Lilas, 75011 Paris"},
+    {id:"c2",nom:"Boulangerie Lévy",email:"contact@boulangerie-levy.fr",tel:"01 43 55 12 00",adresse:"8 av. de la République, 75011 Paris"},
+    {id:"c3",nom:"Cabinet Roussel",email:"compta@roussel.fr",tel:"01 44 90 33 21",adresse:"14 rue de Rivoli, 75004 Paris"}
+  ];
+  const mk=(o)=>({type:"devis",date:"20/05/2026",accepte:false,paye:false,nb_heures:"4",pieces:[],totalHT:536,tva:53.6,tvaRate:10,ttc:589.6,description:"Remplacement de la robinetterie.",client:{nom:o.cn},...o});
+  S.dossiers=[
+    {id:"d1",nom:"Mme Petit — Salle de bain",client:"Mme Sophie Petit",statut:"devis_envoye",createdAt:"20/05/2026",documents:[mk({docNumber:"DEV-2026-026",cn:"Mme Sophie Petit",ttc:589.6})]},
+    {id:"d2",nom:"Boulangerie Lévy — Vitrine",client:"Boulangerie Lévy",statut:"devis_accepte",createdAt:"12/05/2026",documents:[mk({docNumber:"DEV-2026-024",cn:"Boulangerie Lévy",accepte:true,ttc:1240})]},
+    {id:"d3",nom:"Cabinet Roussel — Réseau",client:"Cabinet Roussel",statut:"facture",createdAt:"04/05/2026",documents:[mk({type:"facture",docNumber:"FACT-2026-018",cn:"Cabinet Roussel",date:"04/05/2026",ttc:2980,paye:false})]},
+    {id:"d4",nom:"M. Dubois — Chauffe-eau",client:"M. Dubois",statut:"termine",createdAt:"28/04/2026",documents:[mk({type:"facture",docNumber:"FACT-2026-014",cn:"M. Dubois",date:"28/04/2026",ttc:760,paye:true})]}
+  ];
+  S.templates=[{id:"t1",tab:"devis",nom:"Entretien mensuel"}];
+  try{checkDevisAConvertir&&checkDevisAConvertir();}catch(e){}
+  renderApp();
+}
+
 // ── Plan Guard : alerte mode lecture ──────────────────────────
 function _showReadonlyAlert(msg) {
   const existing = document.getElementById("pg-readonly-alert");
@@ -2584,7 +2821,7 @@ function _showReadonlyAlert(msg) {
 }
 
 </script>
-<script src="chat-widget.js"></script>
+<script src="chat-widget.js?v=1"></script>
 <div class="artio-legal-footer">
   <a href="cgv.html">CGV</a> · <a href="cgu.html">CGU</a> · <a href="confidentialite.html">Politique de confidentialité</a>
 </div>
