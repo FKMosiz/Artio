@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Artio — Dossiers</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="plan-guard.js?v=1"></script>
+  <script>const PAGE_PLAN_REQUIRED = "solo";</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <style>
+:root,[data-theme="dark"]{--bg:#080b14;--surface:#0e1220;--surface-2:#141829;--surface-3:#1a2035;--border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.13);--text:#e2e5f1;--muted:#6b7494;--amber:#f5a742;--amber-dim:rgba(245,167,66,0.12);--amber-glow:rgba(245,167,66,0.28);--teal:#3ecfcf;--teal-dim:rgba(62,207,207,0.11);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--green:#4ade80;--fh:'Space Grotesk',sans-serif;--fb:'Plus Jakarta Sans',sans-serif}
+[data-theme="light"]{--bg:#faf8f3;--surface:#ffffff;--surface-2:#f3efe6;--surface-3:#ece7dc;--border:rgba(20,18,12,0.08);--border-hi:rgba(20,18,12,0.16);--text:#1a1a1f;--muted:#6a6b78;--amber:#d97706;--amber-dim:rgba(217,119,6,0.10);--amber-glow:rgba(217,119,6,0.22);--teal:#0d9488;--teal-dim:rgba(13,148,136,0.10);--red:#dc2626;--green:#16a34a}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+button{font-family:var(--fb);cursor:pointer}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:3px}
+.artio-nav{position:sticky;top:0;z-index:50;height:56px;padding:0 20px 0 66px;display:flex;align-items:center;gap:16px;background:rgba(8,11,20,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+[data-theme="light"] .artio-nav{background:rgba(250,248,243,0.92)!important;border-bottom-color:rgba(20,18,12,0.10)!important}
+.nav-logo{font-family:var(--fh);font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.02em;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.nav-logo img{width:26px;height:26px;display:block}
+.theme-toggle{width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--border);border-radius:9px;cursor:pointer;color:var(--text);transition:all .2s;flex-shrink:0}
+.theme-toggle:hover{border-color:var(--amber);color:var(--amber)}
+.theme-toggle svg{width:15px;height:15px}
+.theme-toggle .icon-sun{display:none}
+.theme-toggle .icon-moon{display:block}
+[data-theme="light"] .theme-toggle .icon-sun{display:block}
+[data-theme="light"] .theme-toggle .icon-moon{display:none}
+.app{max-width:860px;margin:0 auto;padding:22px 20px 60px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px;margin-bottom:14px}
+.badge{display:inline-flex;align-items:center;font-size:10px;padding:3px 9px;border-radius:100px;font-weight:700;letter-spacing:.04em}
+.btn-small{font-size:12px;padding:5px 12px;border-radius:8px;font-weight:500;border:1px solid;transition:all .2s;cursor:pointer;background:transparent}
+.btn-green{background:var(--teal-dim);color:var(--teal);border-color:rgba(62,207,207,.3)}
+.btn-green:hover{background:rgba(62,207,207,.2)}
+.btn-blue{background:var(--amber-dim);color:var(--amber);border-color:rgba(245,167,66,.3)}
+.btn-blue:hover{background:rgba(245,167,66,.2)}
+.btn-red{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,.25)}
+.btn-red:hover{background:rgba(248,113,113,.18)}
+.btn-teal{background:var(--teal-dim);color:var(--teal);border-color:rgba(62,207,207,.25)}
+.btn-gray{background:var(--surface-2);color:var(--muted);border-color:var(--border)}
+.btn-gray:hover{border-color:var(--border-hi);color:var(--text)}
+.dossier-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.dossier-card:hover{border-color:var(--border-hi)}
+.dossier-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;cursor:pointer;background:var(--surface-2);transition:background .15s}
+.dossier-header:hover{background:var(--surface-3)}
+.preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.preview-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
+.preview-table th{padding:7px 10px;background:var(--amber-dim);color:var(--amber);font-size:10px;font-weight:700;text-align:left;text-transform:uppercase;letter-spacing:.04em}
+.preview-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.divider{border-top:1px solid var(--border);padding-top:10px;margin-bottom:10px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem}
+@media(max-width:580px){.preview-grid{grid-template-columns:1fr}.btn-small{font-size:11px;padding:4px 8px}.stats-grid{grid-template-columns:1fr 1fr}}
+.artio-legal-footer{position:relative;z-index:1;text-align:center;padding:12px 16px;font-size:11px;color:var(--muted);border-top:1px solid var(--border)}
+.artio-legal-footer a{color:var(--muted);text-decoration:none;transition:color .2s}
+.artio-legal-footer a:hover{color:var(--amber)}
+/* Sidebar */
+.sidebar-trigger{position:fixed;top:9px;left:14px;z-index:60;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;transition:background .15s}
+.sidebar-trigger:hover{background:var(--surface-3)}
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:70;opacity:0;pointer-events:none;transition:opacity .2s}
+.sidebar-overlay.open{opacity:1;pointer-events:auto}
+.sidebar{position:fixed;top:0;left:-280px;bottom:0;width:280px;background:var(--surface);border-right:1px solid var(--border);z-index:80;transition:left .25s ease;display:flex;flex-direction:column}
+.sidebar.open{left:0}
+.sidebar-head{display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo{width:28px;height:28px}
+.sidebar-brand{font-family:var(--fh);font-weight:700;font-size:17px;flex:1}
+.sidebar-close{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;cursor:pointer;color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center}
+.sidebar-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.sidebar-link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;color:var(--muted);text-decoration:none;background:transparent;border:none;text-align:left;cursor:pointer;transition:background .12s,color .12s;font-family:var(--fb);width:100%}
+.sidebar-link:hover{background:var(--surface-2);color:var(--text)}
+.sidebar-link.active{background:var(--amber-dim);color:var(--amber);font-weight:600}
+.sidebar-sep{height:1px;background:var(--border);margin:8px 12px}
+.sidebar-logout{color:var(--red)}
+.sidebar-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+.sidebar-theme{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;width:36px;height:36px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center}
+.sidebar-theme .icon-sun{display:none}
+[data-theme="dark"] .sidebar-theme .icon-moon{display:none}
+[data-theme="dark"] .sidebar-theme .icon-sun{display:inline-block}
+@media(max-width:767px){.sidebar.open{width:100%}}
+  </style>
+</head>
+<body>
+<button class="sidebar-trigger" onclick="toggleSidebar()" aria-label="Menu">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+<aside class="sidebar">
+  <div class="sidebar-head">
+    <img src="artio-icon.png" alt="" class="sidebar-logo"/>
+    <span class="sidebar-brand">Artio</span>
+    <button class="sidebar-close" onclick="closeSidebar()" aria-label="Fermer">×</button>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="home.html" class="sidebar-link" data-route="home">🏠 Accueil</a>
+    <a href="app.html" class="sidebar-link" data-route="app">🎙 Créer</a>
+    <a href="dossiers.html" class="sidebar-link active" data-route="dossiers">📁 Dossiers</a>
+    <a href="rediger.html" class="sidebar-link" data-route="rediger">✉️ Rédiger</a>
+    <a href="clients.html" class="sidebar-link" data-route="clients">👥 Clients</a>
+    <a href="dashboard.html" class="sidebar-link" data-route="dashboard">📊 Tableau de bord</a>
+    <a href="calendar.html" class="sidebar-link" data-route="calendar">📅 Calendrier</a>
+    <div class="sidebar-sep"></div>
+    <a href="aide.html" class="sidebar-link" data-route="aide">❔ Aide</a>
+    <a href="settings.html" class="sidebar-link" data-route="settings">⚙️ Paramètres</a>
+    <button class="sidebar-link sidebar-logout" onclick="handleLogout()">↪ Déconnexion</button>
+  </nav>
+  <div class="sidebar-foot">
+    <button class="sidebar-theme" onclick="toggleTheme()" title="Changer de thème">
+      <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</aside>
+
+<nav class="artio-nav">
+  <a href="home.html" class="nav-logo">
+    <img src="artio-icon.png" alt=""/>Artio
+  </a>
+  <div style="flex:1"></div>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Thème">
+    <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+</nav>
+
+<main class="app" id="app-root">
+  <div style="text-align:center;padding:40px;color:var(--muted);">Chargement…</div>
+</main>
+
+<div class="artio-legal-footer">
+  <a href="cgv.html">CGV</a> · <a href="cgu.html">CGU</a> · <a href="confidentialite.html">Politique de confidentialité</a>
+</div>
+
+<script>
+const SUPABASE_URL="https://mwmexkoeqeyueqgdkkni.supabase.co";
+const SUPABASE_KEY="sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
+const FUNCTIONS_URL=SUPABASE_URL+"/functions/v1";
+const{createClient}=supabase;
+const sb=window.sb=createClient(SUPABASE_URL,SUPABASE_KEY);
+const LOGO_WHITE="";
+const DOC_STORE={};
+function storeDoc(doc){const key=doc.docNumber;DOC_STORE[key]=doc;return key}
+function getDoc(key){return DOC_STORE[key]}
+function getStatuts(){return{devis_envoye:{label:"Devis envoyé",bg:"rgba(251,146,60,.13)",color:"#fb923c"},devis_accepte:{label:"Devis accepté",bg:"rgba(96,165,250,.13)",color:"#60a5fa"},facture:{label:"Facturé",bg:"rgba(62,207,207,.13)",color:"#3ecfcf"},termine:{label:"Terminé",bg:"rgba(107,116,148,.15)",color:"#6b7494"}};}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function todayFR(){return new Date().toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"})}
+function isoToFR(iso){if(!iso)return todayFR();const[y,m,d]=iso.split("-");return d+"/"+m+"/"+y;}
+function uid(){return"dos_"+Date.now()+Math.random().toString(36).slice(2,6)}
+function getNextNum(type,user){const k="artio_ctr_"+type+"_"+(user?.id||"x");let n=(parseInt(localStorage.getItem(k)||"0"))+1;localStorage.setItem(k,n);return(type==="devis"?"DEV":"FACT")+"-2026-"+String(n).padStart(3,"0")}
+
+let S={
+  user:null,
+  langue:"fr",
+  entreprise:{nom:"",adresse:"",tel:"",email:"",siret:"",taux_horaire:"",assujetti_tva:false,secteur:"",conditions_paiement:"",delai_paiement:"30",validite_devis:3,iban:"",contexte_ia:"",logo_base64:null,couleur_pdf:null,rc_pro_assureur:"",rc_pro_police:"",decennale_assureur:"",decennale_police:"",certifications:"",nature_operation:""},
+  dossiers:[],clients:[],
+  openDossier:null,previewDocNum:null,deleteConfirm:null,
+  convertingId:null,devisAConvertir:[],
+  showDatePrestModal:false,showSiretModal:null,pendingConvert:null,
+  signatureLink:null,signatureLinkCopied:false,
+  emettreId:null,renamingDossierId:null,renamingDossierVal:"",
+  rappelLoadingId:null,loading:false,
+};
+function set(patch){Object.assign(S,patch);renderPage();}
+
+async function upsertDossier(dos){
+  try{
+    const{error}=await sb.from("dossiers").upsert({id:dos.id,user_id:S.user.id,nom:dos.nom||"",client:dos.client||"",statut:dos.statut||"devis_envoye",documents:JSON.stringify(dos.documents||[]),created_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"id"});
+    if(error){console.error("upsertDossier:",error.message);alert("Erreur de sauvegarde : "+error.message);}
+  }catch(e){alert("Erreur de sauvegarde : "+e.message);}
+}
+async function deleteDossierDB(id){await sb.from("dossiers").delete().eq("id",id).eq("user_id",S.user.id);}
+
+function checkDevisAConvertir(){
+  try{
+    const today=new Date();today.setHours(0,0,0,0);
+    const liste=[];
+    for(const dos of S.dossiers){
+      if((dos.documents||[]).some(d=>d.type==="facture"))continue;
+      const devis=(dos.documents||[]).find(d=>d.type==="devis"&&d.accepte);
+      if(!devis)continue;
+      if(devis.date_prestation){const dp=new Date(devis.date_prestation);dp.setHours(0,0,0,0);if(dp<=today)liste.push({dosId:dos.id,docNum:devis.docNumber,nom:dos.nom||dos.client||"",datePresta:devis.date_prestation});}
+      else{liste.push({dosId:dos.id,docNum:devis.docNumber,nom:dos.nom||dos.client||"",datePresta:null});}
+    }
+    S.devisAConvertir=liste;
+  }catch(e){console.error("checkDevisAConvertir:",e);}
+}
+
+async function hashDoc(obj){
+  const str=JSON.stringify(obj,Object.keys(obj).sort());
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+async function callClaude(prompt,maxTokens=400,retries=5){
+  if(window.PlanGuard&&window.PlanGuard.isFree()){_showReadonlyAlert("La génération par IA nécessite un abonnement actif.");throw new Error("plan_required");}
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session){throw new Error("Session expirée, reconnecte-toi.");}
+  for(let attempt=1;attempt<=retries;attempt++){
+    try{
+      const res=await fetch(FUNCTIONS_URL+"/claude-proxy",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})});
+      const d=await res.json();
+      if(!res.ok){
+        if((d.code==="plan_required")||res.status===403){_showReadonlyAlert("Abonnement requis pour utiliser l'IA.");throw new Error("plan_required");}
+        if((res.status===529||res.status===503||res.status===429)&&attempt<retries){await new Promise(r=>setTimeout(r,1500*Math.pow(1.5,attempt)));continue;}
+        throw new Error(d.error||d.message||"Erreur proxy IA");
+      }
+      return{text:d.content?.map(b=>b.text||"").join("")||"",usage:d.usage||null};
+    }catch(e){
+      if(attempt===retries){if(e.message==="plan_required")throw e;throw new Error("L'IA est momentanément surchargée. Réessayez dans quelques instants.");}
+      if(e.message==="plan_required")throw e;
+      await new Promise(r=>setTimeout(r,1500*Math.pow(1.5,attempt)));
+    }
+  }
+}
+
+async function logTokens(feature,usage){
+  try{
+    if(!usage||!S.user?.id)return;
+    const input=usage.input_tokens||0,output=usage.output_tokens||0;
+    const cout=(input*0.000003)+(output*0.000015);
+    await sb.from("token_logs").insert({user_id:S.user.id,feature,input_tokens:input,output_tokens:output,total_tokens:input+output,cout_estime:cout});
+  }catch(e){console.debug("logTokens:",e.message);}
+}
+
+window.toggleDossier=id=>set({openDossier:S.openDossier===id?null:id});
+
+window.markTermine=async id=>{
+  const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;
+  dos.statut="termine";await upsertDossier(dos);set({});
+};
+window.markAccepte=async(dosId,docNum)=>{
+  if(window.PlanGuard&&window.PlanGuard.isFree()){_showReadonlyAlert("Action impossible en mode lecture.");return;}
+  const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
+  dos.statut="devis_accepte";dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,accepte:true}:d);
+  await upsertDossier(dos);set({});
+};
+window.markPaye=async(dosId,docNum)=>{
+  if(window.PlanGuard&&window.PlanGuard.isFree()){_showReadonlyAlert("Action impossible en mode lecture.");return;}
+  const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
+  const datePaye=new Date().toLocaleDateString("fr-FR");
+  dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,paye:true,date_paye:datePaye}:d);
+  dos.statut="termine";
+  await upsertDossier(dos);set({});
+  showToast("✅ Facture marquée comme payée !");
+};
+
+async function genererRappelPaiement(dosId,docNum){
+  if(window.PlanGuard&&!window.PlanGuard.isPro()){window.PlanGuard.showProModal("Rappels de paiement IA");return;}
+  const dos=S.dossiers.find(d=>d.id===dosId);
+  const doc=dos?.documents?.find(d=>d.docNumber===docNum);
+  if(!doc){alert("Document introuvable.");return;}
+  const e=S.entreprise;
+  const joursEcoules=doc.date?Math.floor((Date.now()-new Date(doc.date.split("/").reverse().join("-")))/86400000):30;
+  const ibanInfo=e.iban?"Virement bancaire — IBAN : "+e.iban:"(IBAN non renseigné)";
+  const contexte=e.contexte_ia?"\n\nContexte entreprise : "+e.contexte_ia:"";
+  set({loading:true,rappelLoadingId:docNum});
+  try{
+    const prompt="Tu es l'assistant de "+(e.nom||"un prestataire")+" (secteur: "+(e.secteur||"services")+")."+contexte+"\n\nRédige un email de rappel de paiement, professionnel mais direct.\n\nDonnées :\n- Client : "+(doc.client?.nom||dos.client||"le client")+"\n- Facture N° : "+docNum+"\n- Date d'émission : "+(doc.date||"date inconnue")+"\n- Montant : "+(doc.ttc||0).toFixed(2)+" € TTC\n- Impayée depuis : "+joursEcoules+" jour"+(joursEcoules>1?"s":"")+"\n- Prestation : "+(doc.description||dos.nom||"")+"\n- Coordonnées de paiement : "+ibanInfo+"\n- Conditions : "+(e.conditions_paiement||"paiement à réception")+"\n\nInstructions :\n- Inclus DIRECTEMENT les coordonnées de paiement\n- Ton : "+(joursEcoules<15?"courtois, premier rappel":joursEcoules<30?"ferme, deuxième rappel":"très ferme, dernier rappel")+"\n- Signe UNIQUEMENT avec \""+( e.nom||"l'entreprise")+"\"\n- Langue : français\n- Écris directement l'email, sans commentaire";
+    const{text:txt,usage:ur}=await callClaude(prompt,400);
+    logTokens("email",ur);
+    localStorage.setItem("artio-email-body",txt);
+    localStorage.setItem("artio-email-client-nom",doc.client?.nom||dos.client||"");
+    localStorage.setItem("artio-email-client-email",doc.client?.email||"");
+    set({loading:false,rappelLoadingId:null});
+    showToast("💶 Email de rappel généré — ouverture Rédiger…");
+    setTimeout(()=>{location.href="rediger.html?mode=email";},800);
+  }catch(err){
+    set({loading:false,rappelLoadingId:null});
+    if(err.message!=="plan_required")alert("Erreur : "+err.message);
+  }
+}
+
+async function genererRelance(dosId,docNum){
+  if(window.PlanGuard&&!window.PlanGuard.isPro()){window.PlanGuard.showProModal("Relances clients IA");return;}
+  const dos=S.dossiers.find(d=>d.id===dosId);
+  const doc=dos?.documents?.find(d=>d.docNumber===docNum);
+  if(!doc){alert("Document introuvable.");return;}
+  const e=S.entreprise;
+  const joursEcoules=doc.date?Math.floor((Date.now()-new Date(doc.date.split("/").reverse().join("-")))/86400000):14;
+  set({loading:true});
+  try{
+    const prompt=`Tu es un assistant pour ${e.nom||"un prestataire"} (secteur: ${e.secteur||"services"}).\nRédige un email de relance professionnel et chaleureux pour un devis non signé.\nInfos: Client: ${doc.client?.nom||dos.client||"le client"} | Devis N°${docNum} | Montant: ${doc.ttc?.toFixed(2)||"?"} € TTC | Envoyé il y a ${joursEcoules} jours | Description: ${doc.description||dos.nom||""}.\nLangue: français. Ton: courtois, sans pression.\nSigne au nom de "${e.nom||"l'entreprise"}". Écris directement l'email sans commentaire.`;
+    const{text:txt,usage:ur}=await callClaude(prompt,350);
+    logTokens("email",ur);
+    localStorage.setItem("artio-email-body",txt);
+    localStorage.setItem("artio-email-client-nom",doc.client?.nom||dos.client||"");
+    localStorage.setItem("artio-email-client-email",doc.client?.email||"");
+    set({loading:false});
+    showToast("📩 Email de relance généré — ouverture Rédiger…");
+    setTimeout(()=>{location.href="rediger.html?mode=email";},800);
+  }catch(err){
+    set({loading:false});
+    alert("Erreur : "+err.message);
+  }
+}
+
+sendForSignature=async(dosId,docNum)=>{
+  if(window.PlanGuard&&!window.PlanGuard.isPro()){window.PlanGuard.showProModal("Signature électronique");return;}
+  const dos=S.dossiers.find(d=>d.id===dosId);
+  const doc=dos?.documents?.find(d=>d.docNumber===docNum);
+  if(!doc){alert("Document introuvable.");return;}
+  set({loading:true});
+  const token=[...Array(32)].map(()=>(Math.random().toString(36)[2]||"a")).join("");
+  const docHash=await hashDoc({...doc,_dossier_id:dosId});
+  const validiteJoursLink=parseInt(doc.validite_jours)||3;
+  const expiresAt=new Date(Date.now()+validiteJoursLink*86400000).toISOString();
+  const{error}=await sb.from("signatures").upsert({token,user_id:S.user.id,dossier_id:dosId,doc_number:docNum,doc_data:{...doc,_dossier_id:dosId},doc_hash:docHash,status:"pending",expires_at:expiresAt,created_at:new Date().toISOString()},{onConflict:"token"});
+  set({loading:false});
+  if(error){alert("Erreur : "+error.message);return;}
+  const link=window.location.origin+"/sign.html?token="+token;
+  set({signatureLink:link,signatureLinkCopied:false});
+};
+window.sendForSignature=sendForSignature;
+window.copySignatureLink=async function(){
+  if(!S.signatureLink)return;
+  try{await navigator.clipboard.writeText(S.signatureLink);}catch(e){const ta=document.getElementById("sig-link-input");if(ta){ta.select();try{document.execCommand("copy");}catch(_){}}}
+  set({signatureLinkCopied:true});
+  setTimeout(()=>{S.signatureLinkCopied=false;renderPage();},2200);
+};
+
+window.emettreFacture=async function(dosId,docNum,opts){
+  const silent=opts&&opts.silent===true;
+  const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
+  const doc=dos.documents.find(d=>d.docNumber===docNum);if(!doc)return;
+  if(!S.entreprise?.siret){if(!silent)showToast("⚠️ SIRET manquant dans ton profil — va dans Paramètres.");return;}
+  let clientSiret=(doc.client?.siret||"").replace(/\s/g,"");
+  if(!clientSiret){if(silent)return;set({showSiretModal:{dosId,docNum}});return;}
+  set({emettreId:docNum});
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session){if(!silent)showToast("⚠️ Session expirée. Reconnecte-toi.");set({emettreId:null});return;}
+    const resp=await fetch(FUNCTIONS_URL+"/index-factpulse",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({dossier_id:dosId,doc_number:docNum})});
+    const result=await resp.json();
+    if(!resp.ok||!result.success){const msg=result?.error||result?.message||"Erreur inconnue";if(!silent)showToast("❌ FactPulse : "+msg);else console.warn("FactPulse silent:",msg);set({emettreId:null});return;}
+    const{data:freshDos}=await sb.from("dossiers").select("*").eq("id",dosId).single();
+    if(freshDos){const idx=S.dossiers.findIndex(d=>d.id===dosId);if(idx>=0)S.dossiers[idx]=freshDos;}
+    set({emettreId:null,dossiers:[...S.dossiers]});
+    if(!silent)showToast("✅ Facture émise électroniquement ! Flow ID : "+(result.flow_id||result.factpulse_id||"émis"));
+  }catch(e){if(!silent)showToast("❌ Erreur réseau : "+e.message);set({emettreId:null});}
+};
+
+convertToFacture=async(dosId,docNum)=>{
+  if(window.PlanGuard&&window.PlanGuard.isFree()){_showReadonlyAlert("Action impossible en mode lecture.");return;}
+  const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
+  const devis=dos.documents.find(d=>d.docNumber===docNum);if(!devis)return;
+  if(!devis.date_prestation){set({pendingConvert:{dosId,docNum},showDatePrestModal:true});return;}
+  await _doConvert(dosId,docNum,isoToFR(devis.date_prestation));
+};
+async function _doConvert(dosId,docNum,dateFacture){
+  set({convertingId:docNum});
+  const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
+  const devis=dos.documents.find(d=>d.docNumber===docNum);if(!devis)return;
+  const factNum=await getNextNum("facture",S.user);
+  const factDoc={...devis,type:"facture",docNumber:factNum,date:dateFacture,validUntil:null,accepte:false};
+  dos.statut="facture";
+  dos.documents=dos.documents.map(d=>d.docNumber===docNum?{...d,accepte:true}:d).concat([factDoc]);
+  storeDoc(factDoc);
+  await upsertDossier(dos);
+  set({convertingId:null,pendingConvert:null,showDatePrestModal:false});
+  checkDevisAConvertir();
+  if(S.entreprise?.siret){try{await window.emettreFacture(dosId,factNum,{silent:true});}catch(e){console.warn("Auto-émission FactPulse:",e.message);}}
+}
+window.startRename=function(id){const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;set({renamingDossierId:id,renamingDossierVal:dos.nom||""});};
+window.renameDossier=async function(id){
+  const newNom=S.renamingDossierVal.trim();if(!newNom)return;
+  const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;
+  dos.nom=newNom;await upsertDossier(dos);set({renamingDossierId:null,renamingDossierVal:""});
+};
+window.confirmDeleteDossier=async id=>{
+  await deleteDossierDB(id);S.dossiers=S.dossiers.filter(d=>d.id!==id);
+  const{data:cls}=await sb.from("clients").select("id,nom,email,tel,adresse").eq("user_id",S.user.id).order("nom",{ascending:true});
+  if(cls)S.clients=cls;
+  set({deleteConfirm:null,openDossier:null,previewDocNum:null});
+};
+window.confirmDeleteDoc=async(dosId,docNum)=>{
+  const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
+  dos.documents=dos.documents.filter(d=>d.docNumber!==docNum);
+  if(dos.documents.length===0){await deleteDossierDB(dosId);S.dossiers=S.dossiers.filter(d=>d.id!==dosId);}
+  else{await upsertDossier(dos);}
+  const{data:cls}=await sb.from("clients").select("id,nom,email,tel,adresse").eq("user_id",S.user.id).order("nom",{ascending:true});
+  if(cls)S.clients=cls;
+  set({deleteConfirm:null,previewDocNum:null});
+};
+
+function generatePDF(doc){
+  const{jsPDF}=window.jspdf;const pdf=new jsPDF({unit:"mm",format:"a4"});
+  const W=210,m=18,cW=W-2*m,rX=W-m;let y=m;
+  const pdfColor=doc.entreprise.couleur_pdf||"#378ADD";
+  const rgb=(pdfColor.match(/[0-9a-f]{2}/gi)||["37","8a","dd"]).map(h=>parseInt(h,16));
+  if(doc.entreprise.logo_base64){try{const props=pdf.getImageProperties(doc.entreprise.logo_base64);const ratio=props.width/props.height;const logoW=Math.min(14*ratio,55);pdf.addImage(doc.entreprise.logo_base64,"PNG",m,y-2,logoW,14);y+=17;}catch(e){pdf.setFontSize(16).setFont(undefined,"bold").text(doc.entreprise.nom,m,y);y+=6;}}
+  else{pdf.setFontSize(16).setFont(undefined,"bold").text(doc.entreprise.nom,m,y);y+=6;}
+  pdf.setFontSize(9).setFont(undefined,"normal").text(doc.entreprise.adresse,m,y);y+=5;
+  pdf.text("Tél : "+doc.entreprise.tel,m,y);y+=4;pdf.text("Email : "+doc.entreprise.email,m,y);y+=4;pdf.text("SIRET : "+doc.entreprise.siret,m,y);y+=4;
+  if(doc.entreprise?.iban){pdf.text("IBAN : "+doc.entreprise.iban,m,y);y+=4;}
+  if(doc.entreprise?.rc_pro_assureur){pdf.text("RC Pro : "+doc.entreprise.rc_pro_assureur+(doc.entreprise.rc_pro_police?" — Pol. "+doc.entreprise.rc_pro_police:""),m,y);y+=4;}
+  pdf.setFontSize(20).setFont(undefined,"bold").text(doc.type==="devis"?"DEVIS":"FACTURE",rX,m,{align:"right"});
+  pdf.setFontSize(10).setFont(undefined,"normal");pdf.text("N° "+doc.docNumber,rX,m+9,{align:"right"});pdf.text("Date : "+doc.date,rX,m+15,{align:"right"});
+  if(doc.validUntil)pdf.text("Valable jusqu'au : "+doc.validUntil,rX,m+21,{align:"right"});
+  let yOff=doc.validUntil?27:21;
+  if(doc.date_prestation){const dp=new Date(doc.date_prestation).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});const hp=doc.heure_prestation?" à "+doc.heure_prestation+(doc.heure_fin_prestation?" → "+doc.heure_fin_prestation:""):"";pdf.text((doc.type==="devis"?"Prestation prévue : ":"Prestation réalisée : ")+dp+hp,rX,m+yOff,{align:"right"});}
+  y=58;pdf.setDrawColor(...rgb).setLineWidth(0.4).line(m,y,W-m,y);pdf.setLineWidth(0.2);y+=8;
+  pdf.setFontSize(9).setFont(undefined,"bold").text("CLIENT",m,y);y+=5;pdf.setFont(undefined,"normal").text(doc.client.nom,m,y);y+=4;pdf.text(doc.client.adresse,m,y);y+=4;
+  if(doc.client.tel){pdf.text("Tél : "+doc.client.tel,m,y);y+=4;}
+  y+=3;pdf.setFont(undefined,"bold").text("DESCRIPTION DE LA PRESTATION",m,y);y+=5;pdf.setFont(undefined,"normal");
+  const dl=pdf.splitTextToSize(doc.description,cW);pdf.text(dl,m,y);y+=dl.length*4.5+6;
+  const moRow=doc.nb_heures&&parseFloat(doc.nb_heures)>0?["Temps de travail ("+doc.nb_heures+"h × "+doc.entreprise.taux_horaire+"€/h)",doc.nb_heures,parseFloat(doc.entreprise.taux_horaire).toFixed(2)+" €",doc.moHT.toFixed(2)+" €"]:null;
+  const tb=[...(moRow?[moRow]:[]),...doc.pieces.filter(p=>p.description&&p.quantite&&p.prix_unitaire).map(p=>[p.description,p.quantite,parseFloat(p.prix_unitaire).toFixed(2)+" €",(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)+" €"])];
+  pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tb,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3,overflow:"linebreak",valign:"top"},headStyles:{fillColor:rgb,textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85,overflow:"linebreak"},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});
+  y=pdf.lastAutoTable.finalY+6;
+  pdf.setFontSize(9).setFont(undefined,"normal");pdf.text("Total HT :",135,y);pdf.text(doc.totalHT.toFixed(2)+" €",rX,y,{align:"right"});y+=5;
+  if(doc.entreprise.assujetti_tva){pdf.text("TVA ("+doc.tvaRate+"%) :",135,y);pdf.text(doc.tva.toFixed(2)+" €",rX,y,{align:"right"});y+=5;}
+  pdf.setFont(undefined,"bold").setFontSize(11).text(doc.entreprise.assujetti_tva?"TOTAL TTC :":"TOTAL :",145,y);pdf.text(doc.ttc.toFixed(2)+" €",rX,y,{align:"right"});y+=10;
+  if(!doc.entreprise.assujetti_tva){pdf.setFont(undefined,"italic").setFontSize(8).setTextColor(100);pdf.text("TVA non applicable, art. 293 B du CGI",m,y);y+=5;}
+  pdf.setFont(undefined,"normal").setFontSize(8).setTextColor(80);
+  if(doc.type==="devis"){const condMap={"30_reception":"Paiement à réception de facture.","30_jours":"Paiement à 30 jours date de facture.","45_jours":"Paiement à 45 jours date de facture.","60_jours":"Paiement à 60 jours date de facture.","acompte_30":"30% d'acompte à la commande, solde à réception.","acompte_50":"50% d'acompte à la commande, solde à réception.","3_versements":"Règlement en 3 versements égaux.","custom":"Voir conditions spécifiques.","":"Paiement à réception de facture."};const condTxt=condMap[doc.entreprise.conditions_paiement||""]||"Paiement à réception de facture.";const fullCondTxt="Conditions : "+condTxt+(doc.validite_jours?" Devis valable "+doc.validite_jours+" jour"+(doc.validite_jours>1?"s":"")+".":" ");const condLines=pdf.splitTextToSize(fullCondTxt,cW);pdf.text(condLines,m,y);y+=condLines.length*4+6;pdf.setTextColor(0).setFontSize(9).text("Bon pour accord — Date et signature :",m,y);y+=14;pdf.setDrawColor(180).line(m,y,m+80,y);}
+  else{pdf.text("Paiement à 30 jours. Pénalités de retard : 3× le taux légal. Indemnité forfaitaire : 40 €.",m,y);}
+  try{pdf.addImage("data:image/png;base64,"+LOGO_WHITE,"PNG",m,280,22,7)}catch{}
+  pdf.setFontSize(7).setTextColor(150).text(doc.entreprise.nom+" — SIRET : "+doc.entreprise.siret,W/2,287,{align:"center"});
+  pdf.save(doc.docNumber+".pdf");
+}
+window.downloadPDF=function(key){const doc=getDoc(key);if(!doc){alert("Document introuvable.");return;}try{generatePDF(doc);}catch(e){alert("Erreur PDF : "+e.message);}}
+
+window.downloadSignedProof=async function(docNumber){
+  try{
+    const{data:sig,error}=await sb.from("signatures").select("*").eq("doc_number",docNumber).eq("user_id",S.user.id).eq("status","signed").single();
+    if(error||!sig){alert("Preuve introuvable.");return;}
+    const doc=sig.doc_data;const e=doc.entreprise||{};
+    const{jsPDF}=window.jspdf;const pdf=new jsPDF({unit:"mm",format:"a4"});
+    const W=210,m=18,cW=W-2*m,rX=W-m;let y=m;
+    pdf.setFontSize(16).setFont(undefined,"bold").text(e.nom||"",m,y);y+=6;pdf.setFontSize(9).setFont(undefined,"normal").text(e.adresse||"",m,y);y+=5;pdf.text("Tél : "+(e.tel||""),m,y);y+=4;pdf.text("Email : "+(e.email||""),m,y);y+=4;if(e.siret)pdf.text("SIRET : "+e.siret,m,y);y+=8;
+    pdf.setFontSize(15).setFont(undefined,"bold").setTextColor(83,74,183);pdf.text("DEVIS N° "+doc.docNumber,W/2,y,{align:"center"});y+=5;pdf.setFontSize(9).setFont(undefined,"normal").setTextColor(0);pdf.text("Date : "+doc.date,W/2,y,{align:"center"});y+=8;
+    pdf.setFillColor(249,248,246);pdf.roundedRect(m,y,cW,18,2,2,"F");pdf.setFontSize(8).setTextColor(120).text("CLIENT",m+4,y+5);pdf.setFontSize(10).setTextColor(0).setFont(undefined,"bold").text(doc.client?.nom||"",m+4,y+11);if(doc.client?.adresse){pdf.setFontSize(8).setFont(undefined,"normal").setTextColor(80).text(doc.client.adresse,m+4,y+15);}y+=22;
+    pdf.setFontSize(9).setTextColor(0);if(doc.description){const dl2=pdf.splitTextToSize(doc.description,cW);pdf.text(dl2,m,y);y+=dl2.length*4.5+4;}
+    const tbB=[];if(doc.nb_heures&&parseFloat(doc.nb_heures)>0)tbB.push(["Temps de travail ("+doc.nb_heures+"h × "+e.taux_horaire+"€/h)",doc.nb_heures,parseFloat(e.taux_horaire||0).toFixed(2)+" €",(doc.moHT||0).toFixed(2)+" €"]);
+    (doc.pieces||[]).filter(p=>p.description).forEach(p=>tbB.push([p.description,p.quantite,parseFloat(p.prix_unitaire||0).toFixed(2)+" €",(parseFloat(p.quantite||0)*parseFloat(p.prix_unitaire||0)).toFixed(2)+" €"]));
+    if(tbB.length>0){pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tbB,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[55,138,221],textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});y=pdf.lastAutoTable.finalY+6;}
+    pdf.setFontSize(9).text("Total HT :",135,y);pdf.text((doc.totalHT||0).toFixed(2)+" €",rX,y,{align:"right"});y+=5;if(e.assujetti_tva&&doc.tva){pdf.text("TVA ("+doc.tvaRate+"%) :",135,y);pdf.text((doc.tva||0).toFixed(2)+" €",rX,y,{align:"right"});y+=5;}
+    pdf.setFont(undefined,"bold").setFontSize(11).text(e.assujetti_tva?"TOTAL TTC :":"TOTAL :",145,y);pdf.text((doc.ttc||0).toFixed(2)+" €",rX,y,{align:"right"});y+=14;
+    pdf.setDrawColor(83,74,183);pdf.setLineWidth(0.5);pdf.line(m,y,W-m,y);y+=6;
+    pdf.setFillColor(240,238,255);pdf.roundedRect(m,y,cW,52,3,3,"F");pdf.setFont(undefined,"bold").setFontSize(10).setTextColor(83,74,183);pdf.text("✓ DEVIS SIGNÉ ÉLECTRONIQUEMENT",W/2,y+8,{align:"center"});
+    pdf.setFont(undefined,"normal").setFontSize(8).setTextColor(60);const sd=sig.signed_at?new Date(sig.signed_at).toLocaleString("fr-FR"):"—";
+    pdf.text("Signé par : "+(doc.client?.nom||"Le client")+"  |  Date : "+sd,W/2,y+14,{align:"center"});pdf.text("La signature ci-dessous a valeur contractuelle.",W/2,y+19,{align:"center"});
+    if(sig.signature_data){try{pdf.addImage(sig.signature_data,"PNG",m+10,y+22,cW-20,22);}catch(er){}}pdf.setDrawColor(180);pdf.setLineWidth(0.3);pdf.rect(m+10,y+22,cW-20,22);y+=55;y+=6;
+    pdf.setFillColor(245,245,250);pdf.roundedRect(m,y,cW,60,3,3,"F");pdf.setDrawColor(200,200,210);pdf.roundedRect(m,y,cW,60,3,3,"S");pdf.setFont(undefined,"bold").setFontSize(8).setTextColor(83,74,183);pdf.text("JOURNAL DES ÉVÉNEMENTS (AUDIT TRAIL)",m+4,y+6);
+    pdf.setFont(undefined,"normal").setFontSize(7.5).setTextColor(60);let ay=y+13;const aDateX=m+4;const aEvX=m+38;const created=sig.created_at?new Date(sig.created_at).toLocaleString("fr-FR"):"—";const signed=sig.signed_at?new Date(sig.signed_at).toLocaleString("fr-FR"):"—";
+    [[created,"🔗","Lien de signature créé et envoyé au client"],[signed,"📧","Code OTP envoyé à : "+(sig.signer_email||"—")],[signed,"✅","Code OTP vérifié — email authentifié"],[signed,"🔒","Intégrité SHA-256 vérifiée : "+(sig.hash_verified?"Conforme":"Non vérifiée")],[signed,"✍️","Document signé par : "+(sig.signer_email||doc.client?.nom||"—")],[signed,"🌐","IP du signataire : "+(sig.signer_ip||"—")]].forEach(([dt,icon,label])=>{pdf.setTextColor(120).text(dt,aDateX,ay);pdf.setTextColor(60).text(icon+" "+label,aEvX,ay);ay+=6;});y+=64;
+    pdf.setFont(undefined,"italic").setFontSize(6.5).setTextColor(120);pdf.text("Empreinte SHA-256 : "+(sig.doc_hash||"—"),m,y);y+=4;pdf.text("ID transaction Supabase : "+(sig.id||"—"),m,y);y+=4;if(sig.resend_confirmation_id){pdf.text("ID email Resend : "+sig.resend_confirmation_id,m,y);y+=4;}
+    pdf.text("Preuve générée le "+new Date().toLocaleString("fr-FR")+" — Artio · monartio.fr — Conforme règlement eIDAS",m,y);
+    try{pdf.addImage("data:image/png;base64,"+LOGO_WHITE,"PNG",m,280,22,7);}catch{}pdf.setFontSize(7).setTextColor(150).text((e.nom||"")+" — SIRET : "+(e.siret||""),W/2,287,{align:"center"});
+    pdf.save("PREUVE_SIGNATURE_"+docNumber+".pdf");
+  }catch(err){alert("Erreur : "+err.message);}
+};
+
+function renderHistorique(){
+  const now=new Date();
+  const devisEnAttente=S.dossiers.filter(d=>d.statut==="devis_envoye").length;
+  const dacBanner=S.devisAConvertir.length>0?`<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">${S.devisAConvertir.map(({dosId,docNum,nom,datePresta})=>{const dateLabel=datePresta?new Date(datePresta).toLocaleDateString("fr-FR",{day:"numeric",month:"long"}):"date non renseignée";const pastLabel=datePresta&&new Date(datePresta)<now?" — prestation terminée":"";return`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:12px;"><span style="font-size:18px;">📋</span><div style="flex:1;min-width:0;"><p style="font-size:13px;font-weight:600;color:#f59e0b;margin-bottom:2px;">Devis signé à facturer</p><p style="font-size:12px;color:var(--muted);">${esc(nom)} · ${docNum} · ${dateLabel}${pastLabel}</p></div><button class="btn-small btn-teal" onclick="convertToFacture('${dosId}','${docNum}')" style="white-space:nowrap;">${S.convertingId===docNum?"⏳...":"💶 Créer la facture"}</button></div>`;}).join("")}</div>`:"";
+  const caMois=S.dossiers.reduce((s,d)=>(d.documents||[]).filter(doc=>{if(doc.type!=="facture")return false;const parts=(doc.date||"").split("/");if(parts.length<3)return false;const dt=new Date(parts[2],parts[1]-1,parts[0]);return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear();}).reduce((ss,doc)=>ss+(doc.ttc||0),s),0);
+  const relancesNecessaires=S.dossiers.filter(d=>{if(d.statut!=="devis_envoye")return false;const devis=(d.documents||[]).find(doc=>doc.type==="devis"&&!doc.accepte);if(!devis||!devis.date)return false;const parts=devis.date.split("/");if(parts.length<3)return false;return Math.floor((Date.now()-new Date(parts[2],parts[1]-1,parts[0]))/86400000)>=14;}).length;
+  const facturesImpayees=S.dossiers.reduce((n,d)=>(d.documents||[]).filter(doc=>doc.type==="facture"&&!doc.paye).length+n,0);
+  const statsBar=`<div class="stats-grid"><div class="card" style="padding:12px;text-align:center;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">CA ce mois</div><div style="font-size:18px;font-weight:700;color:var(--amber);">${caMois.toLocaleString("fr-FR",{minimumFractionDigits:0})} €</div></div><div class="card" style="padding:12px;text-align:center;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Devis en attente</div><div style="font-size:18px;font-weight:700;color:var(--amber);">${devisEnAttente}</div></div><div class="card" style="padding:12px;text-align:center;${relancesNecessaires>0?"border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.05);":""}"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">À relancer</div><div style="font-size:18px;font-weight:700;color:${relancesNecessaires>0?"#f59e0b":"var(--green)"};">${relancesNecessaires}</div></div><div class="card" style="padding:12px;text-align:center;${facturesImpayees>0?"border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.05);":""}"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Factures impayées</div><div style="font-size:18px;font-weight:700;color:${facturesImpayees>0?"var(--red)":"var(--green)"};">${facturesImpayees}</div></div></div>`;
+  if(!S.dossiers.length)return dacBanner+statsBar+`<div class="card" style="text-align:center;padding:2rem;"><p style="color:#888;font-size:13px;">Aucun dossier pour l'instant.</p></div>`;
+  return dacBanner+statsBar+S.dossiers.map(dos=>{
+    const st=(getStatuts()[dos.statut]||getStatuts().devis_envoye);
+    const isOpen=S.openDossier===dos.id;
+    const jrsDepuis=dos.createdAt?Math.floor((Date.now()-new Date(dos.createdAt))/86400000):0;
+    const needsRelance=dos.statut==="devis_envoye"&&jrsDepuis>=14;
+    return`<div class="dossier-card"${needsRelance?' style="border-left:3px solid #FFB74D;"':''}><div class="dossier-header" onclick="toggleDossier('${dos.id}')"><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;"><span class="badge" style="background:${st.bg};color:${st.color};">${st.label}</span>${needsRelance?'<span style="font-size:10px;background:#FFF3E0;color:#E65100;padding:2px 6px;border-radius:4px;">📩 À relancer</span>':''}<span style="font-size:13px;font-weight:500;">${esc(dos.nom)}</span></div><p style="font-size:12px;color:#888;">${(dos.documents||[]).length} document${(dos.documents||[]).length>1?"s":""} · ${dos.createdAt||""}</p></div><div style="display:flex;align-items:center;gap:8px;margin-left:12px;">${dos.statut!=="termine"?`<button class="btn-small btn-teal" onclick="event.stopPropagation();markTermine('${dos.id}')">✓ Clôturer</button>`:""}${S.renamingDossierId===dos.id?`<input value="${esc(S.renamingDossierVal)}" onclick="event.stopPropagation()" oninput="S.renamingDossierVal=this.value" onkeydown="if(event.key==='Enter')renameDossier('${dos.id}')" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #378ADD;width:150px;" /><button class="btn-small btn-blue" onclick="event.stopPropagation();renameDossier('${dos.id}')">OK</button><button class="btn-small" onclick="event.stopPropagation();set({renamingDossierId:null})">✕</button>`:`<button class="btn-small" onclick="event.stopPropagation();startRename('${dos.id}')">✏</button>`}<button class="btn-small" onclick="event.stopPropagation();if(window.confirm('Supprimer ce dossier définitivement ?'))confirmDeleteDossier('${dos.id}')" style="color:#A32D2D;border-color:#F09595;">🗑</button></div></div>${isOpen?`<div style="padding:12px;border-top:0.5px solid var(--border);">${(dos.documents||[]).map(doc=>{const hasF=(dos.documents||[]).some(d=>d.type==="facture");return`<div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><div><p style="font-size:13px;font-weight:500;color:var(--text);">${doc.docNumber||""}</p><p style="font-size:12px;color:#888;">${doc.date||""} · ${(doc.ttc||0).toFixed(2)} € TTC</p></div><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn-small" style="background:var(--surface-2);border-color:var(--border);color:var(--text);" onclick="downloadPDF('${doc.docNumber}')">⬇ PDF</button>${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(62,207,207,.12);color:var(--teal);border-color:rgba(62,207,207,.3);" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}${doc.type==="devis"&&doc.accepte?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);font-size:11px;" onclick="downloadSignedProof('${doc.docNumber}')">📄 Preuve signée</button>`:""} ${doc.type==="devis"&&doc.accepte&&!hasF?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}${doc.type==="devis"&&!doc.accepte&&window.PlanGuard?.isPro()?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:`${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);opacity:0.45;" onclick="window.PlanGuard?.showProModal('Signature électronique')">🔒 Signature</button>`:""}`}${doc.type==="devis"&&!doc.accepte&&window.PlanGuard?.isPro()?`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);opacity:0.45;" onclick="window.PlanGuard?.showProModal('Relances clients IA')">🔒 Relance</button>`:""}${doc.type==="facture"?`${doc.paye?`<span class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;">✓ Payée le ${doc.date_paye}</span>`:`<button class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border-color:rgba(74,222,128,.3);" onclick="markPaye('${dos.id}','${doc.docNumber}')">💶 Marquer payée</button>`}${!doc.paye?(S.rappelLoadingId===doc.docNumber?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);cursor:default;" disabled>⏳ Génération...</button>`:window.PlanGuard?.isPro()?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);" onclick="genererRappelPaiement('${dos.id}','${doc.docNumber}')">📨 Rappel</button>`:`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);opacity:0.45;" onclick="window.PlanGuard?.showProModal('Rappels de paiement IA')">🔒 Rappel</button>`):""}  <button class="btn-small" style="background:${doc.factpulse_id?'rgba(74,222,128,.12)':'rgba(83,74,183,.15)'};color:${doc.factpulse_id?'var(--green)':'#9d95f5'};border-color:${doc.factpulse_id?'rgba(74,222,128,.3)':'rgba(83,74,183,.3)'};" onclick="emettreFacture('${dos.id}','${doc.docNumber}')">${S.emettreId===doc.docNumber?'⏳ Envoi...':(doc.factpulse_id?'✅ Émise':'⚡ Émettre')}</button>`:""  }${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button>`:`<button class="btn-small" style="color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}</div></div>${S.previewDocNum===doc.docNumber?`<div style="background:var(--surface-2);border-radius:8px;border:1px solid var(--border);overflow:hidden;"><div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);"><span style="font-size:11px;font-weight:600;color:var(--muted);">Aperçu</span><button class="btn-small" style="font-size:11px;padding:2px 10px;" onclick="set({previewDocNum:null})">✕ Fermer</button></div><div style="padding:1rem;">${renderDocPreview(doc)}</div></div>`:`<button class="btn-small" style="font-size:11px;" onclick="set({previewDocNum:'${doc.docNumber}'})">👁 Aperçu</button>`}</div>`;}).join("")}</div>`:""}</div>`;
+  }).join("");
+}
+
+function renderDocPreview(doc){
+  return`<div style="font-size:13px;line-height:1.7;"><div class="preview-grid"><div><p style="font-weight:500;margin-bottom:2px;">${esc(doc.entreprise.nom)}</p><p style="color:#888;font-size:12px;">${esc(doc.entreprise.adresse)}<br/>${esc(doc.entreprise.tel)} — ${esc(doc.entreprise.email)}<br/>SIRET : ${esc(doc.entreprise.siret)}</p></div><div style="text-align:right;"><p style="font-weight:500;font-size:16px;margin-bottom:2px;">${doc.type==="devis"?"DEVIS":"FACTURE"}</p><p style="color:#888;font-size:12px;">N° ${doc.docNumber}<br/>Date : ${doc.date}${doc.validUntil?"<br/>Valable jusqu'au : "+doc.validUntil:""}${doc.date_prestation?"<br/>"+(doc.type==="devis"?"Prestation prévue":"Prestation réalisée")+" : "+new Date(doc.date_prestation).toLocaleDateString("fr-FR")+(doc.heure_prestation?" à "+doc.heure_prestation+(doc.heure_fin_prestation?" → "+doc.heure_fin_prestation:""):""):""}</p></div></div><div class="divider"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">CLIENT</p><p>${esc(doc.client.nom)}<br/>${esc(doc.client.adresse)}${doc.client.tel?"<br/>Tél : "+esc(doc.client.tel):""}</p></div><div style="margin-bottom:12px;"><p style="font-size:12px;font-weight:500;color:#888;margin-bottom:3px;">DESCRIPTION DE LA PRESTATION</p><p>${esc(doc.description)}</p></div><table class="preview-table"><thead><tr><th style="text-align:left;">Description</th><th style="text-align:right;">Qté</th><th style="text-align:right;">Prix unit. HT</th><th style="text-align:right;">Total HT</th></tr></thead><tbody><tr><td>Temps de travail (${doc.nb_heures}h × ${doc.entreprise.taux_horaire} €/h)</td><td style="text-align:right;">${doc.nb_heures}</td><td style="text-align:right;">${parseFloat(doc.entreprise.taux_horaire).toFixed(2)} €</td><td style="text-align:right;">${doc.moHT.toFixed(2)} €</td></tr>${doc.pieces.map(p=>`<tr><td>${esc(p.description)}</td><td style="text-align:right;">${p.quantite}</td><td style="text-align:right;">${parseFloat(p.prix_unitaire).toFixed(2)} €</td><td style="text-align:right;">${(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)} €</td></tr>`).join("")}</tbody></table><div style="text-align:right;font-size:13px;"><p style="margin:3px 0;color:#888;">Total HT : ${doc.totalHT.toFixed(2)} €</p>${doc.entreprise.assujetti_tva?`<p style="margin:3px 0;color:#888;">TVA (${doc.tvaRate}%) : ${doc.tva.toFixed(2)} €</p>`:`<p style="margin:3px 0;color:#888;font-size:11px;">TVA non applicable — art. 293B du CGI</p>`}<p style="margin:6px 0 0;font-weight:500;font-size:15px;">${doc.entreprise.assujetti_tva?"Total TTC":"Total"} : ${doc.ttc.toFixed(2)} €</p></div></div>`;
+}
+
+function _showReadonlyAlert(msg){
+  const existing=document.getElementById("pg-readonly-alert");if(existing)existing.remove();
+  const wasSubscribed=window.PlanGuard?.wasSubscribed?.()??false;
+  const btnLabel=wasSubscribed?"↩ Se réabonner":"🚀 Découvrir les offres";
+  const el=document.createElement("div");el.id="pg-readonly-alert";
+  el.style.cssText="position:fixed;inset:0;z-index:9100;display:flex;align-items:center;justify-content:center;background:rgba(8,11,20,0.78);backdrop-filter:blur(8px);";
+  el.innerHTML=`<div style="background:#0e1220;border:1px solid rgba(245,167,66,0.25);border-radius:22px;padding:32px 28px;max-width:380px;width:90%;text-align:center;font-family:'Plus Jakarta Sans',sans-serif;"><div style="font-size:36px;margin-bottom:12px;">📂</div><div style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#e2e5f1;margin-bottom:8px;">Mode lecture</div><div style="font-size:13px;color:#6b7494;line-height:1.65;margin-bottom:22px;">${msg}</div><a href="settings.html?tab=abonnement" style="display:block;padding:12px;background:#f5a742;border-radius:12px;color:#080b14;font-size:14px;font-weight:700;font-family:'Space Grotesk',sans-serif;text-decoration:none;margin-bottom:10px;">${btnLabel}</a><button onclick="document.getElementById('pg-readonly-alert').remove()" style="font-size:12px;color:#6b7494;cursor:pointer;background:none;border:none;">Fermer</button></div>`;
+  document.body.appendChild(el);el.addEventListener("click",e=>{if(e.target===el)el.remove();});
+}
+
+function showToast(msg){
+  let t=document.getElementById("artio-toast");
+  if(!t){t=document.createElement("div");t.id="artio-toast";t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0e1220;border:1px solid rgba(255,255,255,0.13);color:#e2e5f1;padding:12px 24px;border-radius:12px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.5);transition:opacity .4s;";document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity="1";clearTimeout(t._to);t._to=setTimeout(()=>{t.style.opacity="0";},4500);
+}
+
+function renderModals(){
+  let m="";
+  if(S.showDatePrestModal){m+=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;" onclick="if(event.target===this)set({showDatePrestModal:false,pendingConvert:null})"><div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:340px;max-width:90vw;"><p style="font-size:16px;font-weight:600;margin-bottom:6px;">📅 Date de la prestation</p><p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Ce devis ne contient pas de date de prestation. Renseignez la date de réalisation pour dater la facture correctement.</p><label style="font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px;">DATE DE RÉALISATION</label><input type="date" id="modal-date-prest" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:14px;margin-bottom:20px;" max="${new Date().toISOString().slice(0,10)}"/><div style="display:flex;gap:10px;"><button onclick="set({showDatePrestModal:false,pendingConvert:null})" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:14px;">Annuler</button><button onclick="(async()=>{const v=document.getElementById('modal-date-prest').value;if(!v)return;const[y,m,d]=v.split('-');const p=S.pendingConvert;await _doConvert(p.dosId,p.docNum,d+'/'+m+'/'+y);showToast('✅ Facture générée');renderPage();})()" style="flex:1;padding:11px;border-radius:10px;background:var(--amber);color:#080b14;border:none;cursor:pointer;font-size:14px;font-weight:700;">Confirmer</button></div></div></div>`;
+  }
+  if(S.signatureLink){m+=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)set({signatureLink:null,signatureLinkCopied:false})"><div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:420px;max-width:100%;"><p style="font-size:16px;font-weight:600;margin-bottom:6px;">✍️ Lien de signature créé</p><p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6;">Envoyez ce lien à votre client par SMS ou email. Il pourra signer le devis directement en ligne.</p><label style="font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px;">LIEN À ENVOYER</label><input id="sig-link-input" type="text" readonly value="${esc(S.signatureLink)}" onclick="this.select()" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13px;margin-bottom:14px;font-family:monospace;"/><div style="display:flex;gap:10px;"><button onclick="set({signatureLink:null,signatureLinkCopied:false})" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:14px;">Fermer</button><button onclick="copySignatureLink()" style="flex:1.4;padding:11px;border-radius:10px;background:${S.signatureLinkCopied?"var(--green)":"var(--amber)"};color:#080b14;border:none;cursor:pointer;font-size:14px;font-weight:700;transition:background .2s;">${S.signatureLinkCopied?"✓ Copié !":"📋 Copier le lien"}</button></div></div></div>`;
+  }
+  if(S.showSiretModal){m+=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)set({showSiretModal:null})"><div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:400px;max-width:100%;"><p style="font-size:16px;font-weight:600;margin-bottom:6px;">⚡ Facturation électronique</p><p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;">Le SIRET du client est requis pour émettre la facture au format électronique (B2B). Laissez vide si le client est un particulier.</p><label style="font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px;">SIRET DU CLIENT</label><input id="modal-siret-input" type="text" maxlength="14" placeholder="Ex : 35600000000048" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:14px;font-family:monospace;letter-spacing:.05em;margin-bottom:20px;" /><div style="display:flex;gap:10px;"><button onclick="set({showSiretModal:null})" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:14px;">Annuler — B2C</button><button onclick="(async()=>{const raw=document.getElementById('modal-siret-input').value.replace(/\\s/g,'');if(!raw||raw.length<9){showToast('⚠️ SIRET invalide');return;}const modal=S.showSiretModal;const dos=S.dossiers.find(d=>d.id===modal.dosId);if(!dos)return;const doc=dos.documents.find(d=>d.docNumber===modal.docNum);if(!doc)return;doc.client=doc.client||{};doc.client.siret=raw;try{await upsertDossier(dos);}catch(e){console.warn(e);}set({showSiretModal:null});await window.emettreFacture(modal.dosId,modal.docNum);})()" style="flex:1.4;padding:11px;border-radius:10px;background:var(--amber);color:#080b14;border:none;cursor:pointer;font-size:14px;font-weight:700;">Émettre la facture</button></div></div></div>`;
+  }
+  if(m){const div=document.createElement("div");div.id="modals-root";div.innerHTML=m;const old=document.getElementById("modals-root");if(old)old.replaceWith(div);else document.body.appendChild(div);}
+  else{const old=document.getElementById("modals-root");if(old)old.remove();}
+}
+
+function renderPage(){
+  const root=document.getElementById("app-root");if(!root)return;
+  root.innerHTML=`<div style="font-family:var(--fh);font-size:22px;font-weight:700;margin-bottom:20px;margin-top:8px;">📁 Dossiers</div>`+renderHistorique();
+  renderModals();
+}
+
+async function loadUserData(userId){
+  try{
+    const{data:profil,error:pe}=await sb.from("profils").select("*").eq("user_id",userId).single();
+    if(pe&&pe.code!=="PGRST116")console.error("Erreur profil:",pe.message);
+    if(profil){S.entreprise={nom:profil.nom||"",adresse:profil.adresse||"",tel:profil.tel||"",email:profil.email||"",siret:profil.siret||"",taux_horaire:profil.taux_horaire||"",assujetti_tva:profil.assujetti_tva||false,secteur:profil.secteur||"",conditions_paiement:profil.conditions_paiement||"",delai_paiement:profil.delai_paiement||"30",validite_devis:profil.validite_devis||3,rc_pro_assureur:profil.rc_pro_assureur||"",rc_pro_police:profil.rc_pro_police||"",decennale_assureur:profil.decennale_assureur||"",decennale_police:profil.decennale_police||"",certifications:profil.certifications||"",nature_operation:profil.nature_operation||"",contexte_ia:profil.contexte_ia||"",iban:profil.iban||"",onboarding_done:profil.onboarding_done||false,logo_base64:profil.logo_base64||null,couleur_pdf:profil.couleur_pdf||null};}
+    const{data:dossiers,error:de}=await sb.from("dossiers").select("*").eq("user_id",userId).order("updated_at",{ascending:false});
+    if(de)console.error("Erreur dossiers:",de.message);
+    if(dossiers&&dossiers.length>0){S.dossiers=dossiers.map(d=>{let docs=[];try{docs=typeof d.documents==="string"?JSON.parse(d.documents):(d.documents||[]);}catch(e){docs=[];}return{...d,documents:docs};});S.dossiers.forEach(d=>(d.documents||[]).forEach(doc=>{if(doc.docNumber)storeDoc(doc);}));}
+    const{data:cls}=await sb.from("clients").select("id,nom,email,tel,adresse").eq("user_id",userId).order("nom",{ascending:true});
+    if(cls)S.clients=cls;
+  }catch(e){console.error("loadUserData exception:",e);}
+  checkDevisAConvertir();
+  renderPage();
+}
+
+async function initAuth(){
+  const theme=localStorage.getItem("artio-theme")||"dark";
+  document.documentElement.setAttribute("data-theme",theme);
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session){location.href="login.html";return;}
+  S.user=session.user;
+  window.PlanGuard?.init?.(session);
+  await loadUserData(session.user.id);
+  sb.auth.onAuthStateChange((event,sess)=>{if(!sess)location.href="login.html";});
+}
+initAuth();
+
+function toggleSidebar(){document.querySelector(".sidebar").classList.toggle("open");document.querySelector(".sidebar-overlay").classList.toggle("open");}
+function closeSidebar(){document.querySelector(".sidebar").classList.remove("open");document.querySelector(".sidebar-overlay").classList.remove("open");}
+function toggleTheme(){const cur=document.documentElement.getAttribute("data-theme")||"dark";const next=cur==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",next);try{localStorage.setItem("artio-theme",next);}catch(e){}}
+async function handleLogout(){await sb.auth.signOut();location.href="login.html";}
+</script>
+<script src="chat-widget.js?v=1"></script>
+</body>
+</html>

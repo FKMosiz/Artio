@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Artio — Rédiger</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="plan-guard.js?v=1"></script>
+  <script>const PAGE_PLAN_REQUIRED = "solo";</script>
+  <style>
+:root,[data-theme="dark"]{--bg:#080b14;--surface:#0e1220;--surface-2:#141829;--surface-3:#1a2035;--border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.13);--text:#e2e5f1;--muted:#6b7494;--amber:#f5a742;--amber-dim:rgba(245,167,66,0.12);--amber-glow:rgba(245,167,66,0.28);--teal:#3ecfcf;--teal-dim:rgba(62,207,207,0.11);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--green:#4ade80;--fh:'Space Grotesk',sans-serif;--fb:'Plus Jakarta Sans',sans-serif}
+[data-theme="light"]{--bg:#faf8f3;--surface:#ffffff;--surface-2:#f3efe6;--surface-3:#ece7dc;--border:rgba(20,18,12,0.08);--border-hi:rgba(20,18,12,0.16);--text:#1a1a1f;--muted:#6a6b78;--amber:#d97706;--amber-dim:rgba(217,119,6,0.10);--amber-glow:rgba(217,119,6,0.22);--teal:#0d9488;--teal-dim:rgba(13,148,136,0.10);--red:#dc2626;--green:#16a34a}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+button{font-family:var(--fb);cursor:pointer}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:3px}
+.artio-nav{position:sticky;top:0;z-index:50;height:56px;padding:0 20px 0 66px;display:flex;align-items:center;gap:16px;background:rgba(8,11,20,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+[data-theme="light"] .artio-nav{background:rgba(250,248,243,0.92)!important;border-bottom-color:rgba(20,18,12,0.10)!important}
+.nav-logo{font-family:var(--fh);font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.02em;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.nav-logo img{width:26px;height:26px;display:block}
+.theme-toggle{width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--border);border-radius:9px;cursor:pointer;color:var(--text);transition:all .2s;flex-shrink:0}
+.theme-toggle:hover{border-color:var(--amber);color:var(--amber)}
+.theme-toggle svg{width:15px;height:15px}
+.theme-toggle .icon-sun{display:none}
+.theme-toggle .icon-moon{display:block}
+[data-theme="light"] .theme-toggle .icon-sun{display:block}
+[data-theme="light"] .theme-toggle .icon-moon{display:none}
+.app{max-width:760px;margin:0 auto;padding:22px 20px 60px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px;margin-bottom:14px}
+.field{margin-bottom:14px}
+.label{display:block;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px}
+.opt{font-size:11px;font-weight:400;color:var(--muted);margin-left:4px;text-transform:none;letter-spacing:0}
+input,textarea,select{width:100%;padding:10px 13px;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-dim)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+textarea{resize:vertical}
+.btn-primary{width:100%;padding:12px;border-radius:12px;border:none;background:var(--amber);color:#080b14;font-size:15px;font-weight:700;font-family:var(--fh);cursor:pointer;margin-top:6px;box-shadow:0 0 24px var(--amber-glow);transition:transform .15s,box-shadow .15s,opacity .2s}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 36px var(--amber-glow)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-small{font-size:12px;padding:5px 12px;border-radius:8px;font-weight:500;border:1px solid;transition:all .2s;cursor:pointer;background:transparent}
+.btn-green{background:var(--teal-dim);color:var(--teal);border-color:rgba(62,207,207,.3)}
+.btn-green:hover{background:rgba(62,207,207,.2)}
+.btn-blue{background:var(--amber-dim);color:var(--amber);border-color:rgba(245,167,66,.3)}
+.btn-blue:hover{background:rgba(245,167,66,.2)}
+.btn-gray{background:var(--surface-2);color:var(--muted);border-color:var(--border)}
+.btn-gray:hover{border-color:var(--border-hi);color:var(--text)}
+.result-box{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:14px}
+.result-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);color:var(--text)}
+.dossier-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.dossier-card:hover{border-color:var(--border-hi)}
+.mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+.mode-btn{padding:11px;border-radius:10px;font-size:13px;font-weight:500;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);cursor:pointer;font-family:var(--fb);transition:all .2s}
+.mode-btn.active{background:var(--amber-dim);border-color:rgba(245,167,66,.35);color:var(--amber)}
+.section-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;margin-top:20px}
+.section-head:first-of-type{margin-top:0}
+.section-icon{width:26px;height:26px;border-radius:8px;background:var(--amber-dim);border:1px solid rgba(245,167,66,0.18);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.section-title{font-family:var(--fh);font-size:10px;font-weight:700;color:var(--amber);letter-spacing:0.07em;text-transform:uppercase}
+.section-line{flex:1;height:1px;background:var(--border)}
+.seg-pills{display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:2px}
+.seg-pill{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:100px;white-space:nowrap;font-size:13.5px;font-weight:600;font-family:var(--fb);cursor:pointer;background:var(--surface);border:1px solid var(--border);color:var(--muted);transition:all .15s}
+.seg-pill svg{width:15px;height:15px}
+.seg-pill:hover{color:var(--text);border-color:var(--border-hi)}
+.seg-pill.active{background:var(--amber-dim);border-color:rgba(245,167,66,.4);color:var(--amber)}
+.seg-pill.locked{opacity:.6}
+@media(max-width:580px){.mode-tabs{grid-template-columns:1fr}}
+.artio-legal-footer{position:relative;z-index:1;text-align:center;padding:12px 16px;font-size:11px;color:var(--muted);border-top:1px solid var(--border)}
+.artio-legal-footer a{color:var(--muted);text-decoration:none;transition:color .2s}
+.artio-legal-footer a:hover{color:var(--amber)}
+/* Sidebar */
+.sidebar-trigger{position:fixed;top:9px;left:14px;z-index:60;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;transition:background .15s}
+.sidebar-trigger:hover{background:var(--surface-3)}
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:70;opacity:0;pointer-events:none;transition:opacity .2s}
+.sidebar-overlay.open{opacity:1;pointer-events:auto}
+.sidebar{position:fixed;top:0;left:-280px;bottom:0;width:280px;background:var(--surface);border-right:1px solid var(--border);z-index:80;transition:left .25s ease;display:flex;flex-direction:column}
+.sidebar.open{left:0}
+.sidebar-head{display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo{width:28px;height:28px}
+.sidebar-brand{font-family:var(--fh);font-weight:700;font-size:17px;flex:1}
+.sidebar-close{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;cursor:pointer;color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center}
+.sidebar-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.sidebar-link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;color:var(--muted);text-decoration:none;background:transparent;border:none;text-align:left;cursor:pointer;transition:background .12s,color .12s;font-family:var(--fb);width:100%}
+.sidebar-link:hover{background:var(--surface-2);color:var(--text)}
+.sidebar-link.active{background:var(--amber-dim);color:var(--amber);font-weight:600}
+.sidebar-sep{height:1px;background:var(--border);margin:8px 12px}
+.sidebar-logout{color:var(--red)}
+.sidebar-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+.sidebar-theme{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;width:36px;height:36px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center}
+.sidebar-theme .icon-sun{display:none}
+[data-theme="dark"] .sidebar-theme .icon-moon{display:none}
+[data-theme="dark"] .sidebar-theme .icon-sun{display:inline-block}
+@media(max-width:767px){.sidebar.open{width:100%}}
+  </style>
+</head>
+<body>
+<button class="sidebar-trigger" onclick="toggleSidebar()" aria-label="Menu">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+<aside class="sidebar">
+  <div class="sidebar-head">
+    <img src="artio-icon.png" alt="" class="sidebar-logo"/>
+    <span class="sidebar-brand">Artio</span>
+    <button class="sidebar-close" onclick="closeSidebar()" aria-label="Fermer">×</button>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="home.html" class="sidebar-link" data-route="home">🏠 Accueil</a>
+    <a href="app.html" class="sidebar-link" data-route="app">🎙 Créer</a>
+    <a href="dossiers.html" class="sidebar-link" data-route="dossiers">📁 Dossiers</a>
+    <a href="rediger.html" class="sidebar-link active" data-route="rediger">✉️ Rédiger</a>
+    <a href="clients.html" class="sidebar-link" data-route="clients">👥 Clients</a>
+    <a href="dashboard.html" class="sidebar-link" data-route="dashboard">📊 Tableau de bord</a>
+    <a href="calendar.html" class="sidebar-link" data-route="calendar">📅 Calendrier</a>
+    <div class="sidebar-sep"></div>
+    <a href="aide.html" class="sidebar-link" data-route="aide">❔ Aide</a>
+    <a href="settings.html" class="sidebar-link" data-route="settings">⚙️ Paramètres</a>
+    <button class="sidebar-link sidebar-logout" onclick="handleLogout()">↪ Déconnexion</button>
+  </nav>
+  <div class="sidebar-foot">
+    <button class="sidebar-theme" onclick="toggleTheme()" title="Changer de thème">
+      <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</aside>
+
+<nav class="artio-nav">
+  <a href="home.html" class="nav-logo">
+    <img src="artio-icon.png" alt=""/>Artio
+  </a>
+  <div style="flex:1"></div>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Thème">
+    <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+</nav>
+
+<main class="app" id="app-root">
+  <div style="text-align:center;padding:40px;color:var(--muted);">Chargement…</div>
+</main>
+
+<div class="artio-legal-footer">
+  <a href="cgv.html">CGV</a> · <a href="cgu.html">CGU</a> · <a href="confidentialite.html">Politique de confidentialité</a>
+</div>
+
+<script>
+const SUPABASE_URL="https://mwmexkoeqeyueqgdkkni.supabase.co";
+const SUPABASE_KEY="sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
+const FUNCTIONS_URL=SUPABASE_URL+"/functions/v1";
+const{createClient}=supabase;
+const sb=window.sb=createClient(SUPABASE_URL,SUPABASE_KEY);
+
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+
+let S={
+  user:null,
+  langue:"fr",
+  entreprise:{nom:"",secteur:"",contexte_ia:""},
+  tab:"email",
+  emailMode:"reponse",
+  emailTons:["vouvoiement"],
+  fields:{},
+  loading:false,
+  generatedText:"",
+  copied:false,
+  voiceContextField:null,
+  gmailEmail:null,
+  gmailAccessToken:null,
+  gmailTokenExpiry:null,
+  emails:[],
+  emailsLoading:false,
+  emailsError:"",
+  expandedEmail:null,
+  emailReplyDraft:{},
+};
+function set(patch){Object.assign(S,patch);renderPage();}
+
+async function callClaude(prompt,maxTokens=400,retries=5){
+  if(window.PlanGuard&&window.PlanGuard.isFree()){_showReadonlyAlert("La génération par IA nécessite un abonnement actif.");throw new Error("plan_required");}
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session){throw new Error("Session expirée.");}
+  for(let attempt=1;attempt<=retries;attempt++){
+    try{
+      const res=await fetch(FUNCTIONS_URL+"/claude-proxy",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})});
+      const d=await res.json();
+      if(!res.ok){
+        if((d.code==="plan_required")||res.status===403){_showReadonlyAlert("Abonnement requis pour utiliser l'IA.");throw new Error("plan_required");}
+        if((res.status===529||res.status===503||res.status===429)&&attempt<retries){await new Promise(r=>setTimeout(r,1500*Math.pow(1.5,attempt)));continue;}
+        throw new Error(d.error||d.message||"Erreur proxy IA");
+      }
+      return{text:d.content?.map(b=>b.text||"").join("")||"",usage:d.usage||null};
+    }catch(e){
+      if(attempt===retries){if(e.message==="plan_required")throw e;throw new Error("L'IA est momentanément surchargée. Réessayez dans quelques instants.");}
+      if(e.message==="plan_required")throw e;
+      await new Promise(r=>setTimeout(r,1500*Math.pow(1.5,attempt)));
+    }
+  }
+}
+
+async function logTokens(feature,usage){
+  try{if(!usage||!S.user?.id)return;const i=usage.input_tokens||0,o=usage.output_tokens||0;await sb.from("token_logs").insert({user_id:S.user.id,feature,input_tokens:i,output_tokens:o,total_tokens:i+o,cout_estime:(i*0.000003)+(o*0.000015)});}catch(e){console.debug("logTokens:",e.message);}
+}
+
+function _showReadonlyAlert(msg){
+  const existing=document.getElementById("pg-readonly-alert");if(existing)existing.remove();
+  const wasSubscribed=window.PlanGuard?.wasSubscribed?.()??false;
+  const el=document.createElement("div");el.id="pg-readonly-alert";
+  el.style.cssText="position:fixed;inset:0;z-index:9100;display:flex;align-items:center;justify-content:center;background:rgba(8,11,20,0.78);backdrop-filter:blur(8px);";
+  el.innerHTML=`<div style="background:#0e1220;border:1px solid rgba(245,167,66,0.25);border-radius:22px;padding:32px 28px;max-width:380px;width:90%;text-align:center;font-family:'Plus Jakarta Sans',sans-serif;"><div style="font-size:36px;margin-bottom:12px;">📂</div><div style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#e2e5f1;margin-bottom:8px;">Mode lecture</div><div style="font-size:13px;color:#6b7494;line-height:1.65;margin-bottom:22px;">${msg}</div><a href="settings.html?tab=abonnement" style="display:block;padding:12px;background:#f5a742;border-radius:12px;color:#080b14;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:10px;">${wasSubscribed?"↩ Se réabonner":"🚀 Découvrir les offres"}</a><button onclick="document.getElementById('pg-readonly-alert').remove()" style="font-size:12px;color:#6b7494;cursor:pointer;background:none;border:none;">Fermer</button></div>`;
+  document.body.appendChild(el);el.addEventListener("click",e=>{if(e.target===el)el.remove();});
+}
+
+function showToast(msg){
+  let t=document.getElementById("artio-toast");
+  if(!t){t=document.createElement("div");t.id="artio-toast";t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0e1220;border:1px solid rgba(255,255,255,0.13);color:#e2e5f1;padding:12px 24px;border-radius:12px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.5);transition:opacity .4s;";document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity="1";clearTimeout(t._to);t._to=setTimeout(()=>{t.style.opacity="0";},4500);
+}
+
+/* ── Voice pour le champ contexte ── */
+let recognition=null,voiceBuffer="",voiceRunning=false,voiceCallback=null;
+function startVoiceGeneric(onResult){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert("Dictée non supportée. Utilisez Chrome.");return;}
+  voiceCallback=onResult;voiceBuffer="";voiceRunning=true;
+  let networkErrors=0;
+  function makeSession(){
+    if(!voiceRunning)return;
+    const r=new SR();r.lang="fr-FR";r.continuous=true;r.interimResults=false;let si=0;
+    r.onresult=e=>{for(let i=si;i<e.results.length;i++){if(e.results[i].isFinal){voiceBuffer+=" "+e.results[i][0].transcript;si=i+1;}}if(voiceCallback)voiceCallback(voiceBuffer.trim());renderPage();};
+    r.onerror=e=>{if(e.error==="no-speech"||e.error==="aborted")return;if(e.error==="network"){networkErrors++;r.onend=null;if(networkErrors>=3){voiceRunning=false;return;}if(voiceRunning)setTimeout(makeSession,1000);return;}voiceRunning=false;};
+    r.onend=()=>{if(voiceRunning)setTimeout(makeSession,100);};
+    recognition=r;try{r.start();}catch(e){if(voiceRunning)setTimeout(makeSession,300);}
+  }
+  makeSession();
+}
+window.stopVoice=async()=>{
+  voiceRunning=false;
+  if(recognition){recognition.onend=null;try{recognition.stop();}catch(e){}}
+  await new Promise(r=>setTimeout(r,450));
+  if(recognition)recognition.onresult=null;
+  S.voiceContextField=null;renderPage();
+};
+window.startVoiceContexte=function(fieldId){
+  if(S.voiceContextField===fieldId){S.voiceContextField=null;window.stopVoice();return;}
+  const existingEl=document.querySelector(`textarea[data-fid="${fieldId}"]`);
+  voiceBuffer=(existingEl?existingEl.value:"").trim();
+  S.voiceContextField=fieldId;
+  voiceCallback=async t=>{const el=document.querySelector(`textarea[data-fid="${fieldId}"]`);if(el){el.value=t;S.fields[fieldId]=t;}};
+  startVoiceGeneric(voiceCallback);
+};
+
+/* ── Email handleGenerate ── */
+window.handleGenerate=async()=>{
+  document.querySelectorAll("input[data-fid],textarea[data-fid]").forEach(el=>{S.fields[el.dataset.fid]=el.value;});
+  const e=S.entreprise,f=S.fields;
+  const req=S.emailMode==="reponse"?["client_nom","message"]:["client_nom","avancement"];
+  const miss=req.filter(id=>!(f[id]||"").trim());
+  if(miss.length){alert("Champs manquants : "+miss.join(", "));return;}
+  set({loading:true,generatedText:""});
+  try{
+    const prompt=S.emailMode==="reponse"
+      ?`Rédige une réponse email professionnelle en français pour ${e.nom}.\n${e.contexte_ia?`Contexte sur l'activité :\n${e.contexte_ia}\n`:""}\nTon : ${(S.emailTons||["vouvoiement"]).join(" + ")}\nClient : ${f.client_nom}\nMessage : ${f.message}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`
+      :`Rédige un email de mise à jour professionnel en français pour ${e.nom}.\nTon : ${(S.emailTons||["vouvoiement"]).join(" + ")}\nClient : ${f.client_nom}\nPrestation / lieu : ${f.adresse_travaux||""}\nAvancement : ${f.avancement}\nProchaine étape : ${f.suite||"à définir"}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`;
+    const{text,usage:ue}=await callClaude(prompt,500);
+    logTokens("email",ue);
+    window.__emailBody=text;
+    set({loading:false,generatedText:text});
+  }catch(err){set({loading:false,generatedText:"Erreur : "+err.message});}
+};
+window.copyText=text=>{navigator.clipboard.writeText(text);set({copied:true});setTimeout(()=>set({copied:false}),2000);};
+window.toggleTon=function(ton){const t=S.emailTons||[];S.emailTons=t.includes(ton)?t.filter(x=>x!==ton):[...t,ton];renderPage();};
+window.setEmailMode=m=>set({emailMode:m,fields:{},generatedText:""});
+
+/* ── Gmail helpers ── */
+function decodeBase64Utf8(str){try{return decodeURIComponent(escape(atob(str.replace(/-/g,"+").replace(/_/g,"/"))));}catch(e){return atob(str.replace(/-/g,"+").replace(/_/g,"/"));}}
+function cleanEmailSnippet(str){return(str||"").replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/\\r\\n|\\r|\\n/g," ").replace(/\r\n|\r|\n/g," ").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").slice(0,200);}
+function cleanEmailBody(str){return(str||"").replace(/\\r\\n|\\r|\\n/g,"\n").replace(/\r\n|\r/g,"\n").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br/>");}
+function isGmailExpired(){return S.gmailTokenExpiry&&new Date()>new Date(S.gmailTokenExpiry);}
+
+async function gmailDisconnect(){
+  if(!confirm("Déconnecter Google ? Cela désactivera l'envoi d'emails ET la synchronisation Google Calendar."))return;
+  try{
+    const{data:{session}}=await sb.auth.getSession();if(!session)return;
+    const res=await fetch(FUNCTIONS_URL+"/google-disconnect",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:"{}"});
+    if(!res.ok){const d=await res.json().catch(()=>({}));alert("Erreur : "+(d.error||"inconnue"));return;}
+    S.gmailEmail=null;S.gmailAccessToken=null;S.emails=[];renderPage();
+  }catch(e){alert("Erreur : "+e.message);}
+}
+
+async function gmailFetchEmails(){
+  if(!S.gmailEmail){alert("Connecte ton Gmail dans les paramètres.");return;}
+  if(isGmailExpired()){S.gmailEmail=null;S.gmailAccessToken=null;S.gmailTokenExpiry=null;S.emails=[];showToast("⚠️ Session Gmail expirée — reconnecte-toi dans les paramètres");renderPage();return;}
+  S.emailsLoading=true;S.emailsError="";renderPage();
+  try{
+    const listRes=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread&maxResults=10",{headers:{"Authorization":"Bearer "+S.gmailAccessToken}});
+    if(listRes.status===401){S.gmailEmail=null;S.gmailAccessToken=null;S.emailsError="Session expirée. Reconnecte Gmail dans les paramètres.";S.emailsLoading=false;renderPage();return;}
+    const listData=await listRes.json();
+    const messages=listData.messages||[];
+    const emails=await Promise.all(messages.map(async m=>{
+      const r=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/"+m.id+"?format=full",{headers:{"Authorization":"Bearer "+S.gmailAccessToken}});
+      const d=await r.json();const headers=d.payload?.headers||[];const get=name=>headers.find(h=>h.name===name)?.value||"";
+      let body="";const parts=d.payload?.parts||[];
+      if(parts.length>0){const textPart=parts.find(p=>p.mimeType==="text/plain")||parts[0];if(textPart?.body?.data)body=decodeBase64Utf8(textPart.body.data);}
+      else if(d.payload?.body?.data)body=decodeBase64Utf8(d.payload.body.data);
+      return{id:m.id,threadId:d.threadId||m.id,messageId:get("Message-Id"),from:get("From"),subject:get("Subject"),date:get("Date"),body:body.slice(0,2000),snippet:d.snippet};
+    }));
+    S.emails=emails;window.__emailBodies={};window.__emailMeta={};
+    emails.forEach(m=>{window.__emailBodies[m.id]=m.body||"";window.__emailMeta[m.id]={threadId:m.threadId,messageId:m.messageId};});
+    S.emailsLoading=false;renderPage();
+  }catch(e){S.emailsError="Erreur : "+e.message;S.emailsLoading=false;renderPage();}
+}
+
+async function gmailSendReply(emailId,threadId,messageId,from,subject,replyBody){
+  if(!S.gmailEmail){showToast("⚠️ Google non connecté");return;}
+  try{
+    const cleanSubj=(subject||"").replace(/[‘’‚‛]/g,"'").replace(/[“”„‟]/g,'"').replace(/…/g,"...");
+    const subj=cleanSubj.startsWith("Re:")?cleanSubj:"Re: "+cleanSubj;
+    showToast("📤 Envoi en cours…");
+    const{data:{session}}=await sb.auth.getSession();if(!session){showToast("⚠️ Session expirée");return;}
+    const res=await fetch(FUNCTIONS_URL+"/gmail-send",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({to:from,subject:subj,text:replyBody,threadId:threadId||emailId,inReplyTo:messageId||null})});
+    const data=await res.json();
+    if(res.ok&&data.success){showToast("✅ Email envoyé dans le fil !");gmailFetchEmails();}
+    else{showToast("❌ Erreur Gmail : "+(data.error||"inconnue"));}
+  }catch(e){showToast("❌ Erreur : "+e.message);}
+}
+
+window.generateEmailReply=async function(emailId,from,subject,body){
+  S.emailReplyDraft={...(S.emailReplyDraft||{}),[emailId]:{loading:true,text:""}};renderPage();
+  try{
+    const e=S.entreprise;
+    const{text:raw,usage:u0}=await callClaude(`Tu es l'assistant de ${e.nom||"l'entreprise"}. Rédige une réponse professionnelle à cet email.\n${e.contexte_ia?`\nContexte sur l'activité :\n${e.contexte_ia}\n`:""}\nTon : ${(S.emailTons||["vouvoiement"]).join(" + ")}\nDe : ${from}\nObjet : ${subject}\nMessage reçu :\n${body}\nSigne "${e.nom||""}".`,800);
+    logTokens("email",u0);
+    S.emailReplyDraft={...(S.emailReplyDraft||{}),[emailId]:{loading:false,text:raw}};
+  }catch(err){S.emailReplyDraft={...(S.emailReplyDraft||{}),[emailId]:{loading:false,text:""}};alert("Erreur : "+err.message);}
+  renderPage();
+};
+
+/* ── Render ── */
+function renderRedigerSeg(){
+  const _pro=!!(window.PlanGuard&&window.PlanGuard.isPro());
+  const penSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+  const inboxSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>';
+  return`<div class="seg-pills"><button class="seg-pill ${S.tab==="email"?"active":""}" onclick="set({tab:'email'})">${penSVG} Rédiger</button><button class="seg-pill ${S.tab==="emails_gmail"?"active":""} ${_pro?"":"locked"}" onclick="${_pro?"set({tab:'emails_gmail'})":" window.PlanGuard?.showProModal('Messagerie Gmail')"}">${inboxSVG} Messagerie${_pro?"":" 🔒"}</button></div>`;
+}
+
+function renderEmail(){
+  const f=S.fields;
+  const tonsHtml=["vouvoiement","tutoiement","amical","institutionnel","ferme"].map(ton=>{const active=(S.emailTons||[]).includes(ton);return`<button onclick="toggleTon('${ton}')" style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${active?"var(--amber)":"var(--border-hi)"};background:${active?"var(--amber-dim)":"transparent"};color:${active?"var(--amber)":"var(--muted)"};font-weight:${active?"600":"400"};font-family:var(--fb);transition:all .2s;">${active?"✓ ":""}${ton.charAt(0).toUpperCase()+ton.slice(1)}</button>`;}).join("");
+  const reponseFields=`<div class="field"><label class="label">Nom du client</label><input type="text" value="${esc(f.client_nom||"")}" placeholder="Ex: M. Martin" data-fid="client_nom" oninput="S.fields['client_nom']=this.value" /></div><div class="field"><label class="label">Message reçu du client</label><textarea placeholder="Colle ici le message du client..." data-fid="message">${esc(f.message||"")}</textarea></div><div class="field"><label class="label" style="display:flex;align-items:center;gap:6px;">Contexte <span class="opt">(optionnel)</span><button onclick="startVoiceContexte('contexte')" style="background:${S.voiceContextField==="contexte"?"#E24B4A":"var(--amber)"};border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#080b14;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Dicter le contexte">${S.voiceContextField==="contexte"?"⏹":"🎙"}</button></label><textarea placeholder="Ex: infos que le client ne connaît pas encore..." data-fid="contexte">${esc(f.contexte||"")}</textarea></div>`;
+  const suiviFields=`<div class="field"><label class="label">Nom du client</label><input type="text" value="${esc(f.client_nom||"")}" placeholder="Ex: M. Martin" data-fid="client_nom" oninput="S.fields['client_nom']=this.value" /></div><div class="field"><label class="label">Prestation / lieu <span class="opt">(optionnel)</span></label><input type="text" value="${esc(f.adresse_travaux||"")}" placeholder="Ex: Rénovation salle de bain, 12 rue..." data-fid="adresse_travaux" oninput="S.fields['adresse_travaux']=this.value" /></div><div class="field"><label class="label">Avancement</label><textarea placeholder="Ex: Installation terminée, mise en service demain..." data-fid="avancement">${esc(f.avancement||"")}</textarea></div><div class="field"><label class="label">Prochaine étape <span class="opt">(optionnel)</span></label><input type="text" value="${esc(f.suite||"")}" placeholder="Ex: Retour jeudi matin" data-fid="suite" oninput="S.fields['suite']=this.value" /></div><div class="field"><label class="label" style="display:flex;align-items:center;gap:6px;">Contexte <span class="opt">(optionnel)</span><button onclick="startVoiceContexte('contexte')" style="background:${S.voiceContextField==="contexte"?"#E24B4A":"var(--amber)"};border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#080b14;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Dicter le contexte">${S.voiceContextField==="contexte"?"⏹":"🎙"}</button></label><textarea placeholder="Ex: infos supplémentaires..." data-fid="contexte">${esc(f.contexte||"")}</textarea></div>`;
+  return`<div class="card">
+    <div class="section-head" style="margin-top:0"><div class="section-icon">✉️</div><span class="section-title">Rédiger une réponse</span><div class="section-line"></div></div>
+    <div class="mode-tabs">
+      <button class="mode-btn ${S.emailMode==="reponse"?"active":""}" onclick="setEmailMode('reponse')">📩 Réponse client</button>
+      <button class="mode-btn ${S.emailMode==="suivi"?"active":""}" onclick="setEmailMode('suivi')">📋 Mise à jour prestation</button>
+    </div>
+    <div style="margin-bottom:16px;"><label class="label" style="margin-bottom:8px;">Ton de la réponse <span style="font-weight:400;font-size:10px;color:var(--muted);">(plusieurs choix possibles)</span></label><div style="display:flex;gap:6px;flex-wrap:wrap;">${tonsHtml}</div></div>
+    ${S.emailMode==="reponse"?reponseFields:suiviFields}
+    <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":"Générer l'email"}</button>
+    ${S.generatedText?`<div class="result-box"><div class="result-header"><span style="font-size:13px;font-weight:500;color:var(--muted);">Email généré</span><button class="btn-small ${S.copied?"btn-green":"btn-gray"}" onclick="copyText(window.__emailBody||'')">${S.copied?"Copié ✓":"Copier"}</button></div><pre>${esc(S.generatedText)}</pre></div>`:""}
+  </div>`;
+}
+
+function renderEmailsGmail(){
+  if(!S.gmailEmail||isGmailExpired()){
+    if(S.gmailEmail&&isGmailExpired()){return`<div class="card" style="text-align:center;padding:2rem;"><p style="font-size:28px;margin-bottom:12px;">⚠️</p><p style="font-weight:500;margin-bottom:8px;color:#f5a742;">Session Gmail expirée</p><p style="font-size:13px;color:#888;margin-bottom:20px;">${esc(S.gmailEmail)} — ton accès a expiré, reconnecte-toi pour continuer.</p><a href="settings.html?tab=gmail" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;font-family:var(--fh);text-align:center;box-shadow:0 0 24px var(--amber-glow)">🔄 Reconnecter Gmail</a></div>`;}
+    return`<div class="card" style="text-align:center;padding:2rem;"><p style="font-size:20px;margin-bottom:12px;">📧</p><p style="font-weight:500;margin-bottom:8px;">Connexion Gmail</p><p style="font-size:13px;color:#888;margin-bottom:20px;">Lis et réponds à tes emails directement depuis Artio.</p><a href="settings.html?tab=gmail" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;font-family:var(--fh);text-align:center;box-shadow:0 0 24px var(--amber-glow)">⚙ Connecter Gmail</a></div>`;
+  }
+  return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><p style="font-weight:500;">Emails non lus</p><div style="display:flex;gap:8px;"><button class="btn-small btn-blue" onclick="gmailFetchEmails()">${S.emailsLoading?"⏳ Chargement...":"🔄 Actualiser"}</button><button class="btn-small btn-gray" onclick="gmailDisconnect()">Déconnecter</button></div></div>${S.emailsError?`<div style="color:#E24B4A;font-size:13px;margin-bottom:12px;">${esc(S.emailsError)}</div>`:""}${S.emails.length===0&&!S.emailsLoading?`<div style="text-align:center;padding:2rem;color:#888;"><p>Aucun email non lu</p><button class="btn-primary" style="margin-top:12px;" onclick="gmailFetchEmails()">Charger les emails</button></div>`:""}${S.emails.map(m=>{const draft=(S.emailReplyDraft||{})[m.id];const safeFrom=esc(m.from).replace(/'/g,"\\'");const safeSubj=esc(m.subject||"").replace(/'/g,"\\'");return`<div class="dossier-card" style="margin-bottom:12px;"><div style="padding:14px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;"><p style="font-weight:500;font-size:14px;flex:1;">${esc(m.subject||"(sans objet)")}</p><span style="font-size:11px;color:#888;margin-left:8px;white-space:nowrap;">${esc((m.date||"").slice(0,16))}</span></div><p style="font-size:12px;color:#888;margin-bottom:8px;">${esc(m.from)}</p><p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:12px;">${cleanEmailSnippet(m.snippet)}</p>${S.expandedEmail===m.id?`<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px;line-height:1.7;color:var(--text);max-height:300px;overflow-y:auto;">${cleanEmailBody(m.body)}</div><button class="btn-small btn-gray" style="margin-bottom:10px;" onclick="set({expandedEmail:null})">▲ Réduire</button>`:`<button class="btn-small btn-gray" style="margin-bottom:10px;" onclick="set({expandedEmail:'${m.id}'})">👁 Voir le message</button>`}${draft?.loading?`<div style="padding:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;">⏳ Réponse en cours de génération...</div>`:draft?.text?`<div style="margin-top:4px;"><textarea id="reply-${m.id}" style="width:100%;min-height:320px;font-size:13px;line-height:1.6;padding:12px;background:var(--surface-2);border:1px solid var(--amber);border-radius:10px;color:var(--text);font-family:var(--fb);resize:vertical;" oninput="S.emailReplyDraft['${m.id}'].text=this.value">${esc(draft.text)}</textarea><div style="display:flex;gap:8px;margin-top:8px;"><button class="btn-small btn-green" id="send-btn-${m.id}" onclick="(async(btn)=>{btn.disabled=true;btn.textContent='⏳ Envoi…';try{const t=document.getElementById('reply-${m.id}').value;const meta=window.__emailMeta?.['${m.id}']||{};await gmailSendReply('${m.id}',meta.threadId,meta.messageId,'${safeFrom}','${safeSubj}',t);btn.textContent='✅ Envoyé !';await new Promise(r=>setTimeout(r,1200));S.emailReplyDraft['${m.id}']=null;renderPage();}catch(e){btn.disabled=false;btn.textContent='📤 Envoyer';}})(this)">📤 Envoyer</button><button class="btn-small btn-gray" onclick="S.emailReplyDraft['${m.id}']=null;renderPage()">✕ Annuler</button></div></div>`:`<button class="btn-small btn-blue" onclick="generateEmailReply('${m.id}','${safeFrom}','${safeSubj}',window.__emailBodies?.['${m.id}']||'')">🤖 Générer une réponse</button>`}</div></div>`;}).join("")}</div>`;
+}
+
+function renderPage(){
+  const root=document.getElementById("app-root");if(!root)return;
+  let html=`<div style="font-family:var(--fh);font-size:22px;font-weight:700;margin-bottom:20px;margin-top:8px;">✉️ Rédiger</div>`;
+  html+=renderRedigerSeg();
+  html+=(S.tab==="emails_gmail"?renderEmailsGmail():renderEmail());
+  root.innerHTML=html;
+}
+
+async function initAuth(){
+  const theme=localStorage.getItem("artio-theme")||"dark";
+  document.documentElement.setAttribute("data-theme",theme);
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session){location.href="login.html";return;}
+  S.user=session.user;
+  window.PlanGuard?.init?.(session);
+  try{
+    const{data:profil}=await sb.from("profils").select("nom,secteur,contexte_ia,google_email,google_access_token,google_token_expiry,gmail_email,gmail_access_token,gmail_token_expiry").eq("user_id",session.user.id).single();
+    if(profil){S.entreprise={nom:profil.nom||"",secteur:profil.secteur||"",contexte_ia:profil.contexte_ia||""};S.gmailEmail=profil.google_email||profil.gmail_email||null;S.gmailAccessToken=profil.google_access_token||profil.gmail_access_token||null;const expiryRaw=profil.google_token_expiry||profil.gmail_token_expiry;S.gmailTokenExpiry=expiryRaw?new Date(expiryRaw):null;}
+  }catch(e){console.error("loadProfil:",e);}
+  // Pré-remplissage depuis dossiers.html (relance/rappel)
+  const sp=new URLSearchParams(window.location.search);
+  if(sp.get("mode")==="email"){
+    const body=localStorage.getItem("artio-email-body")||"";
+    const clientNom=localStorage.getItem("artio-email-client-nom")||"";
+    const clientEmail=localStorage.getItem("artio-email-client-email")||"";
+    if(body){window.__emailBody=body;S.generatedText=body;S.fields.client_nom=clientNom||S.fields.client_nom;S.fields.client_email=clientEmail||S.fields.client_email;localStorage.removeItem("artio-email-body");localStorage.removeItem("artio-email-client-nom");localStorage.removeItem("artio-email-client-email");history.replaceState(null,"",window.location.pathname);}
+  }
+  sb.auth.onAuthStateChange((event,sess)=>{if(!sess)location.href="login.html";});
+  renderPage();
+}
+initAuth();
+
+function toggleSidebar(){document.querySelector(".sidebar").classList.toggle("open");document.querySelector(".sidebar-overlay").classList.toggle("open");}
+function closeSidebar(){document.querySelector(".sidebar").classList.remove("open");document.querySelector(".sidebar-overlay").classList.remove("open");}
+function toggleTheme(){const cur=document.documentElement.getAttribute("data-theme")||"dark";const next=cur==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",next);try{localStorage.setItem("artio-theme",next);}catch(e){}}
+async function handleLogout(){await sb.auth.signOut();location.href="login.html";}
+</script>
+<script src="chat-widget.js?v=1"></script>
+</body>
+</html>
