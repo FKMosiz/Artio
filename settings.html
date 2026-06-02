@@ -214,7 +214,7 @@ select.field-input option { background: var(--surface-2); color: var(--text); }
 .sidebar-link.active{background:var(--amber-dim);color:var(--amber);font-weight:600}
 .sidebar-sep{height:1px;background:var(--border);margin:8px 12px}
 .sidebar-logout{color:#f87171}
-.sidebar-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+.sidebar-foot{padding:12px 10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:2px}
 .sidebar-theme-btn{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;width:36px;height:36px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center}
 .sidebar-theme-btn .icon-sun{display:none}
 [data-theme="dark"] .sidebar-theme-btn .icon-moon{display:none}
@@ -249,40 +249,22 @@ select.field-input option { background: var(--surface-2); color: var(--text); }
     <a href="rediger.html" class="sidebar-link">✉️ Rediger</a>
     <a href="clients.html" class="sidebar-link">👥 Clients</a>
     <a href="dashboard.html" class="sidebar-link">📊 Tableau de bord</a>
-    <a href="calendar.html" class="sidebar-link">📅 Calendrier</a>
-    <div class="sidebar-sep"></div>
-    <a href="aide.html" class="sidebar-link">❔ Aide</a>
-    <a href="settings.html" class="sidebar-link active">⚙️ Parametres</a>
-    <button class="sidebar-link sidebar-logout" onclick="_sidebarLogout()">↪ Deconnexion</button>
-  </nav>
+    <a href="calendar.html" class="sidebar-link">📅 Calendrier</a>  </nav>
   <div class="sidebar-foot">
-    <button class="sidebar-theme-btn" onclick="toggleTheme()" title="Theme">
+    <a href="aide.html" class="sidebar-link">❔ Aide</a>
+    <a href="settings.html" class="sidebar-link active">⚙️ Paramètres</a>
+    <div class="sidebar-sep" style="margin:4px 0;"></div>
+    <button class="sidebar-link sidebar-logout" onclick="_sidebarLogout()">↪ Déconnexion</button>
+    <button class="sidebar-theme-btn" onclick="toggleTheme()" title="Thème" style="margin-top:8px;align-self:flex-end;">
       <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
   </div>
 </aside>
 
-<header class="topbar">
-  <a class="nav-logo" href="home.html">
-    <img src="artio-icon.png" alt="">
-    <span>Artio</span>
-  </a>
-  <nav class="nav-links">
-    <a class="nav-link" href="home.html">Accueil</a>
-    <a class="nav-link" href="app.html">Application</a>
-    <a class="nav-link" href="dashboard.html">Tableau de bord</a>
-    <a class="nav-link" href="calendar.html">Calendrier</a>
-    <a class="nav-link" href="clients.html">Clients</a>
-  </nav>
-  <div style="display:flex;gap:8px;align-items:center">
-    <button class="btn-logout" onclick="location.href='aide.html'">Aide</button>
-    <button class="btn-logout" id="btn-logout">Déconnexion</button>
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Changer de thème" title="Changer de thème">
-      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-    </button>
-  </div>
+<header class="topbar" style="justify-content:space-between;">
+  <a class="nav-logo" href="home.html"><img src="artio-icon.png" alt=""><span>Artio</span></a>
+  <button class="theme-toggle" onclick="toggleTheme()" aria-label="Changer de thème" title="Changer de thème"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
 </header>
 
 <div id="toast-el" class="toast"></div>
