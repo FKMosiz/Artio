@@ -15,9 +15,7 @@
 :root,[data-theme="dark"]{--bg:#080b14;--surface:#0e1220;--surface-2:#141829;--surface-3:#1a2035;--border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.13);--text:#e2e5f1;--muted:#6b7494;--amber:#f5a742;--amber-dim:rgba(245,167,66,0.12);--amber-glow:rgba(245,167,66,0.28);--teal:#3ecfcf;--teal-dim:rgba(62,207,207,0.11);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--green:#4ade80;--fh:'Space Grotesk',sans-serif;--fb:'Plus Jakarta Sans',sans-serif}
 [data-theme="light"]{--bg:#faf8f3;--surface:#ffffff;--surface-2:#f3efe6;--surface-3:#ece7dc;--border:rgba(20,18,12,0.08);--border-hi:rgba(20,18,12,0.16);--text:#1a1a1f;--muted:#6a6b78;--amber:#d97706;--amber-dim:rgba(217,119,6,0.10);--amber-glow:rgba(217,119,6,0.22);--teal:#0d9488;--teal-dim:rgba(13,148,136,0.10);--red:#dc2626;--green:#16a34a}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
-#root{flex:1;display:flex;flex-direction:column;min-height:100vh}
-#root > .app{flex:1}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
 button{font-family:var(--fb);cursor:pointer}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -144,18 +142,6 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .nav-logo{display:inline-flex !important;align-items:center;gap:8px}
 .nav-logo img{width:28px;height:28px;display:block;flex-shrink:0}
 
-/* ── HEADER SIMPLE (page créer) ── */
-.app-topbar{
-  position:sticky;top:0;z-index:50;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 20px 10px 66px; /* 66px à gauche pour laisser place au hamburger */
-  background:var(--bg);
-  border-bottom:1px solid var(--border);
-  min-height:54px;
-}
-.app-topbar .nav-logo{color:var(--text);text-decoration:none;font-family:var(--fh);font-weight:700;font-size:17px}
-@media(max-width:580px){.app-topbar{padding:10px 14px 10px 60px}}
-
 /* ── Light mode topbar ── */
 [data-theme="light"] .topbar,
 [data-theme="light"] .artio-nav {
@@ -192,8 +178,8 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 /* ============================================================
    REFONTE MOBILE-FIRST — bottombar · vocal-first · responsive
    ============================================================ */
-/* App padding */
-.app{padding:16px 16px 32px}
+/* App padding : place pour la bottombar sur mobile */
+.app{padding:16px 16px 92px}
 @media(min-width:768px){.app{padding:22px 20px 48px;max-width:760px;margin:0 auto}}
 
 /* Topnav : liens cachés sur mobile (remplacés par la bottombar) */
@@ -254,7 +240,7 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .section-h1-sub{font-size:13px;color:var(--muted);margin-bottom:18px}
 
 /* ---------- Écran Créer — vocal-first ---------- */
-.create-hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 16px 28px}
+.create-hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 16px 28px;min-height:calc(100vh - 180px);justify-content:center}
 .create-orb-wrap{position:relative;width:150px;height:150px;display:flex;align-items:center;justify-content:center;margin:6px 0 24px;cursor:pointer}
 .create-orb-pulse{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle, rgba(245,167,66,0.42) 0%, transparent 65%);animation:orbPulse 2.4s ease-in-out infinite}
 .create-orb-pulse:nth-child(2){animation-delay:-1.2s}
@@ -303,11 +289,11 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
   .card{padding:18px 16px}
 }
 /* ── SIDEBAR ── */
-.sidebar-trigger{position:fixed;top:9px;left:14px;z-index:1002;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;transition:background .15s}
+.sidebar-trigger{position:fixed;top:9px;left:14px;z-index:60;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;transition:background .15s}
 .sidebar-trigger:hover{background:var(--surface-3)}
-.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1003;opacity:0;pointer-events:none;transition:opacity .2s}
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:70;opacity:0;pointer-events:none;transition:opacity .2s}
 .sidebar-overlay.open{opacity:1;pointer-events:auto}
-.sidebar{position:fixed;top:0;left:-280px;bottom:0;width:280px;background:var(--surface);border-right:1px solid var(--border);z-index:1004;transition:left .25s ease;display:flex;flex-direction:column}
+.sidebar{position:fixed;top:0;left:-280px;bottom:0;width:280px;background:var(--surface);border-right:1px solid var(--border);z-index:80;transition:left .25s ease;display:flex;flex-direction:column}
 .sidebar.open{left:0}
 .sidebar-head{display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid var(--border)}
 .sidebar-logo-img{width:28px;height:28px}
@@ -333,23 +319,22 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
   --cf-teal:#3ecfcf;--cf-green:#4ade80;--cf-red:#f87171;
   --cf-border:rgba(255,255,255,.07);--cf-border-hi:rgba(255,255,255,.14);
   --cf-fh:'Space Grotesk',sans-serif;--cf-fb:'Plus Jakarta Sans',sans-serif;--cf-fm:'JetBrains Mono',monospace;
-  position:fixed;inset:0;z-index:1001;overflow-y:auto;
+  position:fixed;inset:0;z-index:90;overflow-y:auto;
   background:var(--cf-bg);color:var(--cf-text);font-family:var(--cf-fb);
-  display:grid;grid-template-columns:60px 1fr;
+  display:grid;grid-template-columns:60px 1fr;grid-template-rows:auto 1fr;
 }
-.cf-main{display:flex;flex-direction:column;min-height:100vh}
-.cf-rail{background:var(--cf-surface);border-right:1px solid var(--cf-border);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:6px;position:sticky;top:0;height:100vh}
+.cf-rail{grid-row:1/3;background:var(--cf-surface);border-right:1px solid var(--cf-border);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:6px}
 .cf-rail-btn{width:42px;height:42px;border-radius:10px;border:none;background:transparent;color:var(--cf-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:background .12s,color .12s}
 .cf-rail-btn:hover{background:var(--cf-surface-2);color:var(--cf-text)}
 .cf-rail-sep{width:32px;height:1px;background:var(--cf-border);margin:4px 0}
 .cf-rail-bottom{margin-top:auto}
-.cf-topbar{display:flex;align-items:center;gap:14px;padding:16px 24px;border-bottom:1px solid var(--cf-border);max-width:1100px;margin:0 auto;width:100%;box-sizing:border-box;flex-wrap:wrap}
+.cf-topbar{display:flex;align-items:center;gap:14px;padding:16px 24px;border-bottom:1px solid var(--cf-border)}
 .cf-doc-type{font-family:var(--cf-fh);font-size:22px;font-weight:700;letter-spacing:-.02em}
 .cf-doc-num{font-size:13px;color:var(--cf-muted);font-family:var(--cf-fm)}
 .cf-badge{display:inline-flex;align-items:center;font-size:10px;padding:3px 9px;border-radius:100px;font-weight:700;background:var(--cf-amber-dim);color:var(--cf-amber);border:1px solid rgba(245,167,66,.25)}
-.cf-close-btn{margin-left:auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--cf-border);background:var(--cf-surface-2);color:var(--cf-muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.cf-close-btn{margin-left:auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--cf-border);background:var(--cf-surface-2);color:var(--cf-muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .cf-close-btn:hover{border-color:var(--cf-red);color:var(--cf-red)}
-.cf-body{padding:24px;display:flex;flex-direction:column;gap:20px;max-width:1100px;margin:0 auto;width:100%;box-sizing:border-box;flex:1}
+.cf-body{padding:24px;display:flex;flex-direction:column;gap:20px;max-width:800px}
 .cf-fieldset{background:var(--cf-surface);border:1px solid var(--cf-border);border-radius:14px;padding:18px 20px}
 .cf-fs-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .cf-num{width:18px;height:18px;border-radius:4px;background:var(--cf-amber-dim);border:1px solid rgba(245,167,66,.25);display:flex;align-items:center;justify-content:center;font-family:var(--cf-fm);font-size:10px;font-weight:700;color:var(--cf-amber);flex-shrink:0}
@@ -372,7 +357,7 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .cf-totaux{background:var(--cf-surface-2);border:1px solid var(--cf-border);border-radius:10px;padding:14px 16px;font-size:13px}
 .cf-tot-row{display:flex;justify-content:space-between;color:var(--cf-muted);margin-bottom:4px;font-family:var(--cf-fm)}
 .cf-tot-total{display:flex;justify-content:space-between;font-weight:700;color:var(--cf-amber);border-top:1px solid var(--cf-border);padding-top:8px;margin-top:6px;font-family:var(--cf-fm);font-size:16px}
-.cf-actions{display:flex;gap:12px;padding:0 24px 24px;max-width:1100px;margin:0 auto;width:100%;box-sizing:border-box}
+.cf-actions{display:flex;gap:12px;padding:0 24px 24px}
 .cf-btn-primary{flex:1;padding:13px;border-radius:12px;border:none;background:var(--cf-amber);color:#080b14;font-size:15px;font-weight:700;font-family:var(--cf-fh);cursor:pointer;box-shadow:0 0 24px var(--cf-amber-glow);transition:all .15s}
 .cf-btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 36px var(--cf-amber-glow)}
 .cf-btn-primary:disabled{opacity:.5;cursor:not-allowed}
@@ -385,6 +370,44 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .cf-convert-btn:hover{color:var(--cf-amber);border-color:var(--cf-amber)}
 @media(max-width:767px){.cmd-form{grid-template-columns:1fr}.cf-rail{display:none}.cf-grid2,.cf-grid3{grid-template-columns:1fr}.cf-pieces-grid{grid-template-columns:1fr 56px 80px 28px}.cf-topbar{padding-left:60px}}
 .cf-preview-box{background:var(--cf-surface-2);border:1px solid var(--cf-amber-dim);border-radius:12px;padding:16px;margin-top:4px}
+
+/* ── MODE LIGHT pour Command Bar ── */
+[data-theme="light"] .cmd-form{
+  --cf-bg:#faf8f3;--cf-surface:#ffffff;--cf-surface-2:#f5f1e8;--cf-surface-3:#ebe5d6;
+  --cf-text:#1a1208;--cf-muted:#6b7494;
+  --cf-border:rgba(0,0,0,.08);--cf-border-hi:rgba(0,0,0,.16);
+}
+[data-theme="light"] .cf-input[type="date"]{color-scheme:light}
+[data-theme="light"] .cf-input,
+[data-theme="light"] .cf-textarea,
+[data-theme="light"] .cf-select{background:#ffffff;color:#1a1208}
+[data-theme="light"] .cf-input::placeholder,
+[data-theme="light"] .cf-textarea::placeholder{color:#9aa0b4}
+[data-theme="light"] .cf-select option{background:#ffffff;color:#1a1208}
+[data-theme="light"] .cf-rail{background:#ffffff}
+[data-theme="light"] .cf-rail-btn{color:#6b7494}
+[data-theme="light"] .cf-rail-btn:hover{background:#f5f1e8;color:#1a1208}
+[data-theme="light"] .cf-close-btn{background:#ffffff;color:#6b7494}
+[data-theme="light"] .cf-btn-secondary{background:#ffffff;color:#1a1208}
+[data-theme="light"] .cf-totaux{background:#ffffff}
+[data-theme="light"] .cf-preview-box{background:#ffffff}
+
+/* ── Segmented control Devis/Facture (refonte propre) ── */
+.cf-seg{display:inline-flex;background:var(--cf-surface-2);border:1px solid var(--cf-border);border-radius:100px;padding:3px;position:relative;flex-shrink:0}
+.cf-seg-btn{padding:7px 18px;border-radius:100px;font-size:13px;font-weight:600;font-family:var(--cf-fb);cursor:pointer;background:transparent;border:none;color:var(--cf-muted);transition:color .18s,background .18s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.cf-seg-btn.active{background:var(--cf-amber);color:#1a1208;box-shadow:0 2px 12px rgba(245,167,66,.35)}
+.cf-seg-btn:not(.active):hover{color:var(--cf-text)}
+
+/* ── Modale Aperçu live ── */
+.cf-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:1100;display:flex;align-items:center;justify-content:center;padding:20px;animation:cfFadeIn .18s ease}
+.cf-preview-modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.45)}
+.cf-preview-modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--surface)}
+.cf-preview-modal-title{font-family:var(--fh);font-weight:700;font-size:15px;color:var(--text)}
+.cf-preview-modal-body{padding:24px;overflow-y:auto;color:var(--text);background:var(--surface)}
+.cf-preview-modal .cf-close-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.cf-preview-modal .cf-close-btn:hover{border-color:#f87171;color:#f87171}
+[data-theme="light"] .cf-preview-overlay{background:rgba(0,0,0,.45)}
+@keyframes cfFadeIn{from{opacity:0}to{opacity:1}}
 </style>
 <script>
   /* ── THEME INIT (head) ── */
@@ -416,6 +439,67 @@ window.downloadPDF=function(key){
   if(!doc){alert("Document introuvable.");return}
   try{generatePDF(doc)}catch(e){alert("Erreur PDF : "+e.message)}
 }
+
+/* ── Aperçu live du devis/facture en cours de saisie ── */
+window.showLivePreview=function(){
+  // Si un doc a déjà été généré, on le réutilise. Sinon on construit un aperçu depuis S.fields
+  let doc = S.generatedDoc;
+  if(!doc){
+    const f=S.fields||{}, e=S.entreprise||{}, tab=S.tab||'devis';
+    const t = calcTotaux(f.nb_heures, e.taux_horaire, S.pieces||[], f.tva);
+    const pieces = (S.pieces||[]).filter(p=>p && p.description && p.quantite && p.prix_unitaire)
+      .map(p=>({description:p.description, quantite:parseFloat(p.quantite), prix_unitaire:parseFloat(p.prix_unitaire), total:parseFloat(p.quantite)*parseFloat(p.prix_unitaire)}));
+    const items=[];
+    if(t.moHT>0) items.push({description:'Temps de travail ('+f.nb_heures+'h × '+e.taux_horaire+'€)', quantite:1, prix_unitaire:t.moHT, total:t.moHT});
+    pieces.forEach(p=>items.push(p));
+    doc = {
+      type: tab,
+      docNumber: (tab==='devis'?'DEV':'FAC')+'-APERCU',
+      date: todayFR(),
+      validUntil: tab==='devis' && f.validite_jours ? addDays(parseInt(f.validite_jours)) : null,
+      date_prestation: f.date_prestation||'',
+      heure_prestation: f.heure_prestation||'',
+      heure_fin_prestation: f.heure_fin_prestation||'',
+      entreprise: {
+        nom: e.nom||'(Renseignez votre entreprise dans Paramètres)',
+        adresse: e.adresse||'',
+        tel: e.tel||'',
+        email: e.email||'',
+        siret: e.siret||''
+      },
+      client: {
+        nom: f.client_nom||'(Nom client à renseigner)',
+        adresse: f.client_adresse||'',
+        tel: f.client_tel||''
+      },
+      description: f.travaux||'(Description à compléter)',
+      items: items,
+      totalHT: t.totalHT,
+      tvaRate: t.tvaRate,
+      tva: t.tva,
+      ttc: t.ttc,
+      assujetti_tva: !!e.assujetti_tva
+    };
+  }
+  const old = document.getElementById('cf-preview-overlay');
+  if(old) old.remove();
+  const ov = document.createElement('div');
+  ov.id = 'cf-preview-overlay';
+  ov.className = 'cf-preview-overlay';
+  ov.onclick = function(e){ if(e.target===ov) closeLivePreview(); };
+  ov.innerHTML = '<div class="cf-preview-modal">'
+    + '<div class="cf-preview-modal-head">'
+    +   '<span class="cf-preview-modal-title">Aperçu — '+(doc.type==='devis'?'Devis':'Facture')+(S.generatedDoc?' '+esc(doc.docNumber):' (brouillon)')+'</span>'
+    +   '<button class="cf-close-btn" onclick="closeLivePreview()" style="margin-left:auto;">✕</button>'
+    + '</div>'
+    + '<div class="cf-preview-modal-body">'+renderDocPreview(doc)+'</div>'
+    + '</div>';
+  document.body.appendChild(ov);
+};
+window.closeLivePreview=function(){
+  const ov=document.getElementById('cf-preview-overlay');
+  if(ov) ov.remove();
+};
 
 function getStatuts(){
   const dk=S.darkMode;
@@ -2093,14 +2177,25 @@ function renderApp(){
       <button class="sidebar-theme-btn" onclick="toggleTheme()" title="Thème" style="margin-top:6px;align-self:flex-end;"><svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     </div>
   </aside>
-  <nav class="bottombar-spacer" style="display:none"></nav>
-  <header class="app-topbar">
+  <nav class="artio-nav" style="padding-left:66px;">
     <a class="nav-logo" href="home.html"><img src="artio-icon.png" alt=""><span>Artio</span></a>
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Changer de thème" title="Changer de thème"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
-  </header>
+    <div class="nav-links">
+      <button class="nav-link nav-section ${_t==='devis'?'active':''}" onclick="setTab('devis')">${IC.doc} Devis</button>
+      <button class="nav-link nav-section ${_t==='facture'?'active':''}" onclick="setTab('facture')">${IC.receipt} Facture</button>
+    </div>
+    <div class="nav-right">
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Changer de thème" title="Changer de thème"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
+    </div>
+  </nav>
   <div class="app">
     ${renderDevisFacture()}
   </div>
+  <nav class="bottombar">
+    <button class="bb-item ${_t==='devis'?'active':''}" onclick="setTab('devis')"><span class="bb-ic">${IC.doc}</span>Devis</button>
+    <button class="bb-item ${_t==='facture'?'active':''}" onclick="setTab('facture')"><span class="bb-ic">${IC.receipt}</span>Facture</button>
+    <button class="bb-item" onclick="location.href='dossiers.html'"><span class="bb-ic">${IC.folder}</span>Dossiers</button>
+    <button class="bb-item" onclick="toggleSidebar()"><span class="bb-ic">${IC.more}</span>Menu</button>
+  </nav>
   ${S.showSettings?`
   <div class="settings-overlay" onclick="set({showSettings:false})"></div>
   <div class="settings-panel" style="width:${S.settingsPage==="profil"?"480px":"340px"};overflow-y:auto;">
@@ -2377,7 +2472,7 @@ function renderDevisFacture(){
     tplSave='<div style="display:flex;gap:8px;align-items:center;margin-top:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);"><input class="cf-input" type="text" placeholder="Nom du modèle…" value="'+esc(S.templateNom||"")+'" style="flex:1;font-size:12px;" oninput="S.templateNom=this.value"/><button class="cf-btn-secondary" style="padding:8px 12px;font-size:12px;white-space:nowrap;" onclick="saveTemplate()"'+(S.savingTemplate?' disabled':'')+'>💾 '+(S.savingTemplate?'…':'Sauvegarder')+'</button></div>';
   }
   const missCount=[!f.client_nom,!f.travaux,(e.assujetti_tva&&!f.tva)].filter(Boolean).length;
-  const segment=S.entryMode==="manual"?`<div class="cf-pills"><button class="cf-pill ${tab==='devis'?'active':''}" onclick="setTab('devis')">${IC.doc} Devis</button><button class="cf-pill ${tab==='facture'?'active':''}" onclick="setTab('facture')">${IC.receipt} Facture</button></div>`:"";
+  const segment=S.entryMode==="manual"?`<div class="cf-seg"><button class="cf-seg-btn ${tab==='devis'?'active':''}" onclick="setTab('devis')">Devis</button><button class="cf-seg-btn ${tab==='facture'?'active':''}" onclick="setTab('facture')">Facture</button></div>`:"";
   const validiteHtml=tab==="devis"?'<div class="cf-field"><label class="cf-label">Validité du devis</label><select class="cf-select" onchange="S.fields.validite_jours=this.value;render()"><option value="1" '+((S.fields.validite_jours||String(e.validite_devis||3))==="1"?"selected":"")+'>1 jour</option><option value="2" '+((S.fields.validite_jours||String(e.validite_devis||3))==="2"?"selected":"")+'>2 jours</option><option value="3" '+((S.fields.validite_jours||String(e.validite_devis||3))==="3"?"selected":"")+'>3 jours</option><option value="7" '+((S.fields.validite_jours||String(e.validite_devis||3))==="7"?"selected":"")+'>7 jours</option><option value="15" '+((S.fields.validite_jours||String(e.validite_devis||3))==="15"?"selected":"")+'>15 jours</option><option value="30" '+((S.fields.validite_jours||String(e.validite_devis||3))==="30"?"selected":"")+'>30 jours</option></select></div>':"";
   return `<div class="cmd-form">
     <div class="cf-rail">
@@ -2385,7 +2480,7 @@ function renderDevisFacture(){
       <div class="cf-rail-sep"></div>
       <div class="cf-rail-bottom"><button class="cf-rail-btn" style="color:#f87171" onclick="set({manualMode:false,fields:{},pieces:[{description:'',quantite:'1',prix_unitaire:''}],generatedDoc:null,entryMode:null})" title="Retour">✕</button></div>
     </div>
-    <div class="cf-main">
+    <div>
       <div class="cf-topbar">
         ${segment}
         <div style="display:flex;align-items:center;gap:10px;${S.entryMode==='manual'?'margin-left:14px':''}">
@@ -2425,7 +2520,7 @@ function renderDevisFacture(){
         ${S.generatedDoc?`<div class="cf-preview-box">${renderDocPreview(S.generatedDoc)}</div>`:""}
       </div>
       <div class="cf-actions">
-        <button class="cf-btn-secondary" onclick="if(S.generatedDoc)downloadPDF(S.generatedDoc.docNumber)" style="white-space:nowrap;">👁 Aperçu</button>
+        <button class="cf-btn-secondary" onclick="showLivePreview()" style="white-space:nowrap;">👁 Aperçu</button>
         <button class="cf-btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours…":tab==="devis"?"Générer le devis":"Générer la facture"}</button>
       </div>
     </div>
