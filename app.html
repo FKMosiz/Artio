@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
@@ -288,6 +288,88 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
   .stats-grid{grid-template-columns:1fr 1fr !important}
   .card{padding:18px 16px}
 }
+/* ── SIDEBAR ── */
+.sidebar-trigger{position:fixed;top:9px;left:14px;z-index:60;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;transition:background .15s}
+.sidebar-trigger:hover{background:var(--surface-3)}
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:70;opacity:0;pointer-events:none;transition:opacity .2s}
+.sidebar-overlay.open{opacity:1;pointer-events:auto}
+.sidebar{position:fixed;top:0;left:-280px;bottom:0;width:280px;background:var(--surface);border-right:1px solid var(--border);z-index:80;transition:left .25s ease;display:flex;flex-direction:column}
+.sidebar.open{left:0}
+.sidebar-head{display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo-img{width:28px;height:28px}
+.sidebar-brand{font-family:var(--fh);font-weight:700;font-size:17px;flex:1}
+.sidebar-close{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;cursor:pointer;color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center}
+.sidebar-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.sidebar-link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;color:var(--muted);text-decoration:none;background:transparent;border:none;text-align:left;cursor:pointer;transition:background .12s,color .12s;font-family:var(--fb);width:100%}
+.sidebar-link:hover{background:var(--surface-2);color:var(--text)}
+.sidebar-link.active{background:var(--amber-dim);color:var(--amber);font-weight:600}
+.sidebar-sep{height:1px;background:var(--border);margin:8px 12px}
+.sidebar-logout{color:var(--red)}
+.sidebar-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+.sidebar-theme-btn{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;width:36px;height:36px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center}
+.sidebar-theme-btn .icon-sun{display:none}
+[data-theme="dark"] .sidebar-theme-btn .icon-moon{display:none}
+[data-theme="dark"] .sidebar-theme-btn .icon-sun{display:inline-block}
+@media(max-width:767px){.sidebar.open{width:100%}}
+/* ── COMMAND BAR FULLSCREEN ── */
+.cmd-form{
+  --cf-bg:#080b14;--cf-surface:#0e1220;--cf-surface-2:#141829;--cf-surface-3:#1a2035;
+  --cf-text:#e2e5f1;--cf-muted:#8a92ad;
+  --cf-amber:#f5a742;--cf-amber-dim:rgba(245,167,66,.12);--cf-amber-glow:rgba(245,167,66,.28);
+  --cf-teal:#3ecfcf;--cf-green:#4ade80;--cf-red:#f87171;
+  --cf-border:rgba(255,255,255,.07);--cf-border-hi:rgba(255,255,255,.14);
+  --cf-fh:'Space Grotesk',sans-serif;--cf-fb:'Plus Jakarta Sans',sans-serif;--cf-fm:'JetBrains Mono',monospace;
+  position:fixed;inset:0;z-index:90;overflow-y:auto;
+  background:var(--cf-bg);color:var(--cf-text);font-family:var(--cf-fb);
+  display:grid;grid-template-columns:60px 1fr;grid-template-rows:auto 1fr;
+}
+.cf-rail{grid-row:1/3;background:var(--cf-surface);border-right:1px solid var(--cf-border);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:6px}
+.cf-rail-btn{width:42px;height:42px;border-radius:10px;border:none;background:transparent;color:var(--cf-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:background .12s,color .12s}
+.cf-rail-btn:hover{background:var(--cf-surface-2);color:var(--cf-text)}
+.cf-rail-sep{width:32px;height:1px;background:var(--cf-border);margin:4px 0}
+.cf-rail-bottom{margin-top:auto}
+.cf-topbar{display:flex;align-items:center;gap:14px;padding:16px 24px;border-bottom:1px solid var(--cf-border)}
+.cf-doc-type{font-family:var(--cf-fh);font-size:22px;font-weight:700;letter-spacing:-.02em}
+.cf-doc-num{font-size:13px;color:var(--cf-muted);font-family:var(--cf-fm)}
+.cf-badge{display:inline-flex;align-items:center;font-size:10px;padding:3px 9px;border-radius:100px;font-weight:700;background:var(--cf-amber-dim);color:var(--cf-amber);border:1px solid rgba(245,167,66,.25)}
+.cf-close-btn{margin-left:auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--cf-border);background:var(--cf-surface-2);color:var(--cf-muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.cf-close-btn:hover{border-color:var(--cf-red);color:var(--cf-red)}
+.cf-body{padding:24px;display:flex;flex-direction:column;gap:20px;max-width:800px}
+.cf-fieldset{background:var(--cf-surface);border:1px solid var(--cf-border);border-radius:14px;padding:18px 20px}
+.cf-fs-h{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.cf-num{width:18px;height:18px;border-radius:4px;background:var(--cf-amber-dim);border:1px solid rgba(245,167,66,.25);display:flex;align-items:center;justify-content:center;font-family:var(--cf-fm);font-size:10px;font-weight:700;color:var(--cf-amber);flex-shrink:0}
+.cf-fs-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--cf-amber);font-family:var(--cf-fh)}
+.cf-field{margin-bottom:14px}
+.cf-field:last-child{margin-bottom:0}
+.cf-label{display:block;font-size:10px;font-weight:700;color:var(--cf-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.cf-input,.cf-textarea,.cf-select{width:100%;padding:10px 13px;font-size:14px;background:var(--cf-surface-2);border:1px solid var(--cf-border);border-radius:10px;color:var(--cf-text);font-family:var(--cf-fb);outline:none;transition:border-color .2s,box-shadow .2s}
+.cf-input:focus,.cf-textarea:focus,.cf-select:focus{border-color:var(--cf-amber);box-shadow:0 0 0 3px var(--cf-amber-dim)}
+.cf-input::placeholder,.cf-textarea::placeholder{color:var(--cf-muted)}
+.cf-select option{background:var(--cf-surface-2);color:var(--cf-text)}
+.cf-textarea{resize:vertical}
+.cf-input[type="date"]{color-scheme:dark}
+.cf-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cf-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.cf-field-miss .cf-input,.cf-field-miss .cf-textarea{box-shadow:0 0 0 1px var(--cf-amber);border-color:var(--cf-amber)}
+.cf-pieces-grid{display:grid;grid-template-columns:1fr 64px 88px 32px;gap:6px;align-items:start}
+.cf-remove-btn{height:38px;border-radius:9px;border:1px solid var(--cf-border);background:var(--cf-surface-2);color:var(--cf-muted);font-size:16px;display:flex;align-items:center;justify-content:center;width:100%;cursor:pointer;transition:all .2s}
+.cf-remove-btn:hover{border-color:var(--cf-red);color:var(--cf-red)}
+.cf-totaux{background:var(--cf-surface-2);border:1px solid var(--cf-border);border-radius:10px;padding:14px 16px;font-size:13px}
+.cf-tot-row{display:flex;justify-content:space-between;color:var(--cf-muted);margin-bottom:4px;font-family:var(--cf-fm)}
+.cf-tot-total{display:flex;justify-content:space-between;font-weight:700;color:var(--cf-amber);border-top:1px solid var(--cf-border);padding-top:8px;margin-top:6px;font-family:var(--cf-fm);font-size:16px}
+.cf-actions{display:flex;gap:12px;padding:0 24px 24px}
+.cf-btn-primary{flex:1;padding:13px;border-radius:12px;border:none;background:var(--cf-amber);color:#080b14;font-size:15px;font-weight:700;font-family:var(--cf-fh);cursor:pointer;box-shadow:0 0 24px var(--cf-amber-glow);transition:all .15s}
+.cf-btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 36px var(--cf-amber-glow)}
+.cf-btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.cf-btn-secondary{padding:13px 20px;border-radius:12px;border:1px solid var(--cf-border);background:var(--cf-surface);color:var(--cf-text);font-size:14px;font-weight:500;font-family:var(--cf-fb);cursor:pointer;transition:all .15s}
+.cf-btn-secondary:hover{border-color:var(--cf-border-hi);background:var(--cf-surface-2)}
+.cf-pills{display:flex;gap:8px;margin-bottom:4px}
+.cf-pill{padding:8px 18px;border-radius:100px;font-size:13px;font-weight:600;font-family:var(--cf-fb);cursor:pointer;background:var(--cf-surface);border:1px solid var(--cf-border);color:var(--cf-muted);transition:all .15s}
+.cf-pill.active{background:var(--cf-amber-dim);border-color:rgba(245,167,66,.4);color:var(--cf-amber)}
+.cf-convert-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--cf-border);background:transparent;color:var(--cf-muted);cursor:pointer;transition:all .15s;font-family:var(--cf-fb)}
+.cf-convert-btn:hover{color:var(--cf-amber);border-color:var(--cf-amber)}
+@media(max-width:767px){.cmd-form{grid-template-columns:1fr}.cf-rail{display:none}.cf-grid2,.cf-grid3{grid-template-columns:1fr}.cf-pieces-grid{grid-template-columns:1fr 56px 80px 28px}}
+.cf-preview-box{background:var(--cf-surface-2);border:1px solid var(--cf-amber-dim);border-radius:12px;padding:16px;margin-top:4px}
 </style>
 <script>
   /* ── THEME INIT (head) ── */
@@ -390,6 +472,7 @@ let S={
   syncing:false,
   showMoreDrawer:false,
   manualMode:false,
+  entryMode:null,
 };
 
 // ——— ICÔNES (SVG inline, trait fin) ———
@@ -779,14 +862,19 @@ const TOUR_STEPS = [
     target:null, tab:null, pro:false, pos:"center"
   },
   {
+    title:"🧭 Navigation — le menu latéral",
+    desc:"Clique sur ☰ en haut à gauche pour ouvrir le menu. Tu y trouveras toutes les sections :<br>• <strong>Créer</strong> — devis & factures par dictée<br>• <strong>Dossiers</strong> — historique de tous tes documents<br>• <strong>Rédiger</strong> — emails clients et messagerie<br>• Clients, Tableau de bord, Calendrier…",
+    target:".sidebar-trigger", tab:"devis", pro:false, pos:"bottom"
+  },
+  {
     title:"🎙 Dictée vocale — essaie !",
-    desc:"Clique sur le micro et dis :<br><span class=\"tour-example\">« Monsieur Martin veut une intervention de coaching sport mardi à 14h, j'en ai pour 3 heures, plus matériel à 30 euros »</span>Artio extrait automatiquement client, prestation, date et articles.<br><span class=\"tour-warn\">⚠️ La dictée ne fonctionne pas sur Firefox/Brave. Utilise le bouton ci-dessous pour pré-remplir un exemple.</span>",
-    target:".voice-box", tab:"devis", pro:false, pos:"bottom",
+    desc:"Clique sur l'orbe et dis :<br><span class=\"tour-example\">« Monsieur Martin veut une intervention de coaching sport mardi à 14h, j'en ai pour 3 heures, plus matériel à 30 euros »</span>Artio extrait automatiquement client, prestation, date et articles.<br><span class=\"tour-warn\">⚠️ La dictée ne fonctionne pas sur Firefox/Brave. Utilise le bouton ci-dessous pour pré-remplir un exemple.</span>",
+    target:".create-orb-wrap", tab:"devis", pro:false, pos:"bottom",
     action:{label:"📝 Pré-remplir un exemple", fn:"_tourDemoFill"}
   },
   {
     title:"👥 Annuaire clients",
-    desc:"Tape les premières lettres d'un client enregistré : il apparaît dans la liste. Un clic remplit automatiquement nom, email, téléphone et adresse.<br><br>Le bouton 👥 permet d'ouvrir la liste complète de tes clients.",
+    desc:"Dans le formulaire, tape les premières lettres d'un client enregistré : il apparaît dans la liste. Un clic remplit automatiquement nom, email, téléphone et adresse.",
     target:"input[data-fid=\"client_nom\"]", tab:"devis", pro:false, pos:"bottom"
   },
   {
@@ -796,33 +884,18 @@ const TOUR_STEPS = [
   },
   {
     title:"⚡ Générer le document",
-    desc:"Ce bouton produit ton devis. Une fois les infos remplies :<br>• L'IA rédige la description finale<br>• Le PDF est prêt à envoyer<br>• La numérotation est automatique (DEV-2026-XXX)<br>• Le dossier est créé dans l'historique<br><br><small style=\"color:var(--muted)\">Étape suivante : on va voir cet historique.</small>",
-    target:".btn-primary", tab:"devis", pro:false, pos:"top"
+    desc:"Ce bouton produit ton devis. Une fois les infos remplies :<br>• L'IA rédige la description finale<br>• Le PDF est prêt à envoyer<br>• La numérotation est automatique (DEV-2026-XXX)<br>• Le dossier est créé dans tes Dossiers",
+    target:".cf-btn-primary", tab:"devis", pro:false, pos:"top"
   },
   {
     title:"🗂 Tes dossiers",
-    desc:"C'est ici que tous tes devis et factures sont classés. Tu peux :<br>• Voir le statut en temps réel (en attente, signé, payé)<br>• Télécharger le PDF<br>• Visualiser le document généré<br>• Relancer un client impayé<br><br>Chaque devis créé apparaît automatiquement dans cette liste.",
-    target:".tabs", tab:"historique", pro:false, pos:"bottom"
-  },
-  {
-    title:"✍️ Signature électronique",
-    desc:"Depuis un dossier, envoie un lien de signature à ton client. Il signe directement depuis son téléphone — sans compte, sans installation.<br><br>Tu reçois une notification dès que c'est signé, et le statut passe automatiquement à ✅ Signé.",
-    target:null, tab:"historique", pro:false, pos:"center"
-  },
-  {
-    title:"💶 Convertir en facture",
-    desc:"Prestation terminée ? Un clic sur <strong style=\"color:var(--amber)\">💶 Créer la facture</strong> depuis le dossier et c'est fait.<br><br>La numérotation FAC-2026-XXX est automatique, le devis original est archivé, et la facture est prête à être envoyée.",
-    target:null, tab:"historique", pro:false, pos:"center"
+    desc:"La page <strong>Dossiers</strong> liste tous tes devis et factures. Tu peux :<br>• Voir le statut en temps réel (en attente, signé, payé)<br>• Télécharger le PDF<br>• Relancer un client impayé<br><br>Clique « Suivant » pour y accéder.",
+    target:null, tab:null, pro:false, pos:"center", redirect:"dossiers.html"
   },
   {
     title:"📋 Sauvegarder un modèle",
-    desc:"Tu as des clients réguliers ? Sauvegarde le devis comme modèle réutilisable :<br><span class=\"tour-example\">① Remplis le formulaire — à la main ou par dictée vocale<br>② Donne un nom au modèle <em>(ex : « Coaching Martin »)</em><br>③ Coche 📌 Client récurrent <em>si tu veux lier ce client au modèle</em> — laisse décoché si tu veux utiliser ce modèle avec différents clients<br>④ Clique 💾 Sauvegarder</span>Le champ de nom et le bouton 💾 sont juste au-dessus du bouton « Générer ».",
-    target:".tpl-btn-save", tab:"devis", pro:true, pos:"top"
-  },
-  {
-    title:"📂 Charger un modèle",
-    desc:"Une fois un modèle sauvegardé, une barre apparaît en haut du formulaire avec la liste déroulante de tous tes modèles.<br><br>Sélectionne un modèle → clique <strong style=\"color:var(--amber)\">Charger</strong> — tout est pré-rempli en un clic.<br><br>Si le modèle a un client récurrent, son nom, email, téléphone et adresse sont automatiquement remplis aussi.<br><br><em style=\"color:var(--muted)\">Tu peux aussi dicter « comme d'habitude pour Martin » et Artio le charge seul.</em>",
-    target:".tpl-bar", tab:"devis", pro:true, pos:"bottom"
+    desc:"Tu as des clients réguliers ? Dans le formulaire, donne un nom au modèle puis clique 💾 Sauvegarder.<br><br>La prochaine fois, un menu déroulant en haut du formulaire te permet de charger en un clic.<br><br><em style=\"color:var(--muted)\">Tu peux aussi dicter « comme d'habitude pour Martin » et Artio le charge seul.</em>",
+    target:null, tab:"devis", pro:true, pos:"center"
   },
   {
     title:"🎉 Tu es prêt !",
@@ -848,9 +921,11 @@ window._tourDemoFill = function(){
   S.pieces = [
     {description:"Matériel sportif (élastiques, kettlebell)", quantite:"1", prix_unitaire:"30"}
   ];
+  S.manualMode = true;
+  S.entryMode = "manual";
   renderApp();
   setTimeout(function(){ if(S.tourActive) _tourRender(); }, 80);
-  showToast("✨ Exemple pré-rempli — explore le formulaire !");
+  showToast("✨ Exemple pré-rempli — explore le formulaire Command Bar !");
 };
 
 window.startTour = function(){
@@ -867,6 +942,11 @@ window.tourNext = function(){
   _tourRemoveHighlight();
   S.tourStep++;
   const step = TOUR_STEPS[S.tourStep];
+  if(step.redirect){
+    localStorage.setItem('artio_tour_step', S.tourStep);
+    location.href = step.redirect;
+    return;
+  }
   if(step.tab && step.tab !== S.tab){
     S.tab = step.tab;
     renderApp();
@@ -1259,6 +1339,7 @@ window.stopVoice=async()=>{
 };
 
 window.startVoice=()=>{
+  S.entryMode="voice";
   voiceCallback=async t=>{
     try{
       const raw=await callClaude(
@@ -1280,11 +1361,12 @@ Instructions d'extraction:
 - heure_fin_prestation: heure de fin au format HH:MM si mentionnée ("jusqu'à 11h", "pendant 2h"...), null sinon
 - pieces: tableau des prestations/articles avec leur prix. Généraliser : forfait, code service, pièce, produit... (ex: "forfait lavage 39 euros" → {"description":"Forfait lavage","quantite":"1","prix_unitaire":"39"}, "code D9" → {"description":"Code D9","quantite":"1","prix_unitaire":null})
 - template_hint: si l'utilisateur mentionne un modèle habituel ou récurrent ("comme d'habitude", "pareil que d'habitude", "modèle X", "habituel pour Y", "même chose que"), retourner le nom/mot-clé du modèle ou du client. null sinon.
+- type: "devis" si l'utilisateur veut une estimation/proposition (mots-clés: "devis", "estimation", "proposer", "je voudrais", "pour faire"), "facture" si c'est après prestation/paiement (mots-clés: "facture", "j'ai fait", "j'ai terminé", "c'est fait", "à payer", "réglé"). Par défaut "devis".
 
 Si une information n'est pas mentionnée, mettre null. Pour pieces, tableau vide [] si rien mentionné.
 
 JSON:
-{"client_nom":null,"client_adresse":null,"client_tel":null,"client_email":null,"travaux":null,"nb_heures":null,"tva":null,"date_prestation":null,"heure_prestation":null,"pieces":[],"template_hint":null}`,800);
+{"client_nom":null,"client_adresse":null,"client_tel":null,"client_email":null,"travaux":null,"nb_heures":null,"tva":null,"date_prestation":null,"heure_prestation":null,"pieces":[],"template_hint":null,"type":"devis"}`,800);
       logTokens("devis", raw.usage);
 
       const cleaned=raw.text.replace(/```json/g,"").replace(/```/g,"").trim();
@@ -1303,6 +1385,8 @@ JSON:
           prix_unitaire:String(x.prix_unitaire||"")
         }));
       }
+      // Détection devis/facture par l'IA
+      if(p.type==="facture"||p.type==="devis"){S.tab=p.type;}
       // Détection automatique de modèle par la voix
       if(p.template_hint&&String(p.template_hint)!=="null"&&S.templates.length>0){
         const hint=String(p.template_hint).toLowerCase().trim();
@@ -1362,21 +1446,6 @@ window.handleGenerate=async()=>{
     if(!S.pieces[i])S.pieces[i]={};S.pieces[i][k]=el.value;
   });
   const e=S.entreprise,f=S.fields,tab=S.tab;
-  if(tab==="email"){
-    const req=S.emailMode==="reponse"?["client_nom","message"]:["client_nom","avancement"];
-    const miss=req.filter(id=>!(f[id]||"").trim());
-    if(miss.length){alert("Champs manquants : "+miss.join(", "));return}
-    set({loading:true,generatedText:""});
-    try{
-      const prompt=S.emailMode==="reponse"
-        ?`Rédige une réponse email professionnelle en ${{"fr":"français","en":"English","es":"español","zh":"中文"}[S.langue]||"français"} pour ${e.nom}.\n${e.contexte_ia?`Contexte sur l'activité :\n${e.contexte_ia}\n`:""}\nClient : ${f.client_nom}\nMessage : ${f.message}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`
-        :`Rédige un email de mise à jour pour ${e.nom}.\nTon souhaité: ${(S.emailTons||["vouvoiement"]).join(" + ")}.\nClient : ${f.client_nom}\nPrestation / lieu : ${f.adresse_travaux||""}\nAvancement : ${f.avancement}\nProchaine étape : ${f.suite||"à définir"}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`;
-      const {text,usage:ue}=await callClaude(prompt,500);
-      logTokens("email", ue);
-      set({loading:false,generatedText:text});
-    }catch(err){set({loading:false,generatedText:"Erreur : "+err.message})}
-    return;
-  }
   const req=["client_nom","travaux"].concat(S.entreprise.assujetti_tva?["tva"]:[]);
   const miss=req.filter(id=>!(f[id]||"").trim());
   if(miss.length){alert("Champs manquants : "+miss.join(", "));return}
@@ -1420,7 +1489,8 @@ const nom=civStr+(travStr?" — "+travStr:"");
       }
     }
     S.dossiers=[dos,...S.dossiers];
-    set({loading:false,generatedDoc:doc,openDossier:dos.id,tab:"historique"});
+    // entryMode conservé pour pouvoir "Convertir" depuis le formulaire — réinitialisé à la fermeture
+    set({loading:false,generatedDoc:doc,openDossier:dos.id});
   }catch(err){set({loading:false});alert("Erreur : "+err.message)}
 };
 
@@ -1509,83 +1579,6 @@ window.markPaye=async(dosId,docNum)=>{
   showToast("✅ Facture marquée comme payée !");
 };
 
-async function genererRappelPaiement(dosId,docNum){
-    if(window.PlanGuard&&!window.PlanGuard.isPro()){
-      window.PlanGuard.showProModal("Rappels de paiement IA");return;
-    }
-  const dos=S.dossiers.find(d=>d.id===dosId);
-  const doc=dos?.documents?.find(d=>d.docNumber===docNum);
-  if(!doc){alert("Document introuvable.");return}
-  const e=S.entreprise;
-  const joursEcoules=doc.date?Math.floor((Date.now()-new Date(doc.date.split("/").reverse().join("-")))/86400000):30;
-  const dateFacture=doc.date||"date inconnue";
-  const contexte=e.contexte_ia?"\n\nContexte entreprise : "+e.contexte_ia:"";
-  const ibanInfo=e.iban?"Virement bancaire — IBAN : "+e.iban:"(IBAN non renseigné — à ajouter dans Paramètres)";
-  set({loading:true, rappelLoadingId:docNum});
-  try{
-    const prompt="Tu es l'assistant de "+(e.nom||"un prestataire indépendant")+" (secteur: "+(e.secteur||"services")+")."+contexte
-      +"\n\nRédige un email de rappel de paiement, professionnel mais direct."
-      +"\n\nDonnées :"
-      +"\n- Client : "+(doc.client?.nom||dos.client||"le client")
-      +"\n- Facture N° : "+docNum
-      +"\n- Date d'émission : "+dateFacture
-      +"\n- Montant : "+(doc.ttc||0).toFixed(2)+" € TTC"
-      +"\n- Impayée depuis : "+joursEcoules+" jour"+(joursEcoules>1?"s":"")
-      +"\n- Prestation : "+(doc.description||dos.nom||"")
-      +"\n- Coordonnées de paiement : "+ibanInfo
-      +"\n- Conditions : "+(e.conditions_paiement||"paiement à réception")
-      +"\n\nInstructions :"
-      +"\n- Mentionne le numéro de facture, le montant TTC et la date d'émission"
-      +"\n- Inclus DIRECTEMENT les coordonnées de paiement dans le corps du mail"
-      +"\n- Ton : "+(joursEcoules<15?"courtois, premier rappel":joursEcoules<30?"ferme, deuxième rappel":"très ferme, dernier rappel avant relance")
-      +"\n- Signe UNIQUEMENT avec le nom \""+( e.nom||"l'entreprise")+"\". Interdit d'ajouter un titre, un service ou une fonction après la signature."
-      +"\n- Langue : "+({"fr":"français","en":"English","es":"español","zh":"中文"}[S.langue]||"français")
-      +"\n- Écris directement l'email, sans commentaire";
-    const {text:txt,usage:ur}=await callClaude(prompt,400);
-    logTokens("email",ur);
-    window.__emailBody=txt;
-    set({loading:false,tab:"email",emailMode:"reponse",generatedText:txt,rappelLoadingId:null});
-    S.fields.client_nom=doc.client?.nom||dos.client||"";
-    S.fields.client_email=doc.client?.email||"";
-    render();
-    showToast("💶 Email de rappel de paiement généré !");
-  }catch(err){
-    set({loading:false});
-    set({rappelLoadingId:null});
-    if(err.message!=="plan_required")alert("Erreur : "+err.message);
-  }
-}
-
-async function genererRelance(dosId,docNum){
-    if(window.PlanGuard&&!window.PlanGuard.isPro()){
-      window.PlanGuard.showProModal("Relances clients IA");return;
-    }
-  const dos=S.dossiers.find(d=>d.id===dosId);
-  const doc=dos?.documents?.find(d=>d.docNumber===docNum);
-  if(!doc){alert("Document introuvable.");return}
-  const e=S.entreprise;
-  const joursEcoules=doc.date?Math.floor((Date.now()-new Date(doc.date.split("/").reverse().join("-")))/86400000):14;
-  set({loading:true});
-  try{
-    const prompt=`Tu es un assistant pour ${e.nom||"un prestataire indépendant"} (secteur: ${e.secteur||"services"}).
-Rédige un email de relance professionnel et chaleureux pour un devis non signé.
-Infos: Client: ${doc.client?.nom||dos.client||"le client"} | Devis N°${docNum} | Montant: ${doc.ttc?.toFixed(2)||"?"} € TTC | Envoyé il y a ${joursEcoules} jours | Description: ${doc.description||dos.nom||""}.
-Langue: ${{"fr":"français","en":"English","es":"español","zh":"中文"}[S.langue]||"français"}. Ton: courtois, sans pression, rappelle juste les éléments clés.
-Signe au nom de "${e.nom||"l'entreprise"}". Écris directement l'email sans commentaire.`;
-    const {text:txt,usage:ur}=await callClaude(prompt,350);
-    logTokens("email", ur);
-    window.__emailBody=txt;
-    set({loading:false,tab:"email",emailMode:"reponse",generatedText:txt});
-    // Pré-remplir le champ client
-    S.fields.client_nom=doc.client?.nom||dos.client||"";
-    S.fields.client_email=doc.client?.email||"";
-    render();
-    showToast("📩 Email de relance généré — vérifie et envoie !");
-  }catch(err){
-    set({loading:false});
-    alert("Erreur : "+err.message);
-  }
-}
 
 // ── HASH SHA-256 du document ────────────────────────────────────
 async function hashDoc(obj) {
@@ -1781,14 +1774,13 @@ window.confirmDeleteDoc=async(dosId,docNum)=>{
 };
 window.copyText=text=>{navigator.clipboard.writeText(text);set({copied:true});setTimeout(()=>set({copied:false}),2000)};
 window.setTab=t=>{
-  if(window.PlanGuard&&window.PlanGuard.isFree()&&["devis","facture","email"].includes(t)){
+  if(t==="historique"){location.href="dossiers.html";return;}
+  if(t==="email"||t==="emails_gmail"){location.href="rediger.html";return;}
+  if(window.PlanGuard&&window.PlanGuard.isFree()&&["devis","facture"].includes(t)){
     _showReadonlyAlert("La création de documents nécessite un abonnement actif. Consultez votre historique ci-dessous.");
     return;
   }
-    if(t==="emails_gmail"&&window.PlanGuard&&!window.PlanGuard.isPro()){
-      window.PlanGuard.showProModal("Messagerie Gmail");return;
-    }
-  set({tab:t,fields:{validite_jours:String(S.entreprise.validite_devis||3)},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null,manualMode:false,showMoreDrawer:false});
+  set({tab:t,fields:{validite_jours:String(S.entreprise.validite_devis||3)},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null,manualMode:false,showMoreDrawer:false,entryMode:null});
 };
 window.setEmailMode=m=>set({emailMode:m,fields:{},generatedText:""});
 window.startVoiceContexte=function(fieldId){
@@ -2064,52 +2056,45 @@ function renderApp(){
   const e=S.entreprise;
   const _t=S.tab;
   const isCreer=_t==='devis'||_t==='facture';
-  const isDoss=_t==='historique';
-  const isRed=_t==='email'||_t==='emails_gmail';
-  const _isPro=!!(window.PlanGuard&&window.PlanGuard.isPro());
   document.getElementById("root").innerHTML=`
-  <nav class="artio-nav">
+  <button class="sidebar-trigger" onclick="toggleSidebar()" aria-label="Menu"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+  <div class="sidebar-overlay" onclick="closeSidebar()"></div>
+  <aside class="sidebar">
+    <div class="sidebar-head"><img src="artio-icon.png" alt="" class="sidebar-logo-img"/><span class="sidebar-brand">Artio</span><button class="sidebar-close" onclick="closeSidebar()">×</button></div>
+    <nav class="sidebar-nav">
+      <a href="home.html" class="sidebar-link">🏠 Accueil</a>
+      <a href="app.html" class="sidebar-link active">🎙 Créer</a>
+      <a href="dossiers.html" class="sidebar-link">📁 Dossiers</a>
+      <a href="rediger.html" class="sidebar-link">✉️ Rédiger</a>
+      <a href="clients.html" class="sidebar-link">👥 Clients</a>
+      <a href="dashboard.html" class="sidebar-link">📊 Tableau de bord</a>
+      <a href="calendar.html" class="sidebar-link">📅 Calendrier</a>
+      <div class="sidebar-sep"></div>
+      <a href="aide.html" class="sidebar-link">❔ Aide</a>
+      <a href="settings.html" class="sidebar-link">⚙️ Paramètres</a>
+      <button class="sidebar-link sidebar-logout" onclick="handleLogout()">↪ Déconnexion</button>
+    </nav>
+    <div class="sidebar-foot"><button class="sidebar-theme-btn" onclick="toggleTheme()" title="Thème"><svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+  </aside>
+  <nav class="artio-nav" style="padding-left:66px;">
     <a class="nav-logo" href="home.html"><img src="artio-icon.png" alt=""><span>Artio</span></a>
     <div class="nav-links">
-      <button class="nav-link nav-section ${isCreer?'active':''}" onclick="setTab('devis')">Créer</button>
-      <button class="nav-link nav-section ${isDoss?'active':''}" onclick="setTab('historique')">Dossiers${S.dossiers.length?" ("+S.dossiers.length+")":""}</button>
-      <button class="nav-link nav-section ${isRed?'active':''}" onclick="setTab('email')">Rédiger</button>
-      <a class="nav-link" href="clients.html">Clients</a>
-      <a class="nav-link" href="dashboard.html">Tableau de bord</a>
-      <a class="nav-link" href="calendar.html">Calendrier</a>
+      <button class="nav-link nav-section ${_t==='devis'?'active':''}" onclick="setTab('devis')">${IC.doc} Devis</button>
+      <button class="nav-link nav-section ${_t==='facture'?'active':''}" onclick="setTab('facture')">${IC.receipt} Facture</button>
     </div>
     <div class="nav-right">
-      <span class="nav-hide-mobile" style="display:flex;gap:8px;">
-        <button class="nav-btn" onclick="location.href='aide.html'">Aide</button>
-        <button class="nav-btn" onclick="location.href='settings.html'">Paramètres</button>
-        <button class="nav-btn" onclick="handleLogout()">Déconnexion</button>
-      </span>
       <button class="theme-toggle" onclick="toggleTheme()" aria-label="Changer de thème" title="Changer de thème"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
     </div>
   </nav>
   <div class="app">
-    ${S.tab==="emails_gmail"?renderRedigerSeg()+renderEmailsGmail():S.tab==="historique"?'<div class="section-h1">Dossiers</div><div class="section-h1-sub">Suivi de tes devis et factures.</div>'+renderHistorique():S.tab==="email"?renderRedigerSeg()+renderEmail():renderDevisFacture()}
+    ${renderDevisFacture()}
   </div>
   <nav class="bottombar">
-    <button class="bb-item ${isCreer?'active':''}" onclick="setTab('devis')"><span class="bb-ic">${IC.mic}</span>Créer</button>
-    <button class="bb-item ${isDoss?'active':''}" onclick="setTab('historique')"><span class="bb-ic">${IC.folder}</span>Dossiers</button>
-    <button class="bb-item" onclick="location.href='clients.html'"><span class="bb-ic">${IC.users}</span>Clients</button>
-    <button class="bb-item ${S.showMoreDrawer?'active':''}" onclick="set({showMoreDrawer:true})"><span class="bb-ic">${IC.more}</span>Plus</button>
+    <button class="bb-item ${_t==='devis'?'active':''}" onclick="setTab('devis')"><span class="bb-ic">${IC.doc}</span>Devis</button>
+    <button class="bb-item ${_t==='facture'?'active':''}" onclick="setTab('facture')"><span class="bb-ic">${IC.receipt}</span>Facture</button>
+    <button class="bb-item" onclick="location.href='dossiers.html'"><span class="bb-ic">${IC.folder}</span>Dossiers</button>
+    <button class="bb-item" onclick="toggleSidebar()"><span class="bb-ic">${IC.more}</span>Menu</button>
   </nav>
-  ${S.showMoreDrawer?`
-  <div class="drawer-overlay" onclick="set({showMoreDrawer:false})"></div>
-  <div class="drawer">
-    <div class="drawer-handle"></div>
-    <button class="drawer-item ${isRed?'':''}" onclick="setTab('email')">${IC.pen}<span>Rédiger un email</span></button>
-    <button class="drawer-item" onclick="${_isPro?"setTab('emails_gmail')":"set({showMoreDrawer:false});window.PlanGuard?.showProModal('Messagerie Gmail')"}">${IC.inbox}<span>Messagerie</span>${_isPro?"":'<span class="lock">🔒 Pro</span>'}</button>
-    <div class="drawer-sep"></div>
-    <button class="drawer-item" onclick="location.href='dashboard.html'">${IC.chart}<span>Tableau de bord</span></button>
-    <button class="drawer-item" onclick="location.href='calendar.html'">${IC.cal}<span>Calendrier</span></button>
-    <button class="drawer-item" onclick="location.href='settings.html'">${IC.cog}<span>Paramètres</span></button>
-    <button class="drawer-item" onclick="location.href='aide.html'">${IC.help}<span>Aide</span></button>
-    <div class="drawer-sep"></div>
-    <button class="drawer-item danger" onclick="handleLogout()">${IC.logout}<span>Déconnexion</span></button>
-  </div>`:""}
   ${S.showSettings?`
   <div class="settings-overlay" onclick="set({showSettings:false})"></div>
   <div class="settings-panel" style="width:${S.settingsPage==="profil"?"480px":"340px"};overflow-y:auto;">
@@ -2142,7 +2127,7 @@ function renderApp(){
           <button class="btn-small btn-gray" style="width:100%;" onclick="gmailDisconnect()">Déconnecter</button>
           `:`
           <div style="background:var(--teal-dim);border:1px solid rgba(62,207,207,.2);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--teal)">✓ Connecté : ${esc(S.gmailEmail)}</div>
-          <button class="btn-primary" onclick="gmailFetchEmails();set({showSettings:false,tab:'emails_gmail'})">Voir les emails</button>
+          <button class="btn-primary" onclick="set({showSettings:false});location.href='rediger.html'">Voir les emails</button>
           <button class="btn-small btn-gray" style="margin-top:8px;width:100%;" onclick="gmailDisconnect()">Déconnecter</button>
           `}
         `:`
@@ -2357,393 +2342,91 @@ function renderClientPicker(){
 
 function renderDevisFacture(){
   const f=S.fields,tab=S.tab,e=S.entreprise;
-  const heureOpts=(id)=>{
-    let opts='<option value="">-- Optionnel --</option>';
-    for(let h=6;h<=21;h++){
-      for(let m=0;m<60;m+=15){
-        const hh=String(h).padStart(2,"0"),mm=String(m).padStart(2,"0");
-        const val=hh+":"+mm,sel=(S.fields[id]||"")==val?"selected":"";
-        opts+='<option value="'+val+'" '+sel+'>'+h+'h'+(m>0?m:"")+'</option>';
-      }
-    }
-    return opts;
-  };
-  const inp=(id,type,ph)=>{
-    if(type==="textarea") return '<textarea placeholder="'+ph+'" data-fid="'+id+'" oninput="S.fields[this.dataset.fid]=this.value">'+esc(S.fields[id]||"")+'</textarea>';
-    if(type==="select_heure") return '<select data-fid="'+id+'" style="width:100%;padding:10px 12px;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);" onchange="S.fields[\''+id+'\']=this.value">'+heureOpts(id)+'</select>';
-    if(type==="date") return '<input type="date" value="'+(S.fields[id]||"")+'" data-fid="'+id+'" style="width:100%;padding:10px 12px;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);color-scheme:dark;" oninput="S.fields[\''+id+'\']=this.value"/>';
-    if(type==="select") return '<select data-fid="'+id+'" style="width:100%;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--fb);" onchange="S.fields[\''+id+'\']=this.value;updateTotaux()">'
-      +'<option value="">-- Choisir le taux --</option>'
-      +'<option value="10" '+(S.fields[id]==="10"?"selected":"")+'>10 % — Taux réduit</option>'
-      +'<option value="20" '+(S.fields[id]==="20"?"selected":"")+'>20 % — Taux normal</option>'
-      +'</select>';
-    return '<input type="'+type+'" value="'+esc(S.fields[id]||"")+'" placeholder="'+ph+'" data-fid="'+id+'" oninput="S.fields[\''+id+'\']=this.value;'+(id==='nb_heures'||id==='tva'?'updateTotaux()':'')+'" />';
-  };
-  const fld=(id,label,ph,type,opt)=>'<div class="field"><label class="label">'+label+(opt?'<span class="opt">(optionnel)</span>':'')+' </label>'+inp(id,type,ph)+'</div>';
-
-  // ── Barre templates (Pro) ── précomputée sans template literal imbriqué
-  let tplBar = "";
-  if(window.PlanGuard && window.PlanGuard.isPro() && S.templates.filter(t=>t.tab===tab).length > 0){
-    const opts = S.templates.filter(t=>t.tab===tab).map(t=>'<option value="'+t.id+'">'+esc(t.nom)+'</option>').join("");
-    tplBar = '<div class="tpl-bar">'
-      +'<select class="tpl-select" id="tpl-select"><option value="">&#128203; Charger un template...</option>'+opts+'</select>'
-      +'<button class="tpl-btn tpl-btn-load" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)loadTemplate(v)">Charger</button>'
-      +'<button class="tpl-btn" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,.2);" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)deleteTemplate(v)">&#128465;</button>'
-      +'</div>';
-  }
-
-  // ── Section sauvegarder modèle (Pro) ── précomputée
-  let tplSave = "";
-  if(window.PlanGuard && window.PlanGuard.isPro()){
-    const clientNom=(S.fields.client_nom||"").trim();
-    tplSave = '<div style="margin-bottom:4px;">'
-      +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">'
-      +'<input type="text" placeholder="Nom du mod\u00e8le (ex: Entretien mensuel Mme Martin)" value="'+esc(S.templateNom||"")+'"'
-      +' style="flex:1;padding:9px 12px;font-size:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);"'
-      +' oninput="S.templateNom=this.value"/>'
-      +'<button class="tpl-btn tpl-btn-save" onclick="saveTemplate()"'+(S.savingTemplate?' disabled':'')+'>&#128190; '+(S.savingTemplate?'...':'Sauvegarder')+'</button>'
-      +'</div>'
-      +(clientNom
-        ?'<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:6px;cursor:pointer;padding:7px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;">'
-          +'<input type="checkbox" '+(S.templateIncludeClient?'checked':'')
-          +' onchange="S.templateIncludeClient=this.checked;set({})" style="width:15px;height:15px;accent-color:var(--amber);cursor:pointer;flex-shrink:0;"/>'
-          +'<span>\ud83d\udccc Client r\u00e9current \u2014 inclure <strong style=\"color:var(--text)\">'+esc(clientNom)+'</strong> dans ce mod\u00e8le</span>'
-          +'</label>'
-        :'')
-      +'</div>';
-  }
-
   const vs=S.voiceState;
   const hasData=!!(f.client_nom||f.travaux||f.client_adresse||(S.pieces&&S.pieces.some(p=>p&&p.description))||S.generatedDoc);
   const showForm=S.manualMode||hasData;
-  const segment=`<div class="seg-pills">
-    <button class="seg-pill ${tab==='devis'?'active':''}" onclick="setTab('devis')">${IC.doc} Devis</button>
-    <button class="seg-pill ${tab==='facture'?'active':''}" onclick="setTab('facture')">${IC.receipt} Facture</button>
-  </div>`;
-
-  // — Étape 2 : écoute / analyse (visuel, piloté par S.voiceState) —
   if(vs==='recording'||vs==='processing'){
     const rec=vs==='recording';
-    return segment+`<div class="create-hero">
-      <div class="listen-status ${rec?'rec':'proc'}"><span class="dot"></span>${rec?'En écoute…':'Analyse en cours…'}</div>
-      <div class="listen-transcript">${S.voiceTranscript?('« '+esc(S.voiceTranscript)+' »'):'<span class="ph">Parle naturellement — client, prestation, heures, fournitures…</span>'}</div>
-      <div class="create-orb-wrap ${rec?'rec':'proc'}" onclick="${rec?'stopVoice()':''}">
-        <span class="create-orb-pulse"></span><span class="create-orb-pulse"></span>
-        <div class="create-orb">${rec?IC.mic:'<span style="font-size:32px">⏳</span>'}</div>
-      </div>
-      <div class="listen-hint">${rec?"Touche l'orbe pour arrêter et analyser":'Artio extrait les informations de ta dictée…'}</div>
-    </div>`;
+    return `<div class="create-hero"><div class="listen-status ${rec?'rec':'proc'}"><span class="dot"></span>${rec?'En écoute…':'Analyse en cours…'}</div><div class="listen-transcript">${S.voiceTranscript?('« '+esc(S.voiceTranscript)+' »'):'<span class="ph">Parle naturellement — client, prestation, heures, fournitures…</span>'}</div><div class="create-orb-wrap ${rec?'rec':'proc'}" onclick="${rec?'stopVoice()':''}"><span class="create-orb-pulse"></span><span class="create-orb-pulse"></span><div class="create-orb">${rec?IC.mic:'<span style="font-size:32px">⏳</span>'}</div></div><div class="listen-hint">${rec?"Touche l'orbe pour arrêter et analyser":'Artio extrait les informations de ta dictée…'}</div></div>`;
   }
-
-  // — Étape 1 : accueil vocal-first —
   if(!showForm){
-    return segment+`<div class="create-hero">
-      <div class="create-orb-wrap" onclick="startVoice()">
-        <span class="create-orb-pulse"></span><span class="create-orb-pulse"></span>
-        <div class="create-orb">${IC.mic}</div>
-      </div>
-      <div class="create-title">Dicter ${tab==='devis'?'le devis':'la facture'}</div>
-      <div class="create-sub">Parle naturellement — client, prestation, heures et fournitures sont reconnus automatiquement.</div>
-      <button class="create-manual" onclick="set({manualMode:true})">ou remplir manuellement →</button>
-    </div>`;
+    return `<div class="create-hero"><div class="create-orb-wrap" onclick="S.entryMode='voice';startVoice()"><span class="create-orb-pulse"></span><span class="create-orb-pulse"></span><div class="create-orb">${IC.mic}</div></div><div class="create-title">Créer un devis ou une facture</div><div class="create-sub">Dicte naturellement — client, prestation, heures et articles sont reconnus automatiquement.</div><button class="create-manual" onclick="S.entryMode='manual';set({manualMode:true})">ou remplir manuellement →</button></div>`;
   }
-
-  // — Étape 3 : brouillon / formulaire à valider —
+  const heureOpts=(id)=>{let o='<option value="">-- Optionnel --</option>';for(let h=6;h<=21;h++){for(let m=0;m<60;m+=15){const hh=String(h).padStart(2,"0"),mm=String(m).padStart(2,"0"),val=hh+":"+mm,sel=(S.fields[id]||"")==val?"selected":"";o+='<option value="'+val+'" '+sel+'>'+h+'h'+(m>0?m:"")+'</option>';}}return o;};
+  const cfi=(id,type,ph)=>{
+    if(type==="textarea") return '<textarea class="cf-textarea" placeholder="'+ph+'" data-fid="'+id+'" oninput="S.fields[this.dataset.fid]=this.value">'+esc(S.fields[id]||"")+'</textarea>';
+    if(type==="select_heure") return '<select class="cf-select" data-fid="'+id+'" onchange="S.fields[\''+id+'\']=this.value">'+heureOpts(id)+'</select>';
+    if(type==="date") return '<input type="date" class="cf-input" value="'+(S.fields[id]||"")+'" data-fid="'+id+'" oninput="S.fields[\''+id+'\']=this.value"/>';
+    if(type==="select_tva") return '<select class="cf-select" data-fid="'+id+'" onchange="S.fields[\''+id+'\']=this.value;updateTotaux()"><option value="">-- Taux TVA --</option><option value="10" '+(S.fields[id]==="10"?"selected":"")+'>10 %</option><option value="20" '+(S.fields[id]==="20"?"selected":"")+'>20 %</option></select>';
+    return '<input type="'+type+'" class="cf-input" value="'+esc(S.fields[id]||"")+'" placeholder="'+ph+'" data-fid="'+id+'" oninput="S.fields[\''+id+'\']=this.value;'+(id==='nb_heures'||id==='tva'?'updateTotaux()':'')+'" />';
+  };
+  const cff=(id,label,ph,type,opt,miss)=>'<div class="cf-field'+(miss?' cf-field-miss':'')+'"><label class="cf-label">'+label+(opt?' <span style="font-weight:400;text-transform:none;font-size:9px;">(opt.)</span>':'')+' </label>'+cfi(id,type,ph)+'</div>';
+  let tplBar="";
+  if(window.PlanGuard&&window.PlanGuard.isPro()&&S.templates.filter(t=>t.tab===tab).length>0){
+    const opts=S.templates.filter(t=>t.tab===tab).map(t=>'<option value="'+t.id+'">'+esc(t.nom)+'</option>').join("");
+    tplBar='<div style="display:flex;gap:8px;margin-bottom:12px;"><select class="cf-select" id="tpl-select" style="flex:1;font-size:12px;"><option value="">📋 Modèle…</option>'+opts+'</select><button class="cf-btn-secondary" style="padding:8px 12px;font-size:12px;" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)loadTemplate(v)">Charger</button><button class="cf-btn-secondary" style="padding:8px 12px;font-size:12px;" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)deleteTemplate(v)">🗑</button></div>';
+  }
+  let tplSave="";
+  if(window.PlanGuard&&window.PlanGuard.isPro()){
+    tplSave='<div style="display:flex;gap:8px;align-items:center;margin-top:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);"><input class="cf-input" type="text" placeholder="Nom du modèle…" value="'+esc(S.templateNom||"")+'" style="flex:1;font-size:12px;" oninput="S.templateNom=this.value"/><button class="cf-btn-secondary" style="padding:8px 12px;font-size:12px;white-space:nowrap;" onclick="saveTemplate()"'+(S.savingTemplate?' disabled':'')+'>💾 '+(S.savingTemplate?'…':'Sauvegarder')+'</button></div>';
+  }
   const missCount=[!f.client_nom,!f.travaux,(e.assujetti_tva&&!f.tva)].filter(Boolean).length;
-  const formBar=`<div class="form-bar">
-    <button class="mini-mic" onclick="startVoice()">${IC.mic} ${hasData?'Compléter à la voix':'Dicter'}</button>
-    ${(S.manualMode&&!hasData)?`<button class="mini-mic ghost" onclick="set({manualMode:false})">← Dictée</button>`:''}
-    ${(hasData&&missCount)?`<span style="font-size:12.5px;color:var(--amber);font-weight:600;margin-left:auto;">⚠ ${missCount} champ${missCount>1?'s':''} à compléter</span>`:''}
-  </div>`;
-
-  return segment+formBar+`<div class="card">
-    ${tplBar}
-    <div class="section-head" style="margin-top:0">
-      <div class="section-icon">👤</div>
-      <span class="section-title">Client</span>
-      <div class="section-line"></div>
+  const segment=S.entryMode==="manual"?`<div class="cf-pills"><button class="cf-pill ${tab==='devis'?'active':''}" onclick="setTab('devis')">${IC.doc} Devis</button><button class="cf-pill ${tab==='facture'?'active':''}" onclick="setTab('facture')">${IC.receipt} Facture</button></div>`:"";
+  const validiteHtml=tab==="devis"?'<div class="cf-field"><label class="cf-label">Validité du devis</label><select class="cf-select" onchange="S.fields.validite_jours=this.value;render()"><option value="1" '+((S.fields.validite_jours||String(e.validite_devis||3))==="1"?"selected":"")+'>1 jour</option><option value="2" '+((S.fields.validite_jours||String(e.validite_devis||3))==="2"?"selected":"")+'>2 jours</option><option value="3" '+((S.fields.validite_jours||String(e.validite_devis||3))==="3"?"selected":"")+'>3 jours</option><option value="7" '+((S.fields.validite_jours||String(e.validite_devis||3))==="7"?"selected":"")+'>7 jours</option><option value="15" '+((S.fields.validite_jours||String(e.validite_devis||3))==="15"?"selected":"")+'>15 jours</option><option value="30" '+((S.fields.validite_jours||String(e.validite_devis||3))==="30"?"selected":"")+'>30 jours</option></select></div>':"";
+  return `<div class="cmd-form">
+    <div class="cf-rail">
+      <button class="cf-rail-btn" onclick="S.entryMode='voice';startVoice()" title="Dicter">🎙</button>
+      <div class="cf-rail-sep"></div>
+      <div class="cf-rail-bottom"><button class="cf-rail-btn" style="color:#f87171" onclick="set({manualMode:false,fields:{},pieces:[{description:'',quantite:'1',prix_unitaire:''}],generatedDoc:null,entryMode:null})" title="Retour">✕</button></div>
     </div>
-    <div class="${hasData&&!f.client_nom?'field-miss':''}">${renderClientPicker()}</div>
-    <div class="grid2">
-      ${fld("client_tel","Téléphone",L("ph_client_tel"),"text",true)}
-      ${fld("client_email","Email",L("ph_client_email"),"text",true)}
-    </div>
-    ${fld("client_adresse","Adresse","Ex: 12 rue de la Paix, 75001 Paris","text",true)}
-    <div class="section-head">
-      <div class="section-icon">📋</div>
-      <span class="section-title">Prestation</span>
-      <div class="section-line"></div>
-    </div>
-    <div class="grid3">
-      ${fld("date_prestation",tab==="devis"?"Date prévue":"Date de la prestation","","date",true)}
-      ${fld("heure_prestation",tab==="devis"?"Heure début":"Heure début","","select_heure",true)}
-      ${fld("heure_fin_prestation","Heure fin","","select_heure",true)}
-    </div>
-    ${tab==="devis"?`<div class="field" style="margin-bottom:12px;">
-      <label class="label">Validité du devis <span class="opt">(optionnel)</span></label>
-      <select id="validite_jours_select" class="field-input" onchange="S.fields.validite_jours=this.value;render()">
-        <option value="1"  ${(S.fields.validite_jours||String(e.validite_devis||3))==="1" ?"selected":""}>1 jour</option>
-        <option value="2"  ${(S.fields.validite_jours||String(e.validite_devis||3))==="2" ?"selected":""}>2 jours</option>
-        <option value="3"  ${(S.fields.validite_jours||String(e.validite_devis||3))==="3" ?"selected":""}>3 jours</option>
-        <option value="7"  ${(S.fields.validite_jours||String(e.validite_devis||3))==="7" ?"selected":""}>7 jours</option>
-        <option value="15" ${(S.fields.validite_jours||String(e.validite_devis||3))==="15"?"selected":""}>15 jours</option>
-        <option value="30" ${(S.fields.validite_jours||String(e.validite_devis||3))==="30"?"selected":""}>30 jours</option>
-      </select>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Durée de validité commerciale du devis. Le lien de signature expire à la même date. Défaut issu de vos paramètres.</div>
-    </div>`:""}
-    <div class="${hasData&&!f.travaux?'field-miss':''}">${fld("travaux",tab==="devis"?"Description de la prestation":"Prestations réalisées",L("ph_travaux"),"textarea",false)}</div>
-    ${fld("nb_heures","Heures de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true)}
-    ${e.assujetti_tva?`<div class="${hasData&&!f.tva?'field-miss':''}">${fld("tva","TVA (%)","","select",false)}</div>`:""}
-    <div class="section-head">
-      <div class="section-icon">📦</div>
-      <span class="section-title">Articles / Prestations complémentaires</span>
-      <div class="section-line"></div>
-    </div>
-    ${renderPieces()}
-    <div id="totaux-container">${renderTotaux()}</div>
-    ${tplSave}
-    <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":tab==="devis"?"Générer le devis":"Générer la facture"}</button>
-  </div>
-  ${S.generatedDoc?`<div class="card">${renderDocPreview(S.generatedDoc)}</div>`:""}`;
-}
-
-
-function renderRedigerSeg(){
-  const _pro=!!(window.PlanGuard&&window.PlanGuard.isPro());
-  return `<div class="seg-pills">
-    <button class="seg-pill ${S.tab==='email'?'active':''}" onclick="setTab('email')">${IC.pen} Rédiger</button>
-    <button class="seg-pill ${S.tab==='emails_gmail'?'active':''} ${_pro?'':'locked'}" onclick="${_pro?"setTab('emails_gmail')":"window.PlanGuard?.showProModal('Messagerie Gmail')"}">${IC.inbox} Messagerie${_pro?'':' 🔒'}</button>
-  </div>`;
-}
-
-function renderEmail(){
-  const f=S.fields;
-  const fields=[
-    ["client_nom","Nom du client","Ex: M. Martin","text",false],
-    ["message","Message reçu du client","Colle ici le message du client...","textarea",false],
-    ["contexte","Contexte","Ex: infos que le client ne connaît pas encore, contexte particulier...","textarea",true,"voice"]
-  ];
-  return`<div class="card">
-    <div class="section-head" style="margin-top:0">
-      <div class="section-icon">✉️</div>
-      <span class="section-title">Rédiger une réponse</span>
-      <div class="section-line"></div>
-    </div>
-    <div style="margin-bottom:16px;">
-      <label class="label" style="margin-bottom:8px;">Ton de la réponse <span style="font-weight:400;font-size:10px;color:var(--muted);">(plusieurs choix possibles)</span></label>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        ${["vouvoiement","tutoiement","amical","institutionnel","ferme"].map(ton=>{
-          const active=(S.emailTons||[]).includes(ton);
-          return`<button onclick="toggleTon('${ton}')" style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${active?"var(--amber)":"var(--border-hi)"};background:${active?"var(--amber-dim)":"transparent"};color:${active?"var(--amber)":"var(--muted)"};font-weight:${active?"600":"400"};font-family:var(--fb);transition:all .2s;">
-            ${active?"✓ ":""}${ton.charAt(0).toUpperCase()+ton.slice(1)}
-          </button>`;
-        }).join("")}
-      </div>
-    </div>
-    ${fields.map(([id,label,ph,type,opt,extra])=>`<div class="field">
-      <label class="label" style="display:flex;align-items:center;gap:6px;">
-        ${label}${opt?`<span class="opt">(optionnel)</span>`:""}
-        ${extra==="voice"?`<button onclick="startVoiceContexte('${id}')" style="background:${S.voiceContextField===id?"#E24B4A":"var(--amber)"};border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#080b14;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Dicter le contexte">${S.voiceContextField===id?"⏹":"🎙"}</button>`:""}
-      </label>
-      ${type==="textarea"?`<textarea placeholder="${ph}" data-fid="${id}">${esc(f[id]||"")}</textarea>`:`<input type="${type}" value="${esc(f[id]||"")}" placeholder="${ph}" data-fid="${id}" oninput="S.fields['${id}']=this.value" />`}
-    </div>`).join("")}
-    <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":"Générer l'email"}</button>
-    ${S.generatedText?`<div class="result-box">
-      <div class="result-header">
-        <span style="font-size:13px;font-weight:500;color:var(--muted);">Email généré</span>
-        <button class="btn-small ${S.copied?"btn-green":"btn-gray"}" onclick="copyText(window.__emailBody||'')">${S.copied?"Copié ✓":"Copier"}</button>
-      </div>
-      <pre>${esc(S.generatedText)}</pre>
-    </div>`:""}
-  </div>`;
-}
-
-function renderEmailsGmail(){
-  if(!S.gmailEmail||isGmailExpired()){
-    if(S.gmailEmail&&isGmailExpired()){
-      return`<div class="card" style="text-align:center;padding:2rem;">
-        <p style="font-size:28px;margin-bottom:12px;">⚠️</p>
-        <p style="font-weight:500;margin-bottom:8px;color:#f5a742;">Session Gmail expirée</p>
-        <p style="font-size:13px;color:#888;margin-bottom:20px;">${esc(S.gmailEmail)} — ton accès a expiré, reconnecte-toi pour continuer.</p>
-        <a href="settings.html?tab=gmail" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;font-family:var(--fh);text-align:center;box-shadow:0 0 24px var(--amber-glow)">🔄 Reconnecter Gmail</a>
-      </div>`;
-    }
-    return`<div class="card" style="text-align:center;padding:2rem;">
-      <p style="font-size:20px;margin-bottom:12px;">📧</p>
-      <p style="font-weight:500;margin-bottom:8px;">Connexion Gmail</p>
-      <p style="font-size:13px;color:#888;margin-bottom:20px;">Lis et réponds à tes emails directement depuis Artio.</p>
-      <a href="settings.html?tab=gmail" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;font-family:var(--fh);text-align:center;box-shadow:0 0 24px var(--amber-glow)">⚙ Connecter Gmail</a>
-    </div>`;
-  }
-  return`<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <p style="font-weight:500;">Emails non lus</p>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-small btn-blue" onclick="gmailFetchEmails()">${S.emailsLoading?"⏳ Chargement...":"🔄 Actualiser"}</button>
-        <button class="btn-small btn-gray" onclick="gmailDisconnect()">Déconnecter</button>
-      </div>
-    </div>
-    ${S.emailsError?`<div style="color:#E24B4A;font-size:13px;margin-bottom:12px;">${esc(S.emailsError)}</div>`:""}
-    ${S.emails.length===0&&!S.emailsLoading?`<div style="text-align:center;padding:2rem;color:#888;">
-      <p>Aucun email non lu</p>
-      <button class="btn-primary" style="margin-top:12px;" onclick="gmailFetchEmails()">Charger les emails</button>
-    </div>`:""}
-    ${S.emails.map(m=>`
-    <div class="dossier-card" style="margin-bottom:12px;">
-      <div style="padding:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-          <p style="font-weight:500;font-size:14px;flex:1;">${esc(m.subject||"(sans objet)")}</p>
-          <span style="font-size:11px;color:#888;margin-left:8px;white-space:nowrap;">${esc((m.date||"").slice(0,16))}</span>
+    <div>
+      <div class="cf-topbar">
+        ${segment}
+        <div style="display:flex;align-items:center;gap:10px;${S.entryMode==='manual'?'margin-left:14px':''}">
+          <span class="cf-doc-type">${tab==='devis'?'Devis':'Facture'}</span>
+          <span class="cf-doc-num">Brouillon</span>
+          <span class="cf-badge">Nouveau</span>
+          ${S.entryMode==='voice'?'<button class="cf-convert-btn" onclick="setTab(S.tab===\'devis\'?\'facture\':\'devis\')">'+(tab==='devis'?'→ Facture':'→ Devis')+'</button>':''}
+          ${missCount?`<span style="font-size:12px;color:#f5a742;font-weight:600;margin-left:4px;">⚠ ${missCount} champ${missCount>1?'s':''} manquant${missCount>1?'s':''}</span>`:''}
         </div>
-        <p style="font-size:12px;color:#888;margin-bottom:8px;">${esc(m.from)}</p>
-        <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:12px;">${cleanEmailSnippet(m.snippet)}</p>
-        ${S.expandedEmail===m.id?`
-          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px;line-height:1.7;color:var(--text);max-height:300px;overflow-y:auto;">
-            ${cleanEmailBody(m.body)}
-          </div>
-          <button class="btn-small btn-gray" style="margin-bottom:10px;" onclick="set({expandedEmail:null})">▲ Réduire</button>
-        `:`
-          <button class="btn-small btn-gray" style="margin-bottom:10px;" onclick="set({expandedEmail:'${m.id}'})">👁 Voir le message</button>
-        `}
-        ${(()=>{
-          const draft=(S.emailReplyDraft||{})[m.id];
-          if(draft?.loading){
-            return`<div style="padding:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;">⏳ Réponse en cours de génération...</div>`;
-          }
-          if(draft?.text){
-            const safeFrom=esc(m.from).replace(/'/g,"\\'").replace(/"/g,'&quot;');
-            const safeSubj=esc(m.subject||"").replace(/'/g,"\\'").replace(/"/g,'&quot;');
-            return`<div style="margin-top:4px;">
-              <textarea id="reply-${m.id}" style="width:100%;min-height:320px;font-size:13px;line-height:1.6;padding:12px;background:var(--surface-2);border:1px solid var(--amber);border-radius:10px;color:var(--text);font-family:var(--fb);resize:vertical;" oninput="S.emailReplyDraft['${m.id}'].text=this.value">${esc(draft.text)}</textarea>
-              <div style="display:flex;gap:8px;margin-top:8px;">
-                <button class="btn-small btn-green" id="send-btn-${m.id}" onclick="(async(btn)=>{btn.disabled=true;btn.textContent='⏳ Envoi…';try{const t=document.getElementById('reply-${m.id}').value;const meta=window.__emailMeta?.['${m.id}']||{};await gmailSendReply('${m.id}',meta.threadId,meta.messageId,'${safeFrom}','${safeSubj}',t);btn.textContent='✅ Envoyé !';await new Promise(r=>setTimeout(r,1200));S.emailReplyDraft['${m.id}']=null;render();}catch(e){btn.disabled=false;btn.textContent='📤 Envoyer';}})(this)">📤 Envoyer</button>
-                <button class="btn-small btn-gray" onclick="S.emailReplyDraft['${m.id}']=null;render()">✕ Annuler</button>
-              </div>
-            </div>`;
-          }
-          return`<button class="btn-small btn-blue" onclick="generateEmailReply('${m.id}','${esc(m.from).replace(/'/g,"\\'")}','${esc(m.subject||"").replace(/'/g,"\\'")}',window.__emailBodies['${m.id}']||'')">🤖 Générer une réponse</button>`;
-        })()}
+        <button class="cf-close-btn" onclick="set({manualMode:false,fields:{},pieces:[{description:'',quantite:'1',prix_unitaire:''}],generatedDoc:null,entryMode:null})">✕</button>
       </div>
-    </div>`).join("")}
+      <div class="cf-body">
+        ${tplBar}
+        <div class="cf-fieldset">
+          <div class="cf-fs-h"><div class="cf-num">01</div><span class="cf-fs-title">Client</span></div>
+          <div class="${hasData&&!f.client_nom?'cf-field cf-field-miss':'cf-field'}">${renderClientPicker()}</div>
+          <div class="cf-grid2">${cff("client_tel","Téléphone","Ex: 06 12 34 56 78","text",true,false)}${cff("client_email","Email","Ex: dupont@email.com","text",true,false)}</div>
+          ${cff("client_adresse","Adresse","Ex: 12 rue de la Paix, 75001 Paris","text",true,false)}
+        </div>
+        <div class="cf-fieldset">
+          <div class="cf-fs-h"><div class="cf-num">02</div><span class="cf-fs-title">Prestation</span></div>
+          <div class="${hasData&&!f.travaux?'cf-field cf-field-miss':'cf-field'}"><label class="cf-label">${tab==="devis"?"Description de la prestation":"Prestations réalisées"}</label>${cfi("travaux","textarea","Décris ici la prestation à réaliser…")}</div>
+          <div class="cf-grid3">${cff("date_prestation",tab==="devis"?"Date prévue":"Date réalisée","","date",true,false)}${cff("heure_prestation","Heure début","","select_heure",true,false)}${cff("heure_fin_prestation","Heure fin","","select_heure",true,false)}</div>
+          ${cff("nb_heures","Temps de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true,false)}
+          ${validiteHtml}
+          ${e.assujetti_tva?'<div class="cf-field'+(hasData&&!f.tva?' cf-field-miss':'')+'"><label class="cf-label">TVA (%)</label>'+cfi("tva","select_tva","")+'</div>':""}
+        </div>
+        <div class="cf-fieldset">
+          <div class="cf-fs-h"><div class="cf-num">03</div><span class="cf-fs-title">Articles / Prestations complémentaires</span></div>
+          ${renderPieces()}
+        </div>
+        <div class="cf-fieldset">
+          <div class="cf-fs-h"><div class="cf-num">04</div><span class="cf-fs-title">Totaux</span></div>
+          <div id="totaux-container">${renderTotaux()}</div>
+        </div>
+        ${tplSave}
+        ${S.generatedDoc?`<div class="cf-preview-box">${renderDocPreview(S.generatedDoc)}</div>`:""}
+      </div>
+      <div class="cf-actions">
+        <button class="cf-btn-secondary" onclick="if(S.generatedDoc)downloadPDF(S.generatedDoc.docNumber)" style="white-space:nowrap;">👁 Aperçu</button>
+        <button class="cf-btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours…":tab==="devis"?"Générer le devis":"Générer la facture"}</button>
+      </div>
+    </div>
   </div>`;
+}
 }
 
-function renderHistorique(){
-  const now=new Date();
-  const devisEnAttente=S.dossiers.filter(d=>d.statut==="devis_envoye").length;
-  // Bannière devis à convertir en facture
-  const dacBanner=S.devisAConvertir.length>0?`
-  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-    ${S.devisAConvertir.map(({dosId,docNum,nom,datePresta})=>{
-      const dateLabel=datePresta?new Date(datePresta).toLocaleDateString("fr-FR",{day:"numeric",month:"long"}):"date non renseignée";
-      const pastLabel=datePresta&&new Date(datePresta)<now?" — prestation terminée":"";
-      return`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:12px;">
-        <span style="font-size:18px;">📋</span>
-        <div style="flex:1;min-width:0;">
-          <p style="font-size:13px;font-weight:600;color:#f59e0b;margin-bottom:2px;">Devis signé à facturer</p>
-          <p style="font-size:12px;color:var(--muted);">${esc(nom)} · ${docNum} · ${dateLabel}${pastLabel}</p>
-        </div>
-        <button class="btn-small btn-teal" onclick="convertToFacture('${dosId}','${docNum}')" style="white-space:nowrap;">${S.convertingId===docNum?"⏳...":"💶 Créer la facture"}</button>
-      </div>`;
-    }).join("")}
-  </div>`:"";
-  const caMois=S.dossiers.reduce((s,d)=>(d.documents||[]).filter(doc=>{
-    if(doc.type!=="facture")return false;
-    const parts=(doc.date||"").split("/");
-    if(parts.length<3)return false;
-    const dt=new Date(parts[2],parts[1]-1,parts[0]);
-    return dt.getMonth()===now.getMonth()&&dt.getFullYear()===now.getFullYear();
-  }).reduce((ss,doc)=>ss+(doc.ttc||0),s),0);
-  const relancesNecessaires=S.dossiers.filter(d=>{
-    if(d.statut!=="devis_envoye")return false;
-    const devis=(d.documents||[]).find(doc=>doc.type==="devis"&&!doc.accepte);
-    if(!devis||!devis.date)return false;
-    const parts=devis.date.split("/");
-    if(parts.length<3)return false;
-    const jours=Math.floor((Date.now()-new Date(parts[2],parts[1]-1,parts[0]))/86400000);
-    return jours>=14;
-  }).length;
-  const facturesImpayees=S.dossiers.reduce((n,d)=>(d.documents||[]).filter(doc=>doc.type==="facture"&&!doc.paye).length+n,0);
-  const statsBar=`<div class="stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem;">
-    <div class="card" style="padding:12px;text-align:center;">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">CA ce mois</div>
-      <div style="font-size:18px;font-weight:700;color:var(--amber);">${caMois.toLocaleString("fr-FR",{minimumFractionDigits:0})} €</div>
-    </div>
-    <div class="card" style="padding:12px;text-align:center;">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Devis en attente</div>
-      <div style="font-size:18px;font-weight:700;color:var(--amber);">${devisEnAttente}</div>
-    </div>
-    <div class="card" style="padding:12px;text-align:center;${relancesNecessaires>0?"border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.05);":""}">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">À relancer</div>
-      <div style="font-size:18px;font-weight:700;color:${relancesNecessaires>0?"#f59e0b":"var(--green)"};">${relancesNecessaires}</div>
-    </div>
-    <div class="card" style="padding:12px;text-align:center;${facturesImpayees>0?"border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.05);":""}">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Factures impayées</div>
-      <div style="font-size:18px;font-weight:700;color:${facturesImpayees>0?"var(--red)":"var(--green)"};">${facturesImpayees}</div>
-    </div>
-  </div>`;
-  if(!S.dossiers.length)return dacBanner+statsBar+`<div class="card" style="text-align:center;padding:2rem;"><p style="color:#888;font-size:13px;">Aucun dossier pour l'instant.</p></div>`;
-  return dacBanner+statsBar+S.dossiers.map(dos=>{
-    const st=(getStatuts()[dos.statut]||getStatuts().devis_envoye);
-    const isOpen=S.openDossier===dos.id;
-    const hasFacture=(dos.documents||[]).some(d=>d.type==="facture");
-    const jrsDepuis=dos.createdAt?Math.floor((Date.now()-new Date(dos.createdAt))/86400000):0;
-    const needsRelance=dos.statut==="devis_envoye"&&jrsDepuis>=14;
-    return`<div class="dossier-card"${needsRelance?' style="border-left:3px solid #FFB74D;"':''}>
-      <div class="dossier-header" onclick="toggleDossier('${dos.id}')">
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
-            <span class="badge" style="background:${st.bg};color:${st.color};">${st.label}</span>
-            ${needsRelance?'<span style="font-size:10px;background:#FFF3E0;color:#E65100;padding:2px 6px;border-radius:4px;">📩 À relancer</span>':''}
-            <span style="font-size:13px;font-weight:500;">${esc(dos.nom)}</span>
-          </div>
-          <p style="font-size:12px;color:#888;">${(dos.documents||[]).length} document${(dos.documents||[]).length>1?"s":""} · ${dos.createdAt||""}</p>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-left:12px;">
-          ${dos.statut!=="termine"?`<button class="btn-small btn-teal" onclick="event.stopPropagation();markTermine('${dos.id}')">✓ Clôturer</button>`:""}
-          ${S.renamingDossierId===dos.id?`
-            <input value="${esc(S.renamingDossierVal)}" onclick="event.stopPropagation()" oninput="S.renamingDossierVal=this.value" onkeydown="if(event.key==='Enter')renameDossier('${dos.id}')" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #378ADD;width:150px;" />
-            <button class="btn-small btn-blue" onclick="event.stopPropagation();renameDossier('${dos.id}')">OK</button>
-            <button class="btn-small" onclick="event.stopPropagation();set({renamingDossierId:null})">✕</button>
-          `:`<button class="btn-small" onclick="event.stopPropagation();startRename('${dos.id}')">✏</button>`}
-          <button class="btn-small" onclick="event.stopPropagation();if(window.confirm('Supprimer ce dossier définitivement ?'))confirmDeleteDossier('${dos.id}')" style="color:#A32D2D;border-color:#F09595;">🗑</button>
-        </div>
-      </div>
-      ${isOpen?`<div class="dossier-docs" style="padding:12px;border-top:0.5px solid var(--border);">
-        ${(dos.documents||[]).map(doc=>{
-          const hasF=(dos.documents||[]).some(d=>d.type==="facture");
-          return`<div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
-              <div>
-                <p style="font-size:13px;font-weight:500;color:var(--text);">${doc.docNumber||""}</p>
-                <p style="font-size:12px;color:#888;">${doc.date||""} · ${(doc.ttc||0).toFixed(2)} € TTC</p>
-              </div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="btn-small" style="background:var(--surface-2);border-color:var(--border);color:var(--text);" onclick="downloadPDF('${doc.docNumber}')">⬇ PDF</button>
-                ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(62,207,207,.12);color:var(--teal);border-color:rgba(62,207,207,.3);" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}
-                ${doc.type==="devis"&&doc.accepte?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);font-size:11px;" onclick="downloadSignedProof('${doc.docNumber}')">📄 Preuve signée</button>`:""}\n                ${doc.type==="devis"&&doc.accepte&&!hasF?`<button class="btn-small btn-teal" onclick="convertToFacture('${dos.id}','${doc.docNumber}')">${S.convertingId===doc.docNumber?"...":"💶 Convertir"}</button>`:""}
-                ${doc.type==="devis"&&!doc.accepte&&window.PlanGuard?.isPro()?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:`${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);opacity:0.45;" onclick="window.PlanGuard?.showProModal('Signature électronique')">🔒 Signature</button>`:""}`}
-                ${doc.type==="devis"&&!doc.accepte&&window.PlanGuard?.isPro()?`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);opacity:0.45;" onclick="window.PlanGuard?.showProModal('Relances clients IA')">🔒 Relance</button>`:""}
-                ${doc.type==="facture"?`
-                  ${doc.paye
-                    ?`<span class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;">✓ Payée le ${doc.date_paye}</span>`
-                    :`<button class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border-color:rgba(74,222,128,.3);" onclick="markPaye('${dos.id}','${doc.docNumber}')">💶 Marquer payée</button>`
-                  }
-                  ${!doc.paye?(S.rappelLoadingId===doc.docNumber?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);cursor:default;" disabled>⏳ Génération...</button>`:window.PlanGuard?.isPro()?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);" onclick="genererRappelPaiement('${dos.id}','${doc.docNumber}')">📨 Rappel</button>`:`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);opacity:0.45;" onclick="window.PlanGuard?.showProModal('Rappels de paiement IA')">🔒 Rappel</button>`):""}
-                  <button class="btn-small" style="background:${doc.factpulse_id?'rgba(74,222,128,.12)':'rgba(83,74,183,.15)'};color:${doc.factpulse_id?'var(--green)':'#9d95f5'};border-color:${doc.factpulse_id?'rgba(74,222,128,.3)':'rgba(83,74,183,.3)'};" onclick="emettreFacture('${dos.id}','${doc.docNumber}')">${S.emettreId===doc.docNumber?'⏳ Envoi...':(doc.factpulse_id?'✅ Émise':'⚡ Émettre')}</button>
-                `:""  }
-                ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button>`:`<button class="btn-small" style="color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
-              </div>
-            </div>
-            ${S.previewDocNum===doc.docNumber?`<div style="background:var(--surface-2);border-radius:8px;border:1px solid var(--border);overflow:hidden;"><div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);"><span style="font-size:11px;font-weight:600;color:var(--muted);">Aperçu</span><button class=\"btn-small\" style=\"font-size:11px;padding:2px 10px;\" onclick=\"set({previewDocNum:null})\">✕ Fermer</button></div><div style="padding:1rem;">${renderDocPreview(doc)}</div></div>`:
-              `<button class="btn-small" style="font-size:11px;" onclick="set({previewDocNum:'${doc.docNumber}'})">👁 Aperçu</button>`}
-          </div>`;
-        }).join("")}
-        
-      </div>`:""}
-    </div>`;
-  }).join("");
-}
 function renderDocPreview(doc){
   return`<div class="doc-preview-wrapper" style="font-size:13px;line-height:1.7;">
     <div class="preview-grid">
@@ -2834,6 +2517,14 @@ function _showReadonlyAlert(msg) {
     const next=cur==='dark'?'light':'dark';
     document.documentElement.setAttribute('data-theme',next);
     try{localStorage.setItem('artio-theme',next);}catch(e){}
+  }
+  function toggleSidebar(){
+    const s=document.querySelector('.sidebar');const o=document.querySelector('.sidebar-overlay');
+    if(s){s.classList.toggle('open');}if(o){o.classList.toggle('open');}
+  }
+  function closeSidebar(){
+    const s=document.querySelector('.sidebar');const o=document.querySelector('.sidebar-overlay');
+    if(s){s.classList.remove('open');}if(o){o.classList.remove('open');}
   }
 </script>
 </body>
