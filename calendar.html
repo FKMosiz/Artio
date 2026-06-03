@@ -815,10 +815,7 @@ window.deleteRdv = async function(id, dk) {
 };
 
 /* ── INIT ── */
-document.getElementById("btn-logout").addEventListener("click", async () => {
-  await sb.auth.signOut();
-  window.location.href = "index.html";
-});
+(function(){var b=document.getElementById("btn-logout");if(b)b.addEventListener("click",async()=>{await sb.auth.signOut();window.location.href="index.html";});})();
 
 // ── Rendu du bouton Google Calendar dans la toolbar ─────────────
 function renderGoogleBtn() {

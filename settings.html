@@ -971,7 +971,7 @@ function downloadFacture(index) {
 // Le code est lu directement dans l'init depuis ?code=
 
 /* ── LOGOUT ── */
-document.getElementById("btn-logout").addEventListener("click", async () => { await sb.auth.signOut(); location.href = "index.html"; });
+(function(){var b=document.getElementById("btn-logout");if(b)b.addEventListener("click",async()=>{await sb.auth.signOut();location.href="index.html";});})();
 
 /* ── INIT ── */
 (async () => {
