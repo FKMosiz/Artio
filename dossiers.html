@@ -15,7 +15,8 @@
 :root,[data-theme="dark"]{--bg:#080b14;--surface:#0e1220;--surface-2:#141829;--surface-3:#1a2035;--border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.13);--text:#e2e5f1;--muted:#6b7494;--amber:#f5a742;--amber-dim:rgba(245,167,66,0.12);--amber-glow:rgba(245,167,66,0.28);--teal:#3ecfcf;--teal-dim:rgba(62,207,207,0.11);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--green:#4ade80;--fh:'Space Grotesk',sans-serif;--fb:'Plus Jakarta Sans',sans-serif}
 [data-theme="light"]{--bg:#faf8f3;--surface:#ffffff;--surface-2:#f3efe6;--surface-3:#ece7dc;--border:rgba(20,18,12,0.08);--border-hi:rgba(20,18,12,0.16);--text:#1a1a1f;--muted:#6a6b78;--amber:#d97706;--amber-dim:rgba(217,119,6,0.10);--amber-glow:rgba(217,119,6,0.22);--teal:#0d9488;--teal-dim:rgba(13,148,136,0.10);--red:#dc2626;--green:#16a34a}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+#root{flex:1;display:flex;flex-direction:column}
 button{font-family:var(--fb);cursor:pointer}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -157,12 +158,14 @@ button{font-family:var(--fb);cursor:pointer}
   </button>
 </nav>
 
-<main class="app" id="app-root">
+<div id="root" style="flex:1;display:flex;flex-direction:column;min-height:100vh">
+<main class="app" id="app-root" style="flex:1">
   <div style="text-align:center;padding:40px;color:var(--muted);">Chargement…</div>
 </main>
 
 <div class="artio-legal-footer">
   <a href="cgv.html">CGV</a> · <a href="cgu.html">CGU</a> · <a href="confidentialite.html">Politique de confidentialité</a>
+</div>
 </div>
 
 <script>
@@ -197,8 +200,28 @@ let S={
 };
 let dosCurrentPage=1;
 const DOS_PAGE_SIZE=10;
-function set(patch){Object.assign(S,patch);renderPage();}
+function set(patch){Object.assign(S,patch);renderPage();_refreshClientOverlay();}
 
+/* ── OVERLAY CLIENT — DOM direct (évite le flash au clic) ── */
+window.openClientOverlay=function(nom){
+  S.openClientOverlay=nom;S.openDossier=null;
+  _renderClientOverlayDOM();
+};
+window.closeClientOverlay=function(){
+  S.openClientOverlay=null;
+  const el=document.getElementById("client-overlay-root");
+  if(el)el.remove();
+};
+function _renderClientOverlayDOM(){
+  const nom=S.openClientOverlay;if(!nom)return;
+  const grouped=groupByClient(S.dossiers);
+  const grp=grouped.find(g=>g.nom===nom);if(!grp)return;
+  let el=document.getElementById("client-overlay-root");
+  if(!el){el=document.createElement("div");el.id="client-overlay-root";document.body.appendChild(el);}
+  const overlayBody=grp.dossiers.map(dos=>renderDossierCard(dos)).join("");
+  el.innerHTML=`<div class="dos-overlay-bg" onclick="closeClientOverlay()"></div><div class="dos-overlay-wrap"><div class="dos-overlay-modal" onclick="event.stopPropagation()"><div class="dos-overlay-head"><div><div class="dos-overlay-title">📁 ${esc(grp.nom)}</div><div class="dos-overlay-sub">${grp.dossiers.length} dossier${grp.dossiers.length>1?"s":""} · ${grp.nbDocs} document${grp.nbDocs>1?"s":""}</div></div><button class="dos-overlay-close" onclick="closeClientOverlay()">✕</button></div><div class="dos-overlay-body">${overlayBody}</div></div></div>`;
+}
+function _refreshClientOverlay(){if(S.openClientOverlay)_renderClientOverlayDOM();}
 async function upsertDossier(dos){
   try{
     const{error}=await sb.from("dossiers").upsert({id:dos.id,user_id:S.user.id,nom:dos.nom||"",client:dos.client||"",statut:dos.statut||"devis_envoye",documents:JSON.stringify(dos.documents||[]),created_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"id"});
@@ -578,7 +601,7 @@ function renderHistorique(){
     const hasEnAttente=grp.dossiers.some(d=>d.statut==="devis_envoye");
     const lastFmt=grp.lastDate?new Date(grp.lastDate).toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"}):"";
     const badges=(hasEnAttente?'<span style="font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 7px;border-radius:4px;border:1px solid rgba(245,158,11,.3);">En attente</span>':'')+(hasImpaye?'<span style="font-size:10px;background:rgba(248,113,113,.1);color:#f87171;padding:2px 7px;border-radius:4px;border:1px solid rgba(248,113,113,.25);">Impayée</span>':'');
-    return`<div class="client-dos-card" onclick="openClientOverlay('${esc(grp.nom)}')">
+    return`<div class="client-dos-card" data-client-nom="${esc(grp.nom)}" onclick="openClientOverlay(this.dataset.clientNom)">
       <div class="client-dos-av">${initials}</div>
       <div class="client-dos-info">
         <div class="client-dos-name">${esc(grp.nom)}</div>
@@ -594,16 +617,7 @@ function renderHistorique(){
 
   const pagNav=totalPages>1?buildDossPagination(dosCurrentPage,totalPages):"";
 
-  let overlayHTML="";
-  if(S.openClientOverlay){
-    const grp=grouped.find(g=>g.nom===S.openClientOverlay);
-    if(grp){
-      const overlayBody=grp.dossiers.map(dos=>renderDossierCard(dos)).join("");
-      overlayHTML=`<div class="dos-overlay-bg" onclick="closeClientOverlay()"></div><div class="dos-overlay-wrap"><div class="dos-overlay-modal" onclick="event.stopPropagation()"><div class="dos-overlay-head"><div><div class="dos-overlay-title">📁 ${esc(grp.nom)}</div><div class="dos-overlay-sub">${grp.dossiers.length} dossier${grp.dossiers.length>1?"s":""} · ${grp.nbDocs} document${grp.nbDocs>1?"s":""}</div></div><button class="dos-overlay-close" onclick="closeClientOverlay()">✕</button></div><div class="dos-overlay-body">${overlayBody}</div></div></div>`;
-    }
-  }
-
-  return dacBanner+statsBar+listHTML+pagNav+overlayHTML;
+  return dacBanner+statsBar+listHTML+pagNav;
 }
 
 function renderDocPreview(doc){
