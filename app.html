@@ -8,6 +8,7 @@
   <title>Artio — Application</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="plan-guard.js?v=1"></script>
+<script src="tour.js?v=1"></script>
 <script>const PAGE_PLAN_REQUIRED = "solo";</script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -164,30 +165,8 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 }
 .cp-row:hover{background:var(--surface-3);}
 
-/* ── Tour guidé ─────────────────────────────────────────────── */
-#artio-tour-overlay{position:fixed;inset:0;z-index:9500;pointer-events:none;}
-#artio-tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0);transition:background .4s;pointer-events:none;}
-#artio-tour-backdrop.active{background:rgba(8,11,20,.72);pointer-events:all;}
-.tour-card{position:fixed;z-index:9600;background:#0e1220;border:1px solid rgba(245,167,66,.35);border-radius:16px;padding:22px 24px 18px;width:320px;box-shadow:0 16px 48px rgba(0,0,0,.6);pointer-events:all;transition:opacity .25s ease;opacity:0;}
-.tour-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.tour-card-title{font-family:var(--fh);font-size:15px;font-weight:700;color:#e2e5f1;}
-.tour-card-step{font-size:11px;color:var(--muted);font-weight:500;}
-.tour-card-desc{font-size:13px;color:#9aa3c2;line-height:1.6;margin-bottom:16px;}
-.tour-card-pro{display:inline-flex;align-items:center;gap:5px;background:rgba(245,167,66,.12);border:1px solid rgba(245,167,66,.3);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--amber);font-weight:600;margin-bottom:12px;}
-.tour-progress{display:flex;gap:5px;margin-bottom:14px;}
-.tour-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.15);transition:all .3s;}
-.tour-dot.active{background:var(--amber);width:18px;border-radius:3px;}
-.tour-dot.done{background:rgba(245,167,66,.45);}
-.tour-actions{display:flex;gap:8px;align-items:center;}
-.tour-btn-next{flex:1;padding:9px;background:var(--amber);color:#080b14;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--fh);}
-.tour-btn-prev{padding:9px 12px;background:var(--surface-3);color:var(--muted);border:1px solid var(--border);border-radius:10px;font-size:13px;cursor:pointer;}
-.tour-btn-skip{padding:8px 0;background:none;color:var(--muted);border:none;font-size:11px;cursor:pointer;text-align:center;width:100%;margin-top:8px;text-decoration:underline;text-decoration-color:rgba(255,255,255,.15);transition:color .2s;}
-.tour-btn-skip:hover{color:#e2e5f1;text-decoration-color:rgba(255,255,255,.5);}
-.tour-example{display:block;color:var(--amber);padding:10px 12px;background:rgba(245,167,66,.08);border-left:3px solid var(--amber);border-radius:6px;margin:10px 0;font-size:12.5px;font-style:italic;line-height:1.5;}
-.tour-warn{display:block;font-size:11.5px;color:#f5a742;padding:8px 10px;background:rgba(245,167,66,.06);border-radius:6px;margin-top:8px;line-height:1.5;}
-.tour-action-btn{display:block;width:100%;padding:9px;margin:10px 0 0;background:rgba(245,167,66,.12);color:var(--amber);border:1px solid rgba(245,167,66,.3);border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--fb);transition:all .15s;}
-.tour-action-btn:hover{background:rgba(245,167,66,.2);border-color:rgba(245,167,66,.5);}
-.tour-highlight{outline:3px solid var(--amber)!important;outline-offset:4px;border-radius:10px;position:relative;z-index:9501;}
+/* ── Tour guidé : voir tour.js (CSS injecté par le moteur) ───── */
+
 
 /* ============================================================
    REFONTE MOBILE-FIRST — bottombar · vocal-first · responsive
@@ -601,10 +580,6 @@ let S={
   templateIncludeClient:false,
   _showClientPicker:false,
   _clientFilter:"",
-  tourActive:false,
-  tourStep:0,
-  tourActive:false,
-  tourStep:0,
   profilSaved:false,
   syncing:false,
   showMoreDrawer:false,
@@ -990,56 +965,9 @@ Signe "${e.nom||""}".`,800);
 
 
 // ═══════════════════════════════════════════════════════════════════════
-// TOUR GUIDÉ ARTIO
+// TOUR GUIDÉ ARTIO — étapes & moteur dans tour.js
+// Action page-spécifique conservée ici : _tourDemoFill
 // ═══════════════════════════════════════════════════════════════════════
-const TOUR_STEPS = [
-  {
-    title:"👋 Bienvenue sur Artio !",
-    desc:"En quelques minutes, découvre tout ce qu'Artio peut faire — la dictée vocale, l'annuaire clients, la signature électronique et plus encore.<br><br>Tu peux sauter une étape avec « Suivant » ou quitter à tout moment.",
-    target:null, tab:null, pro:false, pos:"center"
-  },
-  {
-    title:"🧭 Navigation — le menu latéral",
-    desc:"Clique sur ☰ en haut à gauche pour ouvrir le menu. Tu y trouveras toutes les sections :<br>• <strong>Créer</strong> — devis & factures par dictée<br>• <strong>Dossiers</strong> — historique de tous tes documents<br>• <strong>Rédiger</strong> — emails clients et messagerie<br>• Clients, Tableau de bord, Calendrier…",
-    target:".sidebar-trigger", tab:"devis", pro:false, pos:"bottom"
-  },
-  {
-    title:"🎙 Dictée vocale — essaie !",
-    desc:"Clique sur l'orbe et dis :<br><span class=\"tour-example\">« Monsieur Martin veut une intervention de coaching sport mardi à 14h, j'en ai pour 3 heures, plus matériel à 30 euros »</span>Artio extrait automatiquement client, prestation, date et articles.<br><span class=\"tour-warn\">⚠️ La dictée ne fonctionne pas sur Firefox/Brave. Utilise le bouton ci-dessous pour pré-remplir un exemple.</span>",
-    target:".create-orb-wrap", tab:"devis", pro:false, pos:"bottom",
-    action:{label:"📝 Pré-remplir un exemple", fn:"_tourDemoFill"}
-  },
-  {
-    title:"👥 Annuaire clients",
-    desc:"Dans le formulaire, tape les premières lettres d'un client enregistré : il apparaît dans la liste. Un clic remplit automatiquement nom, email, téléphone et adresse.",
-    target:"input[data-fid=\"client_nom\"]", tab:"devis", pro:false, pos:"bottom"
-  },
-  {
-    title:"📝 Description & articles",
-    desc:"Décris la prestation manuellement ou via la dictée. En dessous, ajoute les articles (matériel, fournitures) avec quantité et prix unitaire.<br><br>Artio calcule automatiquement le total HT, la TVA et le TTC.",
-    target:null, tab:"devis", pro:false, pos:"center"
-  },
-  {
-    title:"⚡ Générer le document",
-    desc:"Ce bouton produit ton devis. Une fois les infos remplies :<br>• L'IA rédige la description finale<br>• Le PDF est prêt à envoyer<br>• La numérotation est automatique (DEV-2026-XXX)<br>• Le dossier est créé dans tes Dossiers",
-    target:".cf-btn-primary", tab:"devis", pro:false, pos:"top"
-  },
-  {
-    title:"🗂 Tes dossiers",
-    desc:"La page <strong>Dossiers</strong> liste tous tes devis et factures. Tu peux :<br>• Voir le statut en temps réel (en attente, signé, payé)<br>• Télécharger le PDF<br>• Relancer un client impayé<br><br>Clique « Suivant » pour y accéder.",
-    target:null, tab:null, pro:false, pos:"center", redirect:"dossiers.html"
-  },
-  {
-    title:"📋 Sauvegarder un modèle",
-    desc:"Tu as des clients réguliers ? Dans le formulaire, donne un nom au modèle puis clique 💾 Sauvegarder.<br><br>La prochaine fois, un menu déroulant en haut du formulaire te permet de charger en un clic.<br><br><em style=\"color:var(--muted)\">Tu peux aussi dicter « comme d'habitude pour Martin » et Artio le charge seul.</em>",
-    target:null, tab:"devis", pro:true, pos:"center"
-  },
-  {
-    title:"🎉 Tu es prêt !",
-    desc:"Bravo, tu as fait le tour complet d'Artio !<br><br>Retrouve ce tutoriel depuis la page <strong style=\"color:var(--amber)\">Aide</strong> à tout moment.<br><br><small style=\"color:var(--muted)\">La création de devis et factures nécessite un abonnement Solo ou Pro.</small>",
-    target:null, tab:"devis", pro:false, pos:"center"
-  }
-];
 
 // Pré-remplit le formulaire avec un exemple pour les utilisateurs sans dictée vocale
 window._tourDemoFill = function(){
@@ -1061,195 +989,10 @@ window._tourDemoFill = function(){
   S.manualMode = true;
   S.entryMode = "manual";
   renderApp();
-  setTimeout(function(){ if(S.tourActive) _tourRender(); }, 80);
+  setTimeout(function(){ if(window.ArtioTour && window.ArtioTour.isActive()) window.ArtioTour.rerender(); }, 80);
   showToast("✨ Exemple pré-rempli — explore le formulaire Command Bar !");
 };
 
-window.startTour = function(){
-  // Changer d'onglet si nécessaire pour la première étape
-  S.tourActive = true;
-  S.tourStep = 0;
-  renderApp();
-  _tourMount();
-  _tourRender();
-};
-
-window.tourNext = function(){
-  if(S.tourStep >= TOUR_STEPS.length - 1){ window.tourEnd(); return; }
-  _tourRemoveHighlight();
-  S.tourStep++;
-  const step = TOUR_STEPS[S.tourStep];
-  if(step.redirect){
-    localStorage.setItem('artio_tour_step', S.tourStep);
-    location.href = step.redirect;
-    return;
-  }
-  if(step.tab && step.tab !== S.tab){
-    S.tab = step.tab;
-    renderApp();
-  }
-  _tourRender();
-};
-
-window.tourPrev = function(){
-  if(S.tourStep <= 0) return;
-  _tourRemoveHighlight();
-  S.tourStep--;
-  const step = TOUR_STEPS[S.tourStep];
-  if(step.tab && step.tab !== S.tab){
-    S.tab = step.tab;
-    renderApp();
-  }
-  _tourRender();
-};
-
-window.tourEnd = function(){
-  _tourRemoveHighlight();
-  S.tourActive = false;
-  S.tourStep = 0;
-  localStorage.setItem('artio_tour_done','1');
-  var overlay = document.getElementById('artio-tour-overlay');
-  if(overlay) overlay.remove();
-  var backdrop = document.getElementById('artio-tour-backdrop');
-  if(backdrop) backdrop.remove();
-};
-
-function _tourMount(){
-  if(!document.getElementById('artio-tour-backdrop')){
-    var bd = document.createElement('div');
-    bd.id = 'artio-tour-backdrop';
-    document.body.appendChild(bd);
-    setTimeout(function(){ bd.classList.add('active'); }, 30);
-  }
-  if(!document.getElementById('artio-tour-overlay')){
-    var ov = document.createElement('div');
-    ov.id = 'artio-tour-overlay';
-    document.body.appendChild(ov);
-  }
-}
-
-function _tourRemoveHighlight(){
-  document.querySelectorAll('.tour-highlight').forEach(function(el){
-    el.classList.remove('tour-highlight');
-  });
-}
-
-function _tourRender(){
-  if(!S.tourActive) return;
-  var step = TOUR_STEPS[S.tourStep];
-  var overlay = document.getElementById('artio-tour-overlay');
-  if(!overlay) return;
-
-  // Highlight target
-  _tourRemoveHighlight();
-  var targetEl = null;
-  if(step.target){
-    targetEl = document.querySelector(step.target);
-    if(targetEl) targetEl.classList.add('tour-highlight');
-  }
-
-  // Progress dots
-  var dots = TOUR_STEPS.map(function(_,i){
-    var cls = i === S.tourStep ? 'active' : (i < S.tourStep ? 'done' : '');
-    return '<div class="tour-dot ' + cls + '"></div>';
-  }).join('');
-
-  // Pro badge
-  var proBadge = step.pro ? '<div class="tour-card-pro">✨ Fonctionnalité Pro</div>' : '';
-
-  // Action button optionnel (ex: pré-remplir un exemple)
-  var actionBtn = '';
-  if(step.action){
-    actionBtn = '<button class="tour-action-btn" onclick="' + step.action.fn + '()">' + step.action.label + '</button>';
-  }
-
-  // Boutons navigation
-  var prevBtn = S.tourStep > 0
-    ? '<button class="tour-btn-prev" onclick="tourPrev()">←</button>'
-    : '';
-  var nextLabel = S.tourStep === TOUR_STEPS.length - 1 ? "Terminer 🎉" : "Suivant →";
-  var nextBtn = '<button class="tour-btn-next" onclick="tourNext()">' + nextLabel + '</button>';
-  // Bouton quitter (toujours visible sauf dernière étape)
-  var skipBtn = S.tourStep < TOUR_STEPS.length - 1
-    ? '<button class="tour-btn-skip" onclick="tourEnd()">Quitter le tutoriel</button>'
-    : '';
-
-  var cardHtml = '<div class="tour-card" id="tour-card" style="top:-9999px;left:-9999px;opacity:0;">'
-    + '<div class="tour-card-header">'
-    +   '<span class="tour-card-title">' + step.title + '</span>'
-    +   '<span class="tour-card-step">' + (S.tourStep+1) + ' / ' + TOUR_STEPS.length + '</span>'
-    + '</div>'
-    + '<div class="tour-progress">' + dots + '</div>'
-    + proBadge
-    + '<div class="tour-card-desc">' + step.desc + '</div>'
-    + actionBtn
-    + '<div class="tour-actions">'
-    +   prevBtn + nextBtn
-    + '</div>'
-    + skipBtn
-    + '</div>';
-
-  overlay.innerHTML = cardHtml;
-
-  // Position the card
-  var card = document.getElementById('tour-card');
-  if(!card) return;
-
-  if(!targetEl || step.pos === 'center'){
-    // Centré à l'écran
-    card.style.top = '50%';
-    card.style.left = '50%';
-    card.style.transform = 'translate(-50%,-50%)';
-    card.style.position = 'fixed';
-    requestAnimationFrame(function(){ if(card) card.style.opacity = '1'; });
-  } else {
-    // D'abord scroller l'élément en vue, puis positionner après le scroll
-    targetEl.scrollIntoView({behavior:'smooth', block:'center'});
-    setTimeout(function(){
-      var rect2 = targetEl.getBoundingClientRect();
-      var vw2 = window.innerWidth, vh2 = window.innerHeight;
-      var cw2 = 340;
-      // Mesurer la vraie hauteur de la card
-      var ch2 = card.offsetHeight || 260;
-      card.style.transform = '';
-      card.style.position = 'fixed';
-
-      // Logique de placement : préférer au-dessus si pos==='top' ou si pas assez de place en dessous
-      var spaceBelow = vh2 - rect2.bottom - 16;
-      var spaceAbove = rect2.top - 16;
-      var placeAbove = (step.pos === 'top') || (spaceBelow < ch2 + 12 && spaceAbove >= ch2 + 12);
-
-      if(placeAbove){
-        var topVal = rect2.top - ch2 - 12;
-        // Si ça dépasse en haut, centrer verticalement
-        if(topVal < 8) topVal = Math.max(8, vh2/2 - ch2/2);
-        card.style.top = topVal + 'px';
-      } else {
-        var topVal2 = rect2.bottom + 12;
-        // Si ça dépasse en bas, remonter
-        if(topVal2 + ch2 > vh2 - 8) topVal2 = Math.max(8, vh2 - ch2 - 16);
-        card.style.top = topVal2 + 'px';
-      }
-
-      // Horizontalement : centré sur l'élément, sans dépasser les bords
-      var left2 = rect2.left + rect2.width / 2 - cw2 / 2;
-      left2 = Math.max(12, Math.min(left2, vw2 - cw2 - 12));
-      card.style.left = left2 + 'px';
-      card.style.opacity = '1';
-    }, 350); // Attendre la fin du scroll smooth
-  }
-}
-
-// Auto-démarrage du tour
-function _tourAutoStart(){
-  var sp = new URLSearchParams(window.location.search).get('tour');
-  if(sp === '1'){
-    history.replaceState(null,'',window.location.pathname);
-    setTimeout(window.startTour, 600);
-  } else if(!localStorage.getItem('artio_tour_done')){
-    setTimeout(window.startTour, 800);
-  }
-}
 
 async function initAuth(){
   // ── Aperçu design sans connexion : app.html#demo ──
@@ -1274,7 +1017,7 @@ async function initAuth(){
     }
     checkDevisAConvertir();
     renderApp();
-    _tourAutoStart();
+    if(window.ArtioTour) window.ArtioTour.autoStart();
   }else{window.location.href="index.html";}
 }
 
@@ -2191,7 +1934,7 @@ function showToast(msg){
 function render(){
   renderApp();
   if(S._showClientPicker && window.updatePickerDOM) window.updatePickerDOM();
-  if(S.tourActive) setTimeout(_tourRender, 50);
+  if(window.ArtioTour && window.ArtioTour.isActive()) setTimeout(window.ArtioTour.rerender, 50);
 }
 
 function renderApp(){

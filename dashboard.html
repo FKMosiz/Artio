@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="plan-guard.js"></script>
+<script src="tour.js?v=1"></script>
 <script>const PAGE_PLAN_REQUIRED = "solo";</script>
 <style>
 :root, [data-theme="dark"] {
@@ -616,6 +617,8 @@ function render() {
     tva_regime     = profil?.tva_regime     || "encaissements";
     dossiers = (data||[]).map(d => { let docs = []; try { docs = typeof d.documents === "string" ? JSON.parse(d.documents) : (d.documents||[]); } catch(e) {} return {...d, documents: docs}; });
     render();
+    // ── Tutoriel interactif : reprend si en cours ──
+    if(window.ArtioTour) window.ArtioTour.autoStart();
   } catch(e) {
     document.getElementById("main").innerHTML = `<p style="padding:2rem;color:#f87171;">Erreur: ${e.message}</p>`;
   }

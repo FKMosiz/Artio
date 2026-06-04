@@ -8,6 +8,7 @@
   <title>Artio — Rédiger</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="plan-guard.js?v=1"></script>
+  <script src="tour.js?v=1"></script>
   <script>const PAGE_PLAN_REQUIRED = "solo";</script>
   <style>
 :root,[data-theme="dark"]{--bg:#080b14;--surface:#0e1220;--surface-2:#141829;--surface-3:#1a2035;--border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.13);--text:#e2e5f1;--muted:#6b7494;--amber:#f5a742;--amber-dim:rgba(245,167,66,0.12);--amber-glow:rgba(245,167,66,0.28);--teal:#3ecfcf;--teal-dim:rgba(62,207,207,0.11);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--green:#4ade80;--fh:'Space Grotesk',sans-serif;--fb:'Plus Jakarta Sans',sans-serif}
@@ -402,6 +403,8 @@ async function initAuth(){
   }
   sb.auth.onAuthStateChange((event,sess)=>{if(!sess)location.href="login.html";});
   renderPage();
+  // ── Tutoriel interactif : reprend si en cours ──
+  if(window.ArtioTour) window.ArtioTour.autoStart();
 }
 initAuth();
 
