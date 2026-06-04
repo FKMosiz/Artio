@@ -93,8 +93,9 @@ button{font-family:var(--fb);cursor:pointer}
   .client-dos-ca{font-size:13px;font-weight:700;color:var(--amber,#f5a742);font-family:var(--fm,monospace)}
   .client-dos-badges{display:flex;gap:4px;justify-content:flex-end;margin-top:4px;flex-wrap:wrap}
   .client-dos-chevron{color:var(--muted);font-size:20px;flex-shrink:0;margin-left:4px}
-  /* ── Overlay dossiers client ── */
-  .dos-overlay-modal{background:var(--surface);border-radius:16px;width:100%;max-width:800px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.4);animation:slideUp .2s ease}
+  /* ── Overlay dossiers client (sans animation pour éviter le flash au re-render) ── */
+  .dos-overlay-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+  .dos-overlay-modal{background:var(--surface);border-radius:16px;width:100%;max-width:800px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.4)}
   .dos-overlay-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
   .dos-overlay-title{font-family:var(--fh);font-weight:700;font-size:16px;color:var(--text)}
   .dos-overlay-sub{font-size:12px;color:var(--muted);margin-top:2px}
@@ -102,7 +103,6 @@ button{font-family:var(--fb);cursor:pointer}
   .dos-overlay-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
   .dos-overlay-close:hover{border-color:#f87171;color:#f87171}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-  @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
   /* ── Pagination ── */
   .pagination{display:flex;align-items:center;justify-content:center;gap:4px;padding:24px 0 16px;flex-wrap:wrap}
   .pg-btn{min-width:36px;height:36px;padding:0 6px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:13px;font-weight:500;font-family:var(--fb);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
@@ -198,54 +198,10 @@ let S={
 };
 let dosCurrentPage=1;
 const DOS_PAGE_SIZE=10;
-function set(patch){Object.assign(S,patch);renderPage();_refreshClientOverlay();}
+function set(patch){Object.assign(S,patch);renderPage();}
 
-/* ── OVERLAY CLIENT — DOM direct (évite le flash au clic) ── */
-window.openClientOverlay=function(nom){
-  S.openClientOverlay=nom;
-  S.openDossier=null;
-  _renderClientOverlayDOM();
-};
-window.closeClientOverlay=function(){
-  S.openClientOverlay=null;
-  S.openDossier=null;
-  S.previewDocNum=null;
-  S.deleteConfirm=null;
-  const el=document.getElementById("client-overlay-root");
-  if(el)el.remove();
-};
-
-function _renderClientOverlayDOM(){
-  const nom=S.openClientOverlay;if(!nom)return;
-  const grouped=groupByClient(S.dossiers);
-  const grp=grouped.find(g=>g.nom===nom);
-  if(!grp){closeClientOverlay();return;}
-  const overlayHTML=`<div class="dos-overlay-modal"><div class="dos-overlay-head"><div><div class="dos-overlay-title">📁 ${esc(grp.nom)}</div><div class="dos-overlay-sub">${grp.dossiers.length} dossier${grp.dossiers.length>1?"s":""} · ${grp.nbDocs} document${grp.nbDocs>1?"s":""}</div></div><button class="dos-overlay-close" onclick="closeClientOverlay()">✕</button></div><div class="dos-overlay-body">${grp.dossiers.map(dos=>renderDossierCard(dos)).join("")}</div></div>`;
-  let el=document.getElementById("client-overlay-root");
-  if(!el){
-    el=document.createElement("div");
-    el.id="client-overlay-root";
-    el.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .15s ease";
-    // Pas de stopPropagation sur le modal — on filtre par target sur le fond
-    el.onclick=function(e){if(e.target===el)closeClientOverlay();};
-    document.body.appendChild(el);
-  }
-  el.innerHTML=overlayHTML;
-}
-
-/* Ne met à jour QUE le body — pas le fond, pas le header → zéro flash */
-function _refreshClientOverlay(){
-  if(!S.openClientOverlay)return;
-  const grouped=groupByClient(S.dossiers);
-  const grp=grouped.find(g=>g.nom===S.openClientOverlay);
-  if(!grp){closeClientOverlay();return;}
-  const bodyEl=document.querySelector("#client-overlay-root .dos-overlay-body");
-  if(bodyEl){
-    bodyEl.innerHTML=grp.dossiers.map(dos=>renderDossierCard(dos)).join("");
-  }else{
-    _renderClientOverlayDOM();
-  }
-}
+window.openClientOverlay=function(nom){set({openClientOverlay:nom,openDossier:null});};
+window.closeClientOverlay=function(){set({openClientOverlay:null,openDossier:null,previewDocNum:null,deleteConfirm:null});};
 async function upsertDossier(dos){
   try{
     const{error}=await sb.from("dossiers").upsert({id:dos.id,user_id:S.user.id,nom:dos.nom||"",client:dos.client||"",statut:dos.statut||"devis_envoye",documents:JSON.stringify(dos.documents||[]),created_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"id"});
@@ -641,7 +597,16 @@ function renderHistorique(){
 
   const pagNav=totalPages>1?buildDossPagination(dosCurrentPage,totalPages):"";
 
-  return dacBanner+statsBar+listHTML+pagNav;
+  let overlayHTML="";
+  if(S.openClientOverlay){
+    const grp=grouped.find(g=>g.nom===S.openClientOverlay);
+    if(grp){
+      const overlayBody=grp.dossiers.map(dos=>renderDossierCard(dos)).join("");
+      overlayHTML=`<div id="client-overlay-root" class="dos-overlay-bg" onclick="if(event.target===this)closeClientOverlay()"><div class="dos-overlay-modal" onclick="event.stopPropagation()"><div class="dos-overlay-head"><div><div class="dos-overlay-title">📁 ${esc(grp.nom)}</div><div class="dos-overlay-sub">${grp.dossiers.length} dossier${grp.dossiers.length>1?"s":""} · ${grp.nbDocs} document${grp.nbDocs>1?"s":""}</div></div><button class="dos-overlay-close" onclick="closeClientOverlay()">✕</button></div><div class="dos-overlay-body">${overlayBody}</div></div></div>`;
+    }
+  }
+
+  return dacBanner+statsBar+listHTML+pagNav+overlayHTML;
 }
 
 function renderDocPreview(doc){
