@@ -1917,6 +1917,11 @@ window.setTab=t=>{
     _showReadonlyAlert("La création de documents nécessite un abonnement actif. Consultez votre historique ci-dessous.");
     return;
   }
+  // Si déjà dans le formulaire → juste changer le type, ne pas fermer
+  if(S.manualMode||S.entryMode){
+    set({tab:t});
+    return;
+  }
   set({tab:t,fields:{validite_jours:String(S.entreprise.validite_devis||3)},pieces:[{description:"",quantite:"1",prix_unitaire:""}],generatedText:"",generatedDoc:null,manualMode:false,showMoreDrawer:false,entryMode:null});
 };
 window.setEmailMode=m=>set({emailMode:m,fields:{},generatedText:""});
