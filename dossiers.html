@@ -202,11 +202,15 @@ function set(patch){Object.assign(S,patch);renderPage();_refreshClientOverlay();
 
 /* ── OVERLAY CLIENT — DOM direct (évite le flash au clic) ── */
 window.openClientOverlay=function(nom){
-  S.openClientOverlay=nom;S.openDossier=null;
+  S.openClientOverlay=nom;
+  S.openDossier=null;
   _renderClientOverlayDOM();
 };
 window.closeClientOverlay=function(){
   S.openClientOverlay=null;
+  S.openDossier=null;
+  S.previewDocNum=null;
+  S.deleteConfirm=null;
   const el=document.getElementById("client-overlay-root");
   if(el)el.remove();
 };
@@ -214,32 +218,33 @@ window.closeClientOverlay=function(){
 function _renderClientOverlayDOM(){
   const nom=S.openClientOverlay;if(!nom)return;
   const grouped=groupByClient(S.dossiers);
-  const grp=grouped.find(g=>g.nom===nom);if(!grp)return;
+  const grp=grouped.find(g=>g.nom===nom);
+  if(!grp){closeClientOverlay();return;}
+  const overlayHTML=`<div class="dos-overlay-modal"><div class="dos-overlay-head"><div><div class="dos-overlay-title">📁 ${esc(grp.nom)}</div><div class="dos-overlay-sub">${grp.dossiers.length} dossier${grp.dossiers.length>1?"s":""} · ${grp.nbDocs} document${grp.nbDocs>1?"s":""}</div></div><button class="dos-overlay-close" onclick="closeClientOverlay()">✕</button></div><div class="dos-overlay-body">${grp.dossiers.map(dos=>renderDossierCard(dos)).join("")}</div></div>`;
   let el=document.getElementById("client-overlay-root");
   if(!el){
     el=document.createElement("div");
     el.id="client-overlay-root";
-    // Le div lui-même EST le fond — clic direct dessus = fermer
     el.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .15s ease";
-    el.addEventListener("click",function(e){if(e.target===el)closeClientOverlay();});
-    const modal=document.createElement("div");
-    modal.className="dos-overlay-modal";
-    modal.addEventListener("click",function(e){e.stopPropagation();});
-    modal.innerHTML=`<div class="dos-overlay-head"><div><div class="dos-overlay-title">📁 ${esc(grp.nom)}</div><div class="dos-overlay-sub">${grp.dossiers.length} dossier${grp.dossiers.length>1?"s":""} · ${grp.nbDocs} document${grp.nbDocs>1?"s":""}</div></div><button class="dos-overlay-close" onclick="closeClientOverlay()">✕</button></div><div class="dos-overlay-body">${grp.dossiers.map(dos=>renderDossierCard(dos)).join("")}</div>`;
-    el.appendChild(modal);
+    // Pas de stopPropagation sur le modal — on filtre par target sur le fond
+    el.onclick=function(e){if(e.target===el)closeClientOverlay();};
     document.body.appendChild(el);
   }
+  el.innerHTML=overlayHTML;
 }
 
-/* Ne met à jour QUE le body de l'overlay — pas le fond, pas le header → zéro flash */
+/* Ne met à jour QUE le body — pas le fond, pas le header → zéro flash */
 function _refreshClientOverlay(){
   if(!S.openClientOverlay)return;
-  const bodyEl=document.querySelector("#client-overlay-root .dos-overlay-body");
-  if(!bodyEl){_renderClientOverlayDOM();return;}
   const grouped=groupByClient(S.dossiers);
   const grp=grouped.find(g=>g.nom===S.openClientOverlay);
   if(!grp){closeClientOverlay();return;}
-  bodyEl.innerHTML=grp.dossiers.map(dos=>renderDossierCard(dos)).join("");
+  const bodyEl=document.querySelector("#client-overlay-root .dos-overlay-body");
+  if(bodyEl){
+    bodyEl.innerHTML=grp.dossiers.map(dos=>renderDossierCard(dos)).join("");
+  }else{
+    _renderClientOverlayDOM();
+  }
 }
 async function upsertDossier(dos){
   try{
