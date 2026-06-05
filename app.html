@@ -338,7 +338,15 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .cf-preview-doc{background:var(--cf-surface);border:1px solid var(--cf-border);border-radius:12px;padding:18px;font-size:13px;line-height:1.6}
 [data-theme="light"] .cf-preview-doc{background:#ffffff;color:#1a1208}
 
-/* Cases Devis/Facture grandes */
+/* Cases Devis/Facture — pills compactes (refonte one-screen) */
+.cf-type-pills{display:flex;gap:6px;background:var(--cf-surface);border:1px solid var(--cf-border);border-radius:10px;padding:3px}
+.cf-type-pill{flex:1;padding:7px 14px;border-radius:7px;border:none;background:transparent;color:var(--cf-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--cf-fb);font-size:12.5px;font-weight:600;transition:all .15s}
+.cf-type-pill .ic{font-size:14px;opacity:.7}
+.cf-type-pill:hover:not(.active){color:var(--cf-text)}
+.cf-type-pill.active{background:var(--cf-amber-dim);color:var(--cf-amber)}
+.cf-type-pill.active .ic{opacity:1}
+
+/* Anciennes cases — gardées pour compat mais réduites */
 .cf-type-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .cf-type-card{padding:14px 12px;border-radius:12px;border:1.5px solid var(--cf-border);background:var(--cf-surface);color:var(--cf-muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:var(--cf-fb);font-size:13px;font-weight:600;transition:all .15s}
 .cf-type-card .ic{font-size:22px;opacity:.7}
@@ -346,21 +354,24 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .cf-type-card.active{border-color:var(--cf-amber);background:var(--cf-amber-dim);color:var(--cf-amber)}
 .cf-type-card.active .ic{opacity:1}
 
-.cf-fieldset{background:var(--cf-surface);border:1px solid var(--cf-border);border-radius:12px;padding:14px 16px}
-.cf-fs-h{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.cf-fieldset{background:var(--cf-surface);border:1px solid var(--cf-border);border-radius:11px;padding:10px 13px}
+.cf-fs-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.cf-fs-h-spacer{flex:1}
+.cf-fs-h-meta{margin-left:auto;font-size:11px;color:var(--cf-muted)}
 .cf-num{width:18px;height:18px;border-radius:4px;background:var(--cf-amber-dim);border:1px solid rgba(245,167,66,.25);display:flex;align-items:center;justify-content:center;font-family:var(--cf-fm);font-size:10px;font-weight:700;color:var(--cf-amber);flex-shrink:0}
 .cf-fs-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--cf-amber);font-family:var(--cf-fh)}
-.cf-field{margin-bottom:10px}
+.cf-field{margin-bottom:7px}
 .cf-field:last-child{margin-bottom:0}
-.cf-label{display:block;font-size:9.5px;font-weight:700;color:var(--cf-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px}
-.cf-input,.cf-textarea,.cf-select{width:100%;padding:8px 12px;font-size:13.5px;background:var(--cf-surface-2);border:1px solid var(--cf-border);border-radius:9px;color:var(--cf-text);font-family:var(--cf-fb);outline:none;transition:border-color .2s,box-shadow .2s}
+.cf-label{display:block;font-size:9.5px;font-weight:700;color:var(--cf-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+.cf-input,.cf-textarea,.cf-select{width:100%;padding:7px 11px;font-size:13px;background:var(--cf-surface-2);border:1px solid var(--cf-border);border-radius:8px;color:var(--cf-text);font-family:var(--cf-fb);outline:none;transition:border-color .2s,box-shadow .2s}
 .cf-input:focus,.cf-textarea:focus,.cf-select:focus{border-color:var(--cf-amber);box-shadow:0 0 0 3px var(--cf-amber-dim)}
 .cf-input::placeholder,.cf-textarea::placeholder{color:var(--cf-muted)}
 .cf-select option{background:var(--cf-surface-2);color:var(--cf-text)}
-.cf-textarea{resize:vertical;min-height:60px}
+.cf-textarea{resize:vertical;min-height:50px}
 .cf-input[type="date"]{color-scheme:dark}
 .cf-grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .cf-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.cf-grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
 .cf-field-miss .cf-input,.cf-field-miss .cf-textarea{box-shadow:0 0 0 1px var(--cf-amber);border-color:var(--cf-amber)}
 .cf-pieces-grid{display:grid;grid-template-columns:1fr 64px 88px 32px;gap:6px;align-items:start}
 .cf-remove-btn{height:34px;border-radius:9px;border:1px solid var(--cf-border);background:var(--cf-surface-2);color:var(--cf-muted);font-size:15px;display:flex;align-items:center;justify-content:center;width:100%;cursor:pointer;transition:all .2s}
@@ -368,15 +379,29 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .cf-totaux{background:var(--cf-surface-2);border:1px solid var(--cf-border);border-radius:10px;padding:12px 14px;font-size:12.5px}
 .cf-tot-row{display:flex;justify-content:space-between;color:var(--cf-muted);margin-bottom:4px;font-family:var(--cf-fm)}
 .cf-tot-total{display:flex;justify-content:space-between;font-weight:700;color:var(--cf-amber);border-top:1px solid var(--cf-border);padding-top:7px;margin-top:5px;font-family:var(--cf-fm);font-size:15px}
-.cf-actions{display:flex;gap:10px;padding-top:4px}
-.cf-btn-primary{flex:1;padding:11px;border-radius:11px;border:none;background:var(--cf-amber);color:#080b14;font-size:14px;font-weight:700;font-family:var(--cf-fh);cursor:pointer;box-shadow:0 0 24px var(--cf-amber-glow);transition:all .15s}
+/* Bandeau totaux + actions sur une même ligne */
+.cf-bottom-bar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--cf-surface);border:1px solid var(--cf-border);border-radius:11px}
+.cf-bottom-totals{display:flex;align-items:center;gap:14px;font-family:var(--cf-fm);font-size:12px;color:var(--cf-muted);flex-wrap:wrap}
+.cf-bottom-totals .lbl{opacity:.7;margin-right:4px;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.cf-bottom-totals .val{color:var(--cf-text);font-weight:600}
+.cf-bottom-totals .ttc{color:var(--cf-amber);font-weight:700;font-size:14px}
+.cf-bottom-spacer{flex:1}
+.cf-actions{display:flex;gap:8px}
+.cf-btn-primary{padding:10px 18px;border-radius:10px;border:none;background:var(--cf-amber);color:#080b14;font-size:13.5px;font-weight:700;font-family:var(--cf-fh);cursor:pointer;box-shadow:0 0 24px var(--cf-amber-glow);transition:all .15s}
 .cf-btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 36px var(--cf-amber-glow)}
 .cf-btn-primary:disabled{opacity:.5;cursor:not-allowed}
-.cf-btn-secondary{padding:11px 18px;border-radius:11px;border:1px solid var(--cf-border);background:var(--cf-surface);color:var(--cf-text);font-size:13px;font-weight:500;font-family:var(--cf-fb);cursor:pointer;transition:all .15s}
+.cf-btn-secondary{padding:10px 14px;border-radius:10px;border:1px solid var(--cf-border);background:var(--cf-surface);color:var(--cf-text);font-size:12.5px;font-weight:500;font-family:var(--cf-fb);cursor:pointer;transition:all .15s}
 .cf-btn-secondary:hover{border-color:var(--cf-border-hi);background:var(--cf-surface-2)}
 .cf-convert-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--cf-border);background:transparent;color:var(--cf-muted);cursor:pointer;transition:all .15s;font-family:var(--cf-fb)}
 .cf-convert-btn:hover{color:var(--cf-amber);border-color:var(--cf-amber)}
 .cf-preview-box{background:var(--cf-surface-2);border:1px solid var(--cf-amber-dim);border-radius:12px;padding:14px;margin-top:4px}
+/* Validité en pill dans le header de la section Prestation */
+.cf-validite-pill{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--cf-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.cf-validite-pill select{background:var(--cf-surface-2);border:1px solid var(--cf-border);border-radius:6px;padding:3px 8px;font-size:11.5px;color:var(--cf-amber);font-weight:600;font-family:var(--cf-fb);cursor:pointer;outline:none;text-transform:none;letter-spacing:0}
+.cf-validite-pill select:focus{border-color:var(--cf-amber)}
+
+/* Réduction du padding général du formulaire pour gagner de la place */
+.cf-form-col{padding:14px 18px!important;gap:8px!important}
 
 /* Responsive : sous 1100px, preview cachée ; sous 767px, rail caché */
 @media(max-width:1100px){.cf-split{grid-template-columns:1fr}.cf-preview-col{display:none}.cf-form-col{max-width:780px;justify-self:center;border-right:none}}
@@ -2158,6 +2183,7 @@ function renderPieces(){
 window.renderTotauxOnly=function(){
   const el=document.getElementById("totaux-container");
   if(el) el.innerHTML=renderTotaux();
+  _updateInlineTotaux();
 }
 function renderTotaux(){
   const f=S.fields,e=S.entreprise,p=S.pieces;
@@ -2171,9 +2197,27 @@ function renderTotaux(){
   </div>`;
 }
 
+// Met à jour le bandeau de totaux inline (bottom bar) sans re-render global
+function _updateInlineTotaux(){
+  const el=document.querySelector(".cf-bottom-totals");
+  if(!el) return;
+  const f=S.fields,e=S.entreprise;
+  if(!f.nb_heures || !e.taux_horaire){
+    el.innerHTML='<span style="font-size:11.5px;font-style:italic;opacity:.6;">Remplis temps de travail pour voir les totaux</span>';
+    return;
+  }
+  const t=calcTotaux(f.nb_heures,e.taux_horaire,S.pieces||[],f.tva);
+  const ttcVal=parseFloat(f.tva)>0?t.ttc:t.totalHT;
+  el.innerHTML=
+    '<span><span class="lbl">HT</span> <span class="val">'+t.totalHT.toFixed(2)+' €</span></span>'+
+    (parseFloat(f.tva)>0?'<span><span class="lbl">TVA '+f.tva+'%</span> <span class="val">'+(t.ttc-t.totalHT).toFixed(2)+' €</span></span>':'')+
+    '<span><span class="lbl">TTC</span> <span class="val ttc">'+ttcVal.toFixed(2)+' €</span></span>';
+}
+
 function updateTotaux(){
   const el=document.getElementById('totaux-container');
   if(el)el.innerHTML=renderTotaux();
+  _updateInlineTotaux();
 }
 
 // ── Client picker ─────────────────────────────────────────────────────────────
@@ -2278,12 +2322,28 @@ function renderDevisFacture(){
     tplSave='<div style="display:flex;gap:8px;align-items:center;margin-top:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);"><input class="cf-input" type="text" placeholder="Nom du modèle…" value="'+esc(S.templateNom||"")+'" style="flex:1;font-size:12px;" oninput="S.templateNom=this.value"/><button class="cf-btn-secondary" style="padding:8px 12px;font-size:12px;white-space:nowrap;" onclick="saveTemplate()"'+(S.savingTemplate?' disabled':'')+'>💾 '+(S.savingTemplate?'…':'Sauvegarder')+'</button></div>';
   }
   const missCount=[!f.client_nom,!f.travaux,(e.assujetti_tva&&!f.tva)].filter(Boolean).length;
-  // Cases Devis/Facture grandes — uniquement en mode manuel
-  const typeCards=S.entryMode==="manual"?`<div class="cf-type-cards">
-    <button class="cf-type-card ${tab==='devis'?'active':''}" onclick="setTab('devis')"><span class="ic">📄</span><span>Devis</span></button>
-    <button class="cf-type-card ${tab==='facture'?'active':''}" onclick="setTab('facture')"><span class="ic">🧾</span><span>Facture</span></button>
+  // Cases Devis/Facture — pills compactes (refonte one-screen)
+  const typeCards=S.entryMode==="manual"?`<div class="cf-type-pills">
+    <button class="cf-type-pill ${tab==='devis'?'active':''}" onclick="setTab('devis')"><span class="ic">📄</span><span>Devis</span></button>
+    <button class="cf-type-pill ${tab==='facture'?'active':''}" onclick="setTab('facture')"><span class="ic">🧾</span><span>Facture</span></button>
   </div>`:"";
-  const validiteHtml=tab==="devis"?'<div class="cf-field"><label class="cf-label">Validité du devis</label><select class="cf-select" onchange="S.fields.validite_jours=this.value;render()"><option value="1" '+((S.fields.validite_jours||String(e.validite_devis||3))==="1"?"selected":"")+'>1 jour</option><option value="2" '+((S.fields.validite_jours||String(e.validite_devis||3))==="2"?"selected":"")+'>2 jours</option><option value="3" '+((S.fields.validite_jours||String(e.validite_devis||3))==="3"?"selected":"")+'>3 jours</option><option value="7" '+((S.fields.validite_jours||String(e.validite_devis||3))==="7"?"selected":"")+'>7 jours</option><option value="15" '+((S.fields.validite_jours||String(e.validite_devis||3))==="15"?"selected":"")+'>15 jours</option><option value="30" '+((S.fields.validite_jours||String(e.validite_devis||3))==="30"?"selected":"")+'>30 jours</option></select></div>':"";
+  // Validité du devis — affichée en pill dans le header de la section Prestation
+  const validitePill=tab==="devis"?'<div class="cf-validite-pill"><span>Validité</span><select onchange="S.fields.validite_jours=this.value;render()"><option value="1" '+((S.fields.validite_jours||String(e.validite_devis||3))==="1"?"selected":"")+'>1 jour</option><option value="2" '+((S.fields.validite_jours||String(e.validite_devis||3))==="2"?"selected":"")+'>2 jours</option><option value="3" '+((S.fields.validite_jours||String(e.validite_devis||3))==="3"?"selected":"")+'>3 jours</option><option value="7" '+((S.fields.validite_jours||String(e.validite_devis||3))==="7"?"selected":"")+'>7 jours</option><option value="15" '+((S.fields.validite_jours||String(e.validite_devis||3))==="15"?"selected":"")+'>15 jours</option><option value="30" '+((S.fields.validite_jours||String(e.validite_devis||3))==="30"?"selected":"")+'>30 jours</option></select></div>':"";
+  // Plus de champ Validité séparé : il est dans le header (validitePill)
+  const validiteHtml="";
+
+  // Totaux inline pour le bandeau du bas
+  let totauxInlineHtml='';
+  if(f.nb_heures && e.taux_horaire){
+    const t=calcTotaux(f.nb_heures,e.taux_horaire,S.pieces||[],f.tva);
+    const ttcVal=parseFloat(f.tva)>0?t.ttc:t.totalHT;
+    totauxInlineHtml=
+      '<span><span class="lbl">HT</span> <span class="val">'+t.totalHT.toFixed(2)+' €</span></span>'+
+      (parseFloat(f.tva)>0?'<span><span class="lbl">TVA '+f.tva+'%</span> <span class="val">'+(t.ttc-t.totalHT).toFixed(2)+' €</span></span>':'')+
+      '<span><span class="lbl">TTC</span> <span class="val ttc">'+ttcVal.toFixed(2)+' €</span></span>';
+  } else {
+    totauxInlineHtml='<span style="font-size:11.5px;font-style:italic;opacity:.6;">Remplis temps de travail pour voir les totaux</span>';
+  }
 
   // Preview live à droite : si doc généré → l'afficher ; sinon → aperçu construit à la volée
   let livePreviewHTML='';
@@ -2323,25 +2383,24 @@ function renderDevisFacture(){
             ${cff("client_adresse","Adresse","Ex: 12 rue de la Paix, 75001 Paris","text",true,false)}
           </div>
           <div class="cf-fieldset">
-            <div class="cf-fs-h"><div class="cf-num">02</div><span class="cf-fs-title">Prestation</span></div>
+            <div class="cf-fs-h"><div class="cf-num">02</div><span class="cf-fs-title">Prestation</span>${validitePill}</div>
             <div class="${hasData&&!f.travaux?'cf-field cf-field-miss':'cf-field'}"><label class="cf-label">${tab==="devis"?"Description de la prestation":"Prestations réalisées"}</label>${cfi("travaux","textarea","Décris ici la prestation à réaliser…")}</div>
             <div class="cf-grid3">${cff("date_prestation",tab==="devis"?"Date prévue":"Date réalisée","","date",true,false)}${cff("heure_prestation","Heure début","","select_heure",true,false)}${cff("heure_fin_prestation","Heure fin","","select_heure",true,false)}</div>
-            ${cff("nb_heures","Temps de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true,false)}
-            ${validiteHtml}
-            ${e.assujetti_tva?'<div class="cf-field'+(hasData&&!f.tva?' cf-field-miss':'')+'"><label class="cf-label">TVA (%)</label>'+cfi("tva","select_tva","")+'</div>':""}
+            ${e.assujetti_tva?'<div class="cf-grid2">'+cff("nb_heures","Temps de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true,false)+'<div class="cf-field'+(hasData&&!f.tva?' cf-field-miss':'')+'"><label class="cf-label">TVA (%)</label>'+cfi("tva","select_tva","")+'</div></div>':cff("nb_heures","Temps de travail"+(e.taux_horaire?" ("+e.taux_horaire+" €/h HT)":""),"Ex: 3","number",true,false)}
           </div>
           <div class="cf-fieldset">
             <div class="cf-fs-h"><div class="cf-num">03</div><span class="cf-fs-title">Articles / Prestations complémentaires</span></div>
             ${renderPieces()}
           </div>
-          <div class="cf-fieldset">
-            <div class="cf-fs-h"><div class="cf-num">04</div><span class="cf-fs-title">Totaux</span></div>
-            <div id="totaux-container">${renderTotaux()}</div>
-          </div>
+          <div id="totaux-container" style="display:none">${renderTotaux()}</div>
           ${tplSave}
-          <div class="cf-actions">
-            <button class="cf-btn-secondary" onclick="showLivePreview()" style="white-space:nowrap;">👁 Aperçu</button>
-            <button class="cf-btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours…":tab==="devis"?"Générer le devis":"Générer la facture"}</button>
+          <div class="cf-bottom-bar">
+            <div class="cf-bottom-totals">${totauxInlineHtml}</div>
+            <div class="cf-bottom-spacer"></div>
+            <div class="cf-actions">
+              <button class="cf-btn-secondary" onclick="showLivePreview()" style="white-space:nowrap;">👁 Aperçu</button>
+              <button class="cf-btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours…":tab==="devis"?"Générer le devis":"Générer la facture"}</button>
+            </div>
           </div>
         </div>
         <div class="cf-preview-col">
