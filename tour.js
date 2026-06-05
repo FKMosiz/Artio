@@ -48,9 +48,10 @@
     },
     {
       page:"app",
-      title:"🎙 Créer un document — deux façons",
-      desc:"Bienvenue sur la page <strong>Créer</strong>. Deux façons de remplir un devis ou une facture :<br><br>• <strong>À la voix</strong> — clique sur l'orbe et dicte :<br><span class=\"tour-example\">« Devis pour M. Martin, coaching sportif mardi 14h, 3 heures, plus matériel à 30 euros »</span>Artio extrait client, prestation, date et articles automatiquement.<br><br>• <strong>Manuellement</strong> — remplis le formulaire champ par champ (utile si la dictée n'est pas dispo, ex. Firefox/Brave).<br><br>Le bouton ci-dessous pré-remplit un exemple pour explorer.",
-      target:".create-orb-wrap", pos:"bottom",
+      title:"🎙 Créer un document",
+      desc:"Deux façons de remplir un devis ou une facture :<br><br>• 🎙 <strong>À la voix</strong> — clique sur l'orbe et dicte :<br><span class=\"tour-example\">« Devis pour M. Martin, coaching sportif mardi 14h, 3 heures, matériel 30 € »</span>• 📝 <strong>Manuellement</strong> — clique sur <strong>« ou remplir manuellement → »</strong> juste sous l'orbe.<br><br>Le bouton ci-dessous pré-remplit un exemple pour explorer.",
+      target:".create-hero", pos:"bottom",
+      onEnter:"_tourShowOrb",
       action:{label:"📝 Pré-remplir un exemple", fn:"_tourDemoFill"}
     },
     {
@@ -141,7 +142,7 @@
       #artio-tour-overlay{position:fixed;inset:0;z-index:99999;pointer-events:none;}
       #artio-tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0);transition:background .4s;pointer-events:none;z-index:99998;}
       #artio-tour-backdrop.active{background:rgba(8,11,20,.72);pointer-events:all;}
-      .tour-card{position:fixed;z-index:100001;background:var(--surface,#0e1220);border:1px solid rgba(245,167,66,.35);border-radius:16px;padding:22px 24px 18px;width:320px;max-width:calc(100vw - 24px);box-shadow:0 16px 48px rgba(0,0,0,.6);pointer-events:all;transition:opacity .25s ease;opacity:0;}
+      .tour-card{position:fixed;z-index:100001;background:var(--surface,#0e1220);border:1px solid rgba(245,167,66,.35);border-radius:16px;padding:22px 24px 18px;width:340px;max-width:calc(100vw - 24px);max-height:calc(100vh - 32px);overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.6);pointer-events:all;transition:opacity .25s ease;opacity:0;}
       .tour-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
       .tour-card-title{font-family:var(--fh,'Space Grotesk',sans-serif);font-size:15px;font-weight:700;color:var(--text,#e2e5f1);}
       .tour-card-step{font-size:11px;color:var(--muted,#6b7494);font-weight:500;}
@@ -160,7 +161,11 @@
       .tour-warn{display:block;font-size:11.5px;color:#f5a742;padding:8px 10px;background:rgba(245,167,66,.06);border-radius:6px;margin-top:8px;line-height:1.5;}
       .tour-action-btn{display:block;width:100%;padding:9px;margin:10px 0 0;background:rgba(245,167,66,.12);color:var(--amber,#f5a742);border:1px solid rgba(245,167,66,.3);border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--fb,'Plus Jakarta Sans',sans-serif);transition:all .15s;}
       .tour-action-btn:hover{background:rgba(245,167,66,.2);border-color:rgba(245,167,66,.5);}
-      .tour-highlight{outline:3px solid var(--amber,#f5a742)!important;outline-offset:4px;border-radius:10px;position:relative;z-index:100000;}
+      .tour-highlight{outline:3px solid var(--amber,#f5a742)!important;outline-offset:4px;border-radius:10px;position:relative;z-index:100000;box-shadow:0 0 0 4px rgba(245,167,66,.25),0 0 32px rgba(245,167,66,.55)!important;animation:tour-pulse 1.6s ease-in-out infinite;}
+      @keyframes tour-pulse{
+        0%,100%{box-shadow:0 0 0 4px rgba(245,167,66,.25),0 0 28px rgba(245,167,66,.5);}
+        50%{box-shadow:0 0 0 8px rgba(245,167,66,.45),0 0 56px rgba(245,167,66,.85);}
+      }
     `;
     document.head.appendChild(style);
   }
@@ -255,13 +260,16 @@
       return;
     }
 
-    // Scroller la cible en vue d'abord, puis positionner
-    targetEl.scrollIntoView({ behavior:'smooth', block:'center' });
+    // Scroller la cible en vue : 'start' donne max d'espace en-dessous,
+    // 'end' donne max d'espace au-dessus. Évite que la card chevauche la cible.
+    const scrollBlock = (pos === 'top') ? 'end' : (pos === 'bottom' ? 'start' : 'center');
+    targetEl.scrollIntoView({ behavior:'smooth', block: scrollBlock });
     setTimeout(function(){
       const rect = targetEl.getBoundingClientRect();
       const vw = window.innerWidth, vh = window.innerHeight;
       const cw = 340;
       const ch = card.offsetHeight || 260;
+      const gap = 24;
       card.style.transform = '';
       card.style.position = 'fixed';
 
@@ -269,12 +277,11 @@
       if(pos === 'right' || pos === 'left'){
         let leftVal;
         if(pos === 'right'){
-          leftVal = rect.right + 16;
-          // Si ça déborde à droite, replier à gauche
-          if(leftVal + cw > vw - 12) leftVal = rect.left - cw - 16;
+          leftVal = rect.right + gap;
+          if(leftVal + cw > vw - 12) leftVal = rect.left - cw - gap;
         } else {
-          leftVal = rect.left - cw - 16;
-          if(leftVal < 12) leftVal = rect.right + 16;
+          leftVal = rect.left - cw - gap;
+          if(leftVal < 12) leftVal = rect.right + gap;
         }
         leftVal = Math.max(12, Math.min(leftVal, vw - cw - 12));
         let topVal = rect.top + rect.height / 2 - ch / 2;
@@ -286,17 +293,17 @@
       }
 
       // Positionnement vertical (top/bottom) — défaut
-      const spaceBelow = vh - rect.bottom - 16;
-      const spaceAbove = rect.top - 16;
-      const placeAbove = (pos === 'top') || (spaceBelow < ch + 12 && spaceAbove >= ch + 12);
+      const spaceBelow = vh - rect.bottom - gap;
+      const spaceAbove = rect.top - gap;
+      const placeAbove = (pos === 'top') || (spaceBelow < ch + 8 && spaceAbove >= ch + 8);
 
       let topVal;
       if(placeAbove){
-        topVal = rect.top - ch - 12;
-        if(topVal < 8) topVal = Math.max(8, vh / 2 - ch / 2);
+        topVal = rect.top - ch - gap;
+        if(topVal < 8) topVal = 8;
       } else {
-        topVal = rect.bottom + 12;
-        if(topVal + ch > vh - 8) topVal = Math.max(8, vh - ch - 16);
+        topVal = rect.bottom + gap;
+        if(topVal + ch > vh - 8) topVal = Math.max(8, vh - ch - 12);
       }
       card.style.top = topVal + 'px';
 

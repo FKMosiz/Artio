@@ -967,9 +967,22 @@ Signe "${e.nom||""}".`,800);
 // ═══════════════════════════════════════════════════════════════════════
 // TOUR GUIDÉ ARTIO — étapes & moteur dans tour.js
 // Actions page-spécifiques conservées ici :
+//   _tourShowOrb — revient à la vue d'entrée (orbe + bouton manuel)
 //   _tourDemoFill — pré-remplit un exemple complet
 //   _tourEnsureManualForm — bascule en mode manuel sans pré-remplir
 // ═══════════════════════════════════════════════════════════════════════
+
+// Force le retour à la vue d'entrée (orbe + "ou remplir manuellement →")
+// → appelé par l'onEnter de l'étape 4 pour annuler un mode manuel précédent
+window._tourShowOrb = function(){
+  if(typeof S === "undefined") return;
+  if(S.entryMode !== null){
+    S.entryMode = null;
+    S.manualMode = false;
+    if(typeof renderApp === "function") renderApp();
+    setTimeout(function(){ if(window.ArtioTour && window.ArtioTour.isActive()) window.ArtioTour.rerender(); }, 80);
+  }
+};
 
 // Bascule en mode manuel si l'utilisateur n'a rien choisi (vocal/manuel)
 // → garantit que le formulaire est rendu avant les étapes 5 (annuaire) et 6 (générer)
