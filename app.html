@@ -387,7 +387,7 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .cf-bottom-totals .ttc{color:var(--cf-amber);font-weight:700;font-size:14px}
 .cf-bottom-spacer{flex:1}
 .cf-actions{display:flex;gap:8px}
-.cf-btn-primary{padding:10px 18px;border-radius:10px;border:none;background:var(--cf-amber);color:#080b14;font-size:13.5px;font-weight:700;font-family:var(--cf-fh);cursor:pointer;box-shadow:0 0 24px var(--cf-amber-glow);transition:all .15s}
+.cf-btn-primary{flex:1;padding:10px 18px;border-radius:10px;border:none;background:var(--cf-amber);color:#080b14;font-size:13.5px;font-weight:700;font-family:var(--cf-fh);cursor:pointer;box-shadow:0 0 24px var(--cf-amber-glow);transition:all .15s}
 .cf-btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 36px var(--cf-amber-glow)}
 .cf-btn-primary:disabled{opacity:.5;cursor:not-allowed}
 .cf-btn-secondary{padding:10px 14px;border-radius:10px;border:1px solid var(--cf-border);background:var(--cf-surface);color:var(--cf-text);font-size:12.5px;font-weight:500;font-family:var(--cf-fb);cursor:pointer;transition:all .15s}
@@ -401,7 +401,7 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 .cf-validite-pill select:focus{border-color:var(--cf-amber)}
 
 /* Réduction du padding général du formulaire pour gagner de la place */
-.cf-form-col{padding:14px 18px!important;gap:8px!important}
+.cf-form-col{padding:12px 18px!important;gap:6px!important}
 
 /* Responsive : sous 1100px, preview cachée ; sous 767px, rail caché */
 @media(max-width:1100px){.cf-split{grid-template-columns:1fr}.cf-preview-col{display:none}.cf-form-col{max-width:780px;justify-self:center;border-right:none}}
@@ -2315,11 +2315,11 @@ function renderDevisFacture(){
   let tplBar="";
   if(window.PlanGuard&&window.PlanGuard.isPro()&&S.templates.filter(t=>t.tab===tab).length>0){
     const opts=S.templates.filter(t=>t.tab===tab).map(t=>'<option value="'+t.id+'">'+esc(t.nom)+'</option>').join("");
-    tplBar='<div style="display:flex;gap:8px;margin-bottom:12px;"><select class="cf-select" id="tpl-select" style="flex:1;font-size:12px;"><option value="">📋 Modèle…</option>'+opts+'</select><button class="cf-btn-secondary" style="padding:8px 12px;font-size:12px;" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)loadTemplate(v)">Charger</button><button class="cf-btn-secondary" style="padding:8px 12px;font-size:12px;" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)deleteTemplate(v)">🗑</button></div>';
+    tplBar='<div style="display:flex;gap:8px;">'+'<select class="cf-select" id="tpl-select" style="flex:1;font-size:12px;"><option value="">📋 Modèle…</option>'+opts+'</select><button class="cf-btn-secondary" style="padding:8px 12px;font-size:12px;" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)loadTemplate(v)">Charger</button><button class="cf-btn-secondary" style="padding:8px 12px;font-size:12px;" onclick="const v=document.getElementById(\'tpl-select\').value;if(v)deleteTemplate(v)">🗑</button></div>';
   }
   let tplSave="";
   if(window.PlanGuard&&window.PlanGuard.isPro()){
-    tplSave='<div style="display:flex;gap:8px;align-items:center;margin-top:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);"><input class="cf-input" type="text" placeholder="Nom du modèle…" value="'+esc(S.templateNom||"")+'" style="flex:1;font-size:12px;" oninput="S.templateNom=this.value"/><button class="cf-btn-secondary" style="padding:8px 12px;font-size:12px;white-space:nowrap;" onclick="saveTemplate()"'+(S.savingTemplate?' disabled':'')+'>💾 '+(S.savingTemplate?'…':'Sauvegarder')+'</button></div>';
+    tplSave='<div style="display:flex;gap:8px;align-items:center;"><input class="cf-input" type="text" placeholder="Nom du modèle…" value="'+esc(S.templateNom||"")+'" style="flex:1;font-size:12px;" oninput="S.templateNom=this.value"/><button class="cf-btn-secondary" style="padding:8px 12px;font-size:12px;white-space:nowrap;" onclick="saveTemplate()"'+(S.savingTemplate?' disabled':'')+'>💾 '+(S.savingTemplate?'…':'Sauvegarder')+'</button></div>';
   }
   const missCount=[!f.client_nom,!f.travaux,(e.assujetti_tva&&!f.tva)].filter(Boolean).length;
   // Cases Devis/Facture — pills compactes (refonte one-screen)
@@ -2394,13 +2394,9 @@ function renderDevisFacture(){
           </div>
           <div id="totaux-container" style="display:none">${renderTotaux()}</div>
           ${tplSave}
-          <div class="cf-bottom-bar">
-            <div class="cf-bottom-totals">${totauxInlineHtml}</div>
-            <div class="cf-bottom-spacer"></div>
-            <div class="cf-actions">
-              <button class="cf-btn-secondary" onclick="showLivePreview()" style="white-space:nowrap;">👁 Aperçu</button>
-              <button class="cf-btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours…":tab==="devis"?"Générer le devis":"Générer la facture"}</button>
-            </div>
+          <div class="cf-actions">
+            <button class="cf-btn-secondary" onclick="showLivePreview()" style="white-space:nowrap;">👁 Aperçu</button>
+            <button class="cf-btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours…":tab==="devis"?"Générer le devis":"Générer la facture"}</button>
           </div>
         </div>
         <div class="cf-preview-col">
