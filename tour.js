@@ -10,10 +10,17 @@
   // HELPERS — Sidebar ouverte/fermée pour les étapes "menu"
   // ═══════════════════════════════════════════════════════════
   function _openSidebar(){
+    // Sur viewport étroit, menu ouvert + card 340px ne tiennent pas côte-à-côte
+    // → on n'ouvre pas, le moteur fera un fallback centré
+    if(window.innerWidth < 760) return;
     const sb = document.querySelector('.sidebar');
     const ov = document.querySelector('.sidebar-overlay');
     if(sb) sb.classList.add('open');
     if(ov) ov.classList.add('open');
+    // La sidebar a une transition CSS (~250ms) — on re-positionne la card après
+    setTimeout(function(){
+      if(window.ArtioTour && window.ArtioTour.isActive()) window.ArtioTour.rerender();
+    }, 320);
   }
   function _closeSidebar(){
     const sb = document.querySelector('.sidebar');
@@ -146,7 +153,7 @@
       #artio-tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0);transition:background .4s;pointer-events:none;z-index:99996;}
       #artio-tour-backdrop.active{background:rgba(8,11,20,.78);pointer-events:all;}
       /* Spotlight = "trou" dans le voile : la zone surlignée reste claire, le reste est sombre */
-      #artio-tour-spotlight{position:fixed;border-radius:14px;pointer-events:none;z-index:99997;box-shadow:0 0 0 9999px rgba(8,11,20,.78);transition:top .35s ease,left .35s ease,width .35s ease,height .35s ease;display:none;}
+      #artio-tour-spotlight{position:fixed;border-radius:14px;pointer-events:none;z-index:99997;box-shadow:0 0 0 9999px rgba(8,11,20,.78);transition:top .15s ease-out,left .15s ease-out,width .15s ease-out,height .15s ease-out;display:none;}
       #artio-tour-spotlight.active{display:block;}
       .tour-card{position:fixed;z-index:100001;background:var(--surface,#0e1220);border:1px solid rgba(245,167,66,.35);border-radius:16px;padding:22px 24px 18px;width:340px;max-width:calc(100vw - 24px);max-height:calc(100vh - 32px);overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.6);pointer-events:all;transition:opacity .25s ease;opacity:0;}
       .tour-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
@@ -259,6 +266,46 @@
     };
     // Capture phase = on est sûrs d'être notifiés même si onclick inline e.stopPropagation
     el.addEventListener('click', _forceClickHandler, true);
+  }
+
+  // ── Tracking : suit la zone surlignée si l'utilisateur scrolle ou redimensionne ──
+  let _activeTargets = null;
+  let _activePos = null;
+  let _activePrimary = null;
+  let _trackingListener = null;
+  let _trackingRaf = null;
+
+  function _onTrackingEvent(){
+    // throttle via RAF — évite de recalculer 60×/seconde
+    if(_trackingRaf) return;
+    _trackingRaf = requestAnimationFrame(function(){
+      _trackingRaf = null;
+      if(!state.active || !_activeTargets || _activeTargets.length === 0) return;
+      // Met à jour uniquement le spotlight (la card reste fixe dans le viewport)
+      const rect = _activeTargets.length > 1
+        ? _unionRect(_activeTargets)
+        : _activeTargets[0].getBoundingClientRect();
+      if(rect) _showSpotlight(rect);
+    });
+  }
+
+  function _attachTrackingListeners(){
+    if(_trackingListener) return; // déjà attaché
+    _trackingListener = _onTrackingEvent;
+    // Capture phase pour attraper aussi les scrolls de conteneurs internes
+    document.addEventListener('scroll', _trackingListener, true);
+    window.addEventListener('resize', _trackingListener);
+  }
+
+  function _detachTrackingListeners(){
+    if(!_trackingListener) return;
+    document.removeEventListener('scroll', _trackingListener, true);
+    window.removeEventListener('resize', _trackingListener);
+    _trackingListener = null;
+    _activeTargets = null;
+    _activePos = null;
+    _activePrimary = null;
+    if(_trackingRaf){ cancelAnimationFrame(_trackingRaf); _trackingRaf = null; }
   }
 
   function _esc(s){ return String(s == null ? '' : s); }
@@ -449,10 +496,26 @@
 
     const card = document.getElementById('tour-card');
     if(!card) return;
-    _position(card, primaryEl, step.pos, targetEls);
 
-    // Attache le forceClick listener APRÈS le render (cible peut avoir bougé)
-    if(isForceClick) _attachForceClick(step.forceClick);
+    // Mémorise les cibles actives pour le tracking au scroll/resize
+    _activeTargets = targetEls;
+    _activePos = step.pos;
+    _activePrimary = primaryEl;
+
+    // Délai si onEnter modifie le DOM (ex. sidebar qui s'ouvre avec une transition CSS).
+    // Sans ce délai, rect.right serait mesuré pendant l'animation et la card finirait
+    // derrière le menu une fois celui-ci complètement ouvert.
+    const hasOnEnter = !!step.onEnter;
+    const delay = hasOnEnter ? 320 : 30;
+    setTimeout(function(){
+      // Re-vérifie qu'on est toujours sur la même étape (l'utilisateur a pu cliquer Suivant entre-temps)
+      if(!state.active || TOUR_STEPS[state.step] !== step) return;
+      _position(card, primaryEl, step.pos, targetEls);
+      // Attache le forceClick listener APRÈS le positionnement
+      if(isForceClick) _attachForceClick(step.forceClick);
+      // Active le tracking scroll/resize pour que le spotlight suive la zone
+      _attachTrackingListeners();
+    }, delay);
   }
 
 
@@ -504,6 +567,7 @@
     if(state.step >= TOUR_STEPS.length - 1){ end(); return; }
     _removeHighlight();
     _detachForceClick();
+    _detachTrackingListeners();
     const curStep = TOUR_STEPS[state.step];
     _callHook(curStep && curStep.onLeave);
 
@@ -525,6 +589,7 @@
     if(state.step <= 0) return;
     _removeHighlight();
     _detachForceClick();
+    _detachTrackingListeners();
     const curStep = TOUR_STEPS[state.step];
     _callHook(curStep && curStep.onLeave);
 
@@ -545,6 +610,7 @@
   function end(){
     _removeHighlight();
     _detachForceClick();
+    _detachTrackingListeners();
     // Appel du onLeave de l'étape courante (ex. fermer la sidebar si elle était ouverte)
     const curStep = TOUR_STEPS[state.step];
     _callHook(curStep && curStep.onLeave);
