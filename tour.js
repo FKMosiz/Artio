@@ -143,8 +143,11 @@
     style.id = 'artio-tour-css';
     style.textContent = `
       #artio-tour-overlay{position:fixed;inset:0;z-index:99999;pointer-events:none;}
-      #artio-tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0);transition:background .4s;pointer-events:none;z-index:99998;}
-      #artio-tour-backdrop.active{background:rgba(8,11,20,.8);pointer-events:all;}
+      #artio-tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0);transition:background .4s;pointer-events:none;z-index:99996;}
+      #artio-tour-backdrop.active{background:rgba(8,11,20,.78);pointer-events:all;}
+      /* Spotlight = "trou" dans le voile : la zone surlignée reste claire, le reste est sombre */
+      #artio-tour-spotlight{position:fixed;border-radius:14px;pointer-events:none;z-index:99997;box-shadow:0 0 0 9999px rgba(8,11,20,.78);transition:top .35s ease,left .35s ease,width .35s ease,height .35s ease;display:none;}
+      #artio-tour-spotlight.active{display:block;}
       .tour-card{position:fixed;z-index:100001;background:var(--surface,#0e1220);border:1px solid rgba(245,167,66,.35);border-radius:16px;padding:22px 24px 18px;width:340px;max-width:calc(100vw - 24px);max-height:calc(100vh - 32px);overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.6);pointer-events:all;transition:opacity .25s ease;opacity:0;}
       .tour-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
       .tour-card-title{font-family:var(--fh,'Space Grotesk',sans-serif);font-size:15px;font-weight:700;color:var(--text,#e2e5f1);}
@@ -167,10 +170,12 @@
       .tour-forceclick-hint{display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(245,167,66,.12);border:1px dashed rgba(245,167,66,.45);border-radius:10px;font-size:12.5px;color:var(--amber,#f5a742);font-weight:600;line-height:1.45;margin-bottom:8px;}
       .tour-forceclick-hint .tour-fc-arrow{font-size:18px;animation:tour-fc-arrow 1s ease-in-out infinite;}
       @keyframes tour-fc-arrow{0%,100%{transform:translateX(0);}50%{transform:translateX(4px);}}
-      .tour-highlight{outline:3px solid #fff!important;outline-offset:4px;border-radius:10px;position:relative;z-index:100000;box-shadow:0 0 0 7px rgba(245,167,66,.5),0 0 0 14px rgba(245,167,66,.22),0 0 50px 16px rgba(245,167,66,.7)!important;animation:tour-pulse 1.6s ease-in-out infinite;}
+      /* La cible n'a plus besoin d'outline blanc puisque le spotlight la dégrise déjà.
+         On garde juste un halo ambré et un pulse léger pour l'effet "lumière". */
+      .tour-highlight{position:relative;z-index:100000;border-radius:10px;box-shadow:0 0 0 4px rgba(245,167,66,.45),0 0 40px 10px rgba(245,167,66,.55)!important;animation:tour-pulse 1.8s ease-in-out infinite;}
       @keyframes tour-pulse{
-        0%,100%{box-shadow:0 0 0 7px rgba(245,167,66,.5),0 0 0 14px rgba(245,167,66,.22),0 0 40px 12px rgba(245,167,66,.6);}
-        50%{box-shadow:0 0 0 10px rgba(245,167,66,.65),0 0 0 20px rgba(245,167,66,.32),0 0 70px 24px rgba(245,167,66,1);}
+        0%,100%{box-shadow:0 0 0 4px rgba(245,167,66,.45),0 0 32px 8px rgba(245,167,66,.5);}
+        50%{box-shadow:0 0 0 7px rgba(245,167,66,.6),0 0 56px 16px rgba(245,167,66,.85);}
       }
     `;
     document.head.appendChild(style);
@@ -186,11 +191,43 @@
       document.body.appendChild(bd);
       setTimeout(function(){ bd.classList.add('active'); }, 30);
     }
+    if(!document.getElementById('artio-tour-spotlight')){
+      const sp = document.createElement('div');
+      sp.id = 'artio-tour-spotlight';
+      document.body.appendChild(sp);
+    }
     if(!document.getElementById('artio-tour-overlay')){
       const ov = document.createElement('div');
       ov.id = 'artio-tour-overlay';
       document.body.appendChild(ov);
     }
+  }
+
+  // Affiche un voile plat (pas de cible visible) — utilisé pour pos:"center"
+  function _showFlatBackdrop(){
+    const bd = document.getElementById('artio-tour-backdrop');
+    if(bd) bd.classList.add('active');
+    const sp = document.getElementById('artio-tour-spotlight');
+    if(sp) sp.classList.remove('active');
+  }
+
+  // Affiche un spotlight avec un "trou" à la position de la cible (ou de l'union des cibles)
+  function _showSpotlight(rect){
+    if(!rect){ _showFlatBackdrop(); return; }
+    const bd = document.getElementById('artio-tour-backdrop');
+    if(bd) bd.classList.remove('active');
+    let sp = document.getElementById('artio-tour-spotlight');
+    if(!sp){
+      sp = document.createElement('div');
+      sp.id = 'artio-tour-spotlight';
+      document.body.appendChild(sp);
+    }
+    const pad = 10;
+    sp.style.top = (rect.top - pad) + 'px';
+    sp.style.left = (rect.left - pad) + 'px';
+    sp.style.width = (rect.width + pad * 2) + 'px';
+    sp.style.height = (rect.height + pad * 2) + 'px';
+    sp.classList.add('active');
   }
 
   function _removeHighlight(){
@@ -226,24 +263,110 @@
 
   function _esc(s){ return String(s == null ? '' : s); }
 
-  // ── Scroll custom avec marge — évite que la cible soit collée au bord ──
+  // ── Scroll INSTANTANÉ avec marge — la cible n'est pas collée au bord ──
+  // Instant pour qu'on puisse positionner la card immédiatement avec la position finale
   function _scrollTargetIntoView(rect, pos){
     const vh = window.innerHeight;
-    const margin = 90; // distance souhaitée depuis le bord du viewport
+    const margin = 90;
     let delta = 0;
     if(pos === 'bottom'){
       delta = rect.top - margin;
     } else if(pos === 'top'){
       delta = rect.bottom - (vh - margin);
     } else if(pos === 'right' || pos === 'left'){
-      // Centre la cible verticalement
       delta = rect.top + rect.height / 2 - vh / 2;
     } else {
       delta = rect.top + rect.height / 2 - vh / 2;
     }
     if(Math.abs(delta) > 4){
-      window.scrollBy({ top: delta, behavior: 'smooth' });
+      window.scrollBy({ top: delta, behavior: 'auto' });
     }
+  }
+
+  function _unionRect(els){
+    if(!els || els.length === 0) return null;
+    let top = Infinity, left = Infinity, right = -Infinity, bottom = -Infinity;
+    els.forEach(function(el){
+      const r = el.getBoundingClientRect();
+      if(r.top < top) top = r.top;
+      if(r.left < left) left = r.left;
+      if(r.right > right) right = r.right;
+      if(r.bottom > bottom) bottom = r.bottom;
+    });
+    return { top: top, left: left, right: right, bottom: bottom, width: right - left, height: bottom - top };
+  }
+
+  function _position(card, primaryEl, pos, allTargets){
+    if(!primaryEl || pos === 'center'){
+      _showFlatBackdrop();
+      card.style.top = '50%';
+      card.style.left = '50%';
+      card.style.transform = 'translate(-50%,-50%)';
+      card.style.position = 'fixed';
+      requestAnimationFrame(function(){ if(card) card.style.opacity = '1'; });
+      return;
+    }
+
+    // Union des rects si plusieurs cibles
+    const useUnion = (allTargets && allTargets.length > 1);
+    let anchorRect = useUnion ? _unionRect(allTargets) : primaryEl.getBoundingClientRect();
+
+    // Scroll instantané pour amener la cible dans la zone utile du viewport
+    _scrollTargetIntoView(anchorRect, pos);
+
+    // Re-mesure après scroll (scroll instant → rect immédiatement à jour)
+    anchorRect = useUnion ? _unionRect(allTargets) : primaryEl.getBoundingClientRect();
+
+    // Mets à jour le spotlight (trou dans le voile à la position de la cible)
+    _showSpotlight(anchorRect);
+
+    // Position de la card
+    const rect = anchorRect;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const cw = 340;
+    const ch = card.offsetHeight || 260;
+    const gap = 24;
+    card.style.transform = '';
+    card.style.position = 'fixed';
+
+    // Positionnement latéral (right/left)
+    if(pos === 'right' || pos === 'left'){
+      let leftVal;
+      if(pos === 'right'){
+        leftVal = rect.right + gap;
+        if(leftVal + cw > vw - 12) leftVal = rect.left - cw - gap;
+      } else {
+        leftVal = rect.left - cw - gap;
+        if(leftVal < 12) leftVal = rect.right + gap;
+      }
+      leftVal = Math.max(12, Math.min(leftVal, vw - cw - 12));
+      let topVal = rect.top + rect.height / 2 - ch / 2;
+      topVal = Math.max(12, Math.min(topVal, vh - ch - 12));
+      card.style.left = leftVal + 'px';
+      card.style.top = topVal + 'px';
+      card.style.opacity = '1';
+      return;
+    }
+
+    // Positionnement vertical (top/bottom) — défaut
+    const spaceBelow = vh - rect.bottom - gap;
+    const spaceAbove = rect.top - gap;
+    const placeAbove = (pos === 'top') || (spaceBelow < ch + 8 && spaceAbove >= ch + 8);
+
+    let topVal;
+    if(placeAbove){
+      topVal = rect.top - ch - gap;
+    } else {
+      topVal = rect.bottom + gap;
+    }
+    // CLAMP absolu : la card ne sort jamais du viewport
+    topVal = Math.max(12, Math.min(topVal, vh - ch - 12));
+    card.style.top = topVal + 'px';
+
+    let leftVal = rect.left + rect.width / 2 - cw / 2;
+    leftVal = Math.max(12, Math.min(leftVal, vw - cw - 12));
+    card.style.left = leftVal + 'px';
+    card.style.opacity = '1';
   }
 
   function _render(){
@@ -332,85 +455,6 @@
     if(isForceClick) _attachForceClick(step.forceClick);
   }
 
-  function _unionRect(els){
-    if(!els || els.length === 0) return null;
-    let top = Infinity, left = Infinity, right = -Infinity, bottom = -Infinity;
-    els.forEach(function(el){
-      const r = el.getBoundingClientRect();
-      if(r.top < top) top = r.top;
-      if(r.left < left) left = r.left;
-      if(r.right > right) right = r.right;
-      if(r.bottom > bottom) bottom = r.bottom;
-    });
-    return { top: top, left: left, right: right, bottom: bottom, width: right - left, height: bottom - top };
-  }
-
-  function _position(card, primaryEl, pos, allTargets){
-    if(!primaryEl || pos === 'center'){
-      card.style.top = '50%';
-      card.style.left = '50%';
-      card.style.transform = 'translate(-50%,-50%)';
-      card.style.position = 'fixed';
-      requestAnimationFrame(function(){ if(card) card.style.opacity = '1'; });
-      return;
-    }
-
-    // Pour positionner correctement quand plusieurs cibles, on utilise l'union des rects
-    const useUnion = (allTargets && allTargets.length > 1);
-    const anchorRect = useUnion ? _unionRect(allTargets) : primaryEl.getBoundingClientRect();
-
-    // Scroll custom avec marge : la cible n'est pas collée au bord du viewport
-    _scrollTargetIntoView(anchorRect, pos);
-
-    setTimeout(function(){
-      const rect = useUnion ? _unionRect(allTargets) : primaryEl.getBoundingClientRect();
-      const vw = window.innerWidth, vh = window.innerHeight;
-      const cw = 340;
-      const ch = card.offsetHeight || 260;
-      const gap = 24;
-      card.style.transform = '';
-      card.style.position = 'fixed';
-
-      // Positionnement latéral (right/left)
-      if(pos === 'right' || pos === 'left'){
-        let leftVal;
-        if(pos === 'right'){
-          leftVal = rect.right + gap;
-          if(leftVal + cw > vw - 12) leftVal = rect.left - cw - gap;
-        } else {
-          leftVal = rect.left - cw - gap;
-          if(leftVal < 12) leftVal = rect.right + gap;
-        }
-        leftVal = Math.max(12, Math.min(leftVal, vw - cw - 12));
-        let topVal = rect.top + rect.height / 2 - ch / 2;
-        topVal = Math.max(12, Math.min(topVal, vh - ch - 12));
-        card.style.left = leftVal + 'px';
-        card.style.top = topVal + 'px';
-        card.style.opacity = '1';
-        return;
-      }
-
-      // Positionnement vertical (top/bottom)
-      const spaceBelow = vh - rect.bottom - gap;
-      const spaceAbove = rect.top - gap;
-      const placeAbove = (pos === 'top') || (spaceBelow < ch + 8 && spaceAbove >= ch + 8);
-
-      let topVal;
-      if(placeAbove){
-        topVal = rect.top - ch - gap;
-        if(topVal < 8) topVal = 8;
-      } else {
-        topVal = rect.bottom + gap;
-        if(topVal + ch > vh - 8) topVal = Math.max(8, vh - ch - 12);
-      }
-      card.style.top = topVal + 'px';
-
-      let leftVal = rect.left + rect.width / 2 - cw / 2;
-      leftVal = Math.max(12, Math.min(leftVal, vw - cw - 12));
-      card.style.left = leftVal + 'px';
-      card.style.opacity = '1';
-    }, 380);
-  }
 
   // ═══════════════════════════════════════════════════════════
   // CROSS-PAGE NAVIGATION
@@ -515,6 +559,8 @@
     if(ov) ov.remove();
     const bd = document.getElementById('artio-tour-backdrop');
     if(bd) bd.remove();
+    const sp = document.getElementById('artio-tour-spotlight');
+    if(sp) sp.remove();
   }
 
   function _runAction(fnName){
