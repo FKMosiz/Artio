@@ -49,9 +49,12 @@
     {
       page:"app",
       title:"🎙 Créer un document",
-      desc:"Deux façons de remplir un devis ou une facture :<br><br>• 🎙 <strong>À la voix</strong> — clique sur l'orbe et dicte :<br><span class=\"tour-example\">« Devis pour M. Martin, coaching sportif mardi 14h, 3 heures, matériel 30 € »</span>• 📝 <strong>Manuellement</strong> — clique sur <strong>« ou remplir manuellement → »</strong> juste sous l'orbe.<br><br>Le bouton ci-dessous pré-remplit un exemple pour explorer.",
-      target:".create-hero", pos:"bottom",
+      desc:"Deux façons de remplir un devis ou une facture :<br><br>• 🎙 <strong>À la voix</strong> — clique sur l'orbe et dicte :<br><span class=\"tour-example\">« Devis pour M. Martin, coaching sportif mardi 14h, 3 heures, matériel 30 € »</span>• 📝 <strong>Manuellement</strong> — clique sur le bouton « ou remplir manuellement → » sous l'orbe.<br><br>Pour explorer un exemple complet, tu peux aussi utiliser le bouton ci-dessous.",
+      target:[".create-orb-wrap", ".create-manual"],
+      pos:"right",
       onEnter:"_tourShowOrb",
+      forceClick:".create-manual",
+      forceClickHint:"👉 Clique sur « ou remplir manuellement → » pour continuer",
       action:{label:"📝 Pré-remplir un exemple", fn:"_tourDemoFill"}
     },
     {
@@ -141,7 +144,7 @@
     style.textContent = `
       #artio-tour-overlay{position:fixed;inset:0;z-index:99999;pointer-events:none;}
       #artio-tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0);transition:background .4s;pointer-events:none;z-index:99998;}
-      #artio-tour-backdrop.active{background:rgba(8,11,20,.72);pointer-events:all;}
+      #artio-tour-backdrop.active{background:rgba(8,11,20,.8);pointer-events:all;}
       .tour-card{position:fixed;z-index:100001;background:var(--surface,#0e1220);border:1px solid rgba(245,167,66,.35);border-radius:16px;padding:22px 24px 18px;width:340px;max-width:calc(100vw - 24px);max-height:calc(100vh - 32px);overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.6);pointer-events:all;transition:opacity .25s ease;opacity:0;}
       .tour-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
       .tour-card-title{font-family:var(--fh,'Space Grotesk',sans-serif);font-size:15px;font-weight:700;color:var(--text,#e2e5f1);}
@@ -161,10 +164,13 @@
       .tour-warn{display:block;font-size:11.5px;color:#f5a742;padding:8px 10px;background:rgba(245,167,66,.06);border-radius:6px;margin-top:8px;line-height:1.5;}
       .tour-action-btn{display:block;width:100%;padding:9px;margin:10px 0 0;background:rgba(245,167,66,.12);color:var(--amber,#f5a742);border:1px solid rgba(245,167,66,.3);border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--fb,'Plus Jakarta Sans',sans-serif);transition:all .15s;}
       .tour-action-btn:hover{background:rgba(245,167,66,.2);border-color:rgba(245,167,66,.5);}
-      .tour-highlight{outline:3px solid var(--amber,#f5a742)!important;outline-offset:4px;border-radius:10px;position:relative;z-index:100000;box-shadow:0 0 0 4px rgba(245,167,66,.25),0 0 32px rgba(245,167,66,.55)!important;animation:tour-pulse 1.6s ease-in-out infinite;}
+      .tour-forceclick-hint{display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(245,167,66,.12);border:1px dashed rgba(245,167,66,.45);border-radius:10px;font-size:12.5px;color:var(--amber,#f5a742);font-weight:600;line-height:1.45;margin-bottom:8px;}
+      .tour-forceclick-hint .tour-fc-arrow{font-size:18px;animation:tour-fc-arrow 1s ease-in-out infinite;}
+      @keyframes tour-fc-arrow{0%,100%{transform:translateX(0);}50%{transform:translateX(4px);}}
+      .tour-highlight{outline:3px solid #fff!important;outline-offset:4px;border-radius:10px;position:relative;z-index:100000;box-shadow:0 0 0 7px rgba(245,167,66,.5),0 0 0 14px rgba(245,167,66,.22),0 0 50px 16px rgba(245,167,66,.7)!important;animation:tour-pulse 1.6s ease-in-out infinite;}
       @keyframes tour-pulse{
-        0%,100%{box-shadow:0 0 0 4px rgba(245,167,66,.25),0 0 28px rgba(245,167,66,.5);}
-        50%{box-shadow:0 0 0 8px rgba(245,167,66,.45),0 0 56px rgba(245,167,66,.85);}
+        0%,100%{box-shadow:0 0 0 7px rgba(245,167,66,.5),0 0 0 14px rgba(245,167,66,.22),0 0 40px 12px rgba(245,167,66,.6);}
+        50%{box-shadow:0 0 0 10px rgba(245,167,66,.65),0 0 0 20px rgba(245,167,66,.32),0 0 70px 24px rgba(245,167,66,1);}
       }
     `;
     document.head.appendChild(style);
@@ -193,7 +199,52 @@
     });
   }
 
+  // ── ForceClick : capture le clic sur la cible pour avancer le tour ──
+  let _forceClickEl = null;
+  let _forceClickHandler = null;
+  function _detachForceClick(){
+    if(_forceClickEl && _forceClickHandler){
+      _forceClickEl.removeEventListener('click', _forceClickHandler, true);
+    }
+    _forceClickEl = null;
+    _forceClickHandler = null;
+  }
+  function _attachForceClick(selector){
+    _detachForceClick();
+    if(!selector) return;
+    let el = null;
+    try { el = document.querySelector(selector); } catch(e){}
+    if(!el) return;
+    _forceClickEl = el;
+    _forceClickHandler = function(){
+      // Laisse le handler natif de la page s'exécuter, puis avance
+      setTimeout(function(){ if(state.active) next(); }, 100);
+    };
+    // Capture phase = on est sûrs d'être notifiés même si onclick inline e.stopPropagation
+    el.addEventListener('click', _forceClickHandler, true);
+  }
+
   function _esc(s){ return String(s == null ? '' : s); }
+
+  // ── Scroll custom avec marge — évite que la cible soit collée au bord ──
+  function _scrollTargetIntoView(rect, pos){
+    const vh = window.innerHeight;
+    const margin = 90; // distance souhaitée depuis le bord du viewport
+    let delta = 0;
+    if(pos === 'bottom'){
+      delta = rect.top - margin;
+    } else if(pos === 'top'){
+      delta = rect.bottom - (vh - margin);
+    } else if(pos === 'right' || pos === 'left'){
+      // Centre la cible verticalement
+      delta = rect.top + rect.height / 2 - vh / 2;
+    } else {
+      delta = rect.top + rect.height / 2 - vh / 2;
+    }
+    if(Math.abs(delta) > 4){
+      window.scrollBy({ top: delta, behavior: 'smooth' });
+    }
+  }
 
   function _render(){
     if(!state.active) return;
@@ -204,11 +255,23 @@
     if(!overlay) return;
 
     _removeHighlight();
-    let targetEl = null;
+    _detachForceClick();
+
+    // ── Cibles : string OU array de strings → highlight multiple ──
+    const targetEls = [];
     if(step.target){
-      try { targetEl = document.querySelector(step.target); } catch(e){ targetEl = null; }
-      if(targetEl) targetEl.classList.add('tour-highlight');
+      const selectors = Array.isArray(step.target) ? step.target : [step.target];
+      selectors.forEach(function(sel){
+        let el = null;
+        try { el = document.querySelector(sel); } catch(e){}
+        if(el){
+          el.classList.add('tour-highlight');
+          targetEls.push(el);
+        }
+      });
     }
+    // La 1ère cible sert d'ancre pour positionner la card
+    const primaryEl = targetEls[0] || null;
 
     const dots = TOUR_STEPS.map(function(_, i){
       const cls = i === state.step ? 'active' : (i < state.step ? 'done' : '');
@@ -225,8 +288,24 @@
     const prevBtn = state.step > 0
       ? '<button class="tour-btn-prev" onclick="window.ArtioTour.prev()">←</button>'
       : '';
-    const nextLabel = state.step === TOUR_STEPS.length - 1 ? 'Terminer 🎉' : 'Suivant →';
-    const nextBtn = '<button class="tour-btn-next" onclick="window.ArtioTour.next()">' + nextLabel + '</button>';
+
+    // ── ForceClick : pas de bouton "Suivant", remplacé par un hint ──
+    const isForceClick = !!step.forceClick;
+    let nextBlock;
+    if(isForceClick){
+      const hintText = step.forceClickHint || '👉 Clique sur l\'élément encadré pour continuer';
+      nextBlock =
+        '<div class="tour-forceclick-hint">'
+          + '<span class="tour-fc-arrow">👉</span>'
+          + '<span>' + _esc(hintText.replace(/^👉\s*/, '')) + '</span>'
+        + '</div>'
+        + (prevBtn ? '<div class="tour-actions">' + prevBtn + '<div style="flex:1"></div></div>' : '');
+    } else {
+      const nextLabel = state.step === TOUR_STEPS.length - 1 ? 'Terminer 🎉' : 'Suivant →';
+      const nextBtn = '<button class="tour-btn-next" onclick="window.ArtioTour.next()">' + nextLabel + '</button>';
+      nextBlock = '<div class="tour-actions">' + prevBtn + nextBtn + '</div>';
+    }
+
     const skipBtn = state.step < TOUR_STEPS.length - 1
       ? '<button class="tour-btn-skip" onclick="window.ArtioTour.end()">Quitter le tutoriel</button>'
       : '';
@@ -241,17 +320,33 @@
         + proBadge
         + '<div class="tour-card-desc">' + step.desc + '</div>'
         + actionBtn
-        + '<div class="tour-actions">' + prevBtn + nextBtn + '</div>'
+        + nextBlock
         + skipBtn
       + '</div>';
 
     const card = document.getElementById('tour-card');
     if(!card) return;
-    _position(card, targetEl, step.pos);
+    _position(card, primaryEl, step.pos, targetEls);
+
+    // Attache le forceClick listener APRÈS le render (cible peut avoir bougé)
+    if(isForceClick) _attachForceClick(step.forceClick);
   }
 
-  function _position(card, targetEl, pos){
-    if(!targetEl || pos === 'center'){
+  function _unionRect(els){
+    if(!els || els.length === 0) return null;
+    let top = Infinity, left = Infinity, right = -Infinity, bottom = -Infinity;
+    els.forEach(function(el){
+      const r = el.getBoundingClientRect();
+      if(r.top < top) top = r.top;
+      if(r.left < left) left = r.left;
+      if(r.right > right) right = r.right;
+      if(r.bottom > bottom) bottom = r.bottom;
+    });
+    return { top: top, left: left, right: right, bottom: bottom, width: right - left, height: bottom - top };
+  }
+
+  function _position(card, primaryEl, pos, allTargets){
+    if(!primaryEl || pos === 'center'){
       card.style.top = '50%';
       card.style.left = '50%';
       card.style.transform = 'translate(-50%,-50%)';
@@ -260,12 +355,15 @@
       return;
     }
 
-    // Scroller la cible en vue : 'start' donne max d'espace en-dessous,
-    // 'end' donne max d'espace au-dessus. Évite que la card chevauche la cible.
-    const scrollBlock = (pos === 'top') ? 'end' : (pos === 'bottom' ? 'start' : 'center');
-    targetEl.scrollIntoView({ behavior:'smooth', block: scrollBlock });
+    // Pour positionner correctement quand plusieurs cibles, on utilise l'union des rects
+    const useUnion = (allTargets && allTargets.length > 1);
+    const anchorRect = useUnion ? _unionRect(allTargets) : primaryEl.getBoundingClientRect();
+
+    // Scroll custom avec marge : la cible n'est pas collée au bord du viewport
+    _scrollTargetIntoView(anchorRect, pos);
+
     setTimeout(function(){
-      const rect = targetEl.getBoundingClientRect();
+      const rect = useUnion ? _unionRect(allTargets) : primaryEl.getBoundingClientRect();
       const vw = window.innerWidth, vh = window.innerHeight;
       const cw = 340;
       const ch = card.offsetHeight || 260;
@@ -273,7 +371,7 @@
       card.style.transform = '';
       card.style.position = 'fixed';
 
-      // Positionnement latéral (right/left) — pour cibles type sidebar
+      // Positionnement latéral (right/left)
       if(pos === 'right' || pos === 'left'){
         let leftVal;
         if(pos === 'right'){
@@ -292,7 +390,7 @@
         return;
       }
 
-      // Positionnement vertical (top/bottom) — défaut
+      // Positionnement vertical (top/bottom)
       const spaceBelow = vh - rect.bottom - gap;
       const spaceAbove = rect.top - gap;
       const placeAbove = (pos === 'top') || (spaceBelow < ch + 8 && spaceAbove >= ch + 8);
@@ -311,7 +409,7 @@
       leftVal = Math.max(12, Math.min(leftVal, vw - cw - 12));
       card.style.left = leftVal + 'px';
       card.style.opacity = '1';
-    }, 350);
+    }, 380);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -361,6 +459,7 @@
   function next(){
     if(state.step >= TOUR_STEPS.length - 1){ end(); return; }
     _removeHighlight();
+    _detachForceClick();
     const curStep = TOUR_STEPS[state.step];
     _callHook(curStep && curStep.onLeave);
 
@@ -381,6 +480,7 @@
   function prev(){
     if(state.step <= 0) return;
     _removeHighlight();
+    _detachForceClick();
     const curStep = TOUR_STEPS[state.step];
     _callHook(curStep && curStep.onLeave);
 
@@ -400,6 +500,7 @@
 
   function end(){
     _removeHighlight();
+    _detachForceClick();
     // Appel du onLeave de l'étape courante (ex. fermer la sidebar si elle était ouverte)
     const curStep = TOUR_STEPS[state.step];
     _callHook(curStep && curStep.onLeave);

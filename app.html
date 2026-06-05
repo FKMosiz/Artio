@@ -1016,7 +1016,12 @@ window._tourDemoFill = function(){
   S.manualMode = true;
   S.entryMode = "manual";
   renderApp();
-  setTimeout(function(){ if(window.ArtioTour && window.ArtioTour.isActive()) window.ArtioTour.rerender(); }, 80);
+  setTimeout(function(){
+    if(window.ArtioTour && window.ArtioTour.isActive()){
+      // Le formulaire est rempli → on avance au step suivant (annuaire)
+      window.ArtioTour.next();
+    }
+  }, 100);
   showToast("✨ Exemple pré-rempli — explore le formulaire Command Bar !");
 };
 
