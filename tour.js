@@ -7,6 +7,22 @@
   'use strict';
 
   // ═══════════════════════════════════════════════════════════
+  // HELPERS — Sidebar ouverte/fermée pour les étapes "menu"
+  // ═══════════════════════════════════════════════════════════
+  function _openSidebar(){
+    const sb = document.querySelector('.sidebar');
+    const ov = document.querySelector('.sidebar-overlay');
+    if(sb) sb.classList.add('open');
+    if(ov) ov.classList.add('open');
+  }
+  function _closeSidebar(){
+    const sb = document.querySelector('.sidebar');
+    const ov = document.querySelector('.sidebar-overlay');
+    if(sb) sb.classList.remove('open');
+    if(ov) ov.classList.remove('open');
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // CONFIGURATION — Les étapes du tour
   // ═══════════════════════════════════════════════════════════
   const TOUR_STEPS = [
@@ -19,8 +35,10 @@
     {
       page:"home",
       title:"🧭 Le menu — tout commence ici",
-      desc:"Clique sur l'icône <strong>☰</strong> en haut à gauche pour ouvrir le menu latéral. Tu y trouveras toutes les sections d'Artio.<br><br>Il est accessible depuis n'importe quelle page.",
-      target:".sidebar-trigger", pos:"bottom"
+      desc:"Voici le menu latéral, ouvert pour toi.<br><br>Tu y trouveras toutes les sections d'Artio : Créer, Dossiers, Rédiger, Clients, Tableau de bord, Calendrier, Paramètres…<br><br>Il s'ouvre depuis n'importe quelle page via l'icône <strong>☰</strong> en haut à gauche.",
+      target:".sidebar", pos:"right",
+      onEnter: _openSidebar,
+      onLeave: _closeSidebar
     },
     {
       page:"home",
@@ -30,8 +48,8 @@
     },
     {
       page:"app",
-      title:"🎙 Créer un document à la voix",
-      desc:"Bienvenue sur la page <strong>Créer</strong>. Clique sur l'orbe et dicte :<br><span class=\"tour-example\">« Devis pour M. Martin, coaching sportif mardi 14h, 3 heures, plus matériel à 30 euros »</span>Artio extrait automatiquement client, prestation, date et articles.<br><span class=\"tour-warn\">⚠️ La dictée ne fonctionne pas sur Firefox/Brave. Utilise le bouton ci-dessous pour pré-remplir un exemple.</span>",
+      title:"🎙 Créer un document — deux façons",
+      desc:"Bienvenue sur la page <strong>Créer</strong>. Deux façons de remplir un devis ou une facture :<br><br>• <strong>À la voix</strong> — clique sur l'orbe et dicte :<br><span class=\"tour-example\">« Devis pour M. Martin, coaching sportif mardi 14h, 3 heures, plus matériel à 30 euros »</span>Artio extrait client, prestation, date et articles automatiquement.<br><br>• <strong>Manuellement</strong> — remplis le formulaire champ par champ (utile si la dictée n'est pas dispo, ex. Firefox/Brave).<br><br>Le bouton ci-dessous pré-remplit un exemple pour explorer.",
       target:".create-orb-wrap", pos:"bottom",
       action:{label:"📝 Pré-remplir un exemple", fn:"_tourDemoFill"}
     },
@@ -39,18 +57,20 @@
       page:"app",
       title:"👥 Annuaire & autocomplétion",
       desc:"Tape les premières lettres d'un client enregistré : il apparaît dans une liste. Un clic remplit nom, email, téléphone et adresse.<br><br>Tu peux aussi basculer entre <strong>Devis</strong> et <strong>Facture</strong> en haut du formulaire.",
-      target:"input[data-fid=\"client_nom\"]", pos:"bottom"
+      target:"input[data-fid=\"client_nom\"]", pos:"bottom",
+      onEnter:"_tourEnsureManualForm"
     },
     {
       page:"app",
       title:"⚡ Générer le document",
       desc:"Ce bouton produit ton PDF. Une fois les champs remplis :<br>• L'IA rédige la description finale<br>• Les totaux HT/TVA/TTC sont calculés<br>• La numérotation est automatique (DEV-2026-XXX)<br>• Le dossier est créé dans <strong>Dossiers</strong>",
-      target:".cf-btn-primary", pos:"top"
+      target:".cf-btn-primary", pos:"top",
+      onEnter:"_tourEnsureManualForm"
     },
     {
       page:"rediger",
       title:"✉️ Rédiger un email client",
-      desc:"Page dédiée à la rédaction d'emails professionnels. Deux modes :<br>• <strong>Réponse</strong> — réagir à un message reçu<br>• <strong>Suivi</strong> — informer un client de l'avancement<br><br>Choisis le ton (vouvoiement, cordial, ferme…) et l'IA rédige.<br><br>Si Gmail est connecté, ta boîte de réception s'affiche ici et tu peux répondre directement.",
+      desc:"Page dédiée à la rédaction d'emails professionnels.<br><br>Tu colles le message reçu, tu choisis le ton (vouvoiement, cordial, ferme…) et l'IA rédige la réponse pour toi.<br><br>Si Gmail est connecté, ta boîte de réception s'affiche aussi ici via l'onglet <strong>Messagerie</strong> — tu peux répondre directement depuis Artio.",
       target:null, pos:"center"
     },
     {
@@ -118,10 +138,10 @@
     const style = document.createElement('style');
     style.id = 'artio-tour-css';
     style.textContent = `
-      #artio-tour-overlay{position:fixed;inset:0;z-index:9500;pointer-events:none;}
-      #artio-tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0);transition:background .4s;pointer-events:none;}
+      #artio-tour-overlay{position:fixed;inset:0;z-index:99999;pointer-events:none;}
+      #artio-tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0);transition:background .4s;pointer-events:none;z-index:99998;}
       #artio-tour-backdrop.active{background:rgba(8,11,20,.72);pointer-events:all;}
-      .tour-card{position:fixed;z-index:9600;background:var(--surface,#0e1220);border:1px solid rgba(245,167,66,.35);border-radius:16px;padding:22px 24px 18px;width:320px;max-width:calc(100vw - 24px);box-shadow:0 16px 48px rgba(0,0,0,.6);pointer-events:all;transition:opacity .25s ease;opacity:0;}
+      .tour-card{position:fixed;z-index:100001;background:var(--surface,#0e1220);border:1px solid rgba(245,167,66,.35);border-radius:16px;padding:22px 24px 18px;width:320px;max-width:calc(100vw - 24px);box-shadow:0 16px 48px rgba(0,0,0,.6);pointer-events:all;transition:opacity .25s ease;opacity:0;}
       .tour-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
       .tour-card-title{font-family:var(--fh,'Space Grotesk',sans-serif);font-size:15px;font-weight:700;color:var(--text,#e2e5f1);}
       .tour-card-step{font-size:11px;color:var(--muted,#6b7494);font-weight:500;}
@@ -140,7 +160,7 @@
       .tour-warn{display:block;font-size:11.5px;color:#f5a742;padding:8px 10px;background:rgba(245,167,66,.06);border-radius:6px;margin-top:8px;line-height:1.5;}
       .tour-action-btn{display:block;width:100%;padding:9px;margin:10px 0 0;background:rgba(245,167,66,.12);color:var(--amber,#f5a742);border:1px solid rgba(245,167,66,.3);border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--fb,'Plus Jakarta Sans',sans-serif);transition:all .15s;}
       .tour-action-btn:hover{background:rgba(245,167,66,.2);border-color:rgba(245,167,66,.5);}
-      .tour-highlight{outline:3px solid var(--amber,#f5a742)!important;outline-offset:4px;border-radius:10px;position:relative;z-index:9501;}
+      .tour-highlight{outline:3px solid var(--amber,#f5a742)!important;outline-offset:4px;border-radius:10px;position:relative;z-index:100000;}
     `;
     document.head.appendChild(style);
   }
@@ -245,6 +265,27 @@
       card.style.transform = '';
       card.style.position = 'fixed';
 
+      // Positionnement latéral (right/left) — pour cibles type sidebar
+      if(pos === 'right' || pos === 'left'){
+        let leftVal;
+        if(pos === 'right'){
+          leftVal = rect.right + 16;
+          // Si ça déborde à droite, replier à gauche
+          if(leftVal + cw > vw - 12) leftVal = rect.left - cw - 16;
+        } else {
+          leftVal = rect.left - cw - 16;
+          if(leftVal < 12) leftVal = rect.right + 16;
+        }
+        leftVal = Math.max(12, Math.min(leftVal, vw - cw - 12));
+        let topVal = rect.top + rect.height / 2 - ch / 2;
+        topVal = Math.max(12, Math.min(topVal, vh - ch - 12));
+        card.style.left = leftVal + 'px';
+        card.style.top = topVal + 'px';
+        card.style.opacity = '1';
+        return;
+      }
+
+      // Positionnement vertical (top/bottom) — défaut
       const spaceBelow = vh - rect.bottom - 16;
       const spaceAbove = rect.top - 16;
       const placeAbove = (pos === 'top') || (spaceBelow < ch + 12 && spaceAbove >= ch + 12);
@@ -276,6 +317,18 @@
   }
 
   // ═══════════════════════════════════════════════════════════
+  // HOOKS — onEnter / onLeave (fonction directe ou nom window)
+  // ═══════════════════════════════════════════════════════════
+  function _callHook(hook){
+    if(!hook) return;
+    if(typeof hook === 'function'){
+      try { hook(); } catch(e){ console.error('[ArtioTour] Hook function failed:', e); }
+    } else if(typeof hook === 'string' && typeof window[hook] === 'function'){
+      try { window[hook](); } catch(e){ console.error('[ArtioTour] Hook ' + hook + ' failed:', e); }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // API PUBLIQUE
   // ═══════════════════════════════════════════════════════════
   function start(stepIndex){
@@ -294,12 +347,16 @@
     localStorage.setItem(LS_STEP, String(state.step));
     _injectCSS();
     _mount();
+    _callHook(step && step.onEnter);
     _render();
   }
 
   function next(){
     if(state.step >= TOUR_STEPS.length - 1){ end(); return; }
     _removeHighlight();
+    const curStep = TOUR_STEPS[state.step];
+    _callHook(curStep && curStep.onLeave);
+
     const nextIdx = state.step + 1;
     const nextStep = TOUR_STEPS[nextIdx];
     state.step = nextIdx;
@@ -310,12 +367,16 @@
     }
 
     localStorage.setItem(LS_STEP, String(state.step));
+    _callHook(nextStep.onEnter);
     _render();
   }
 
   function prev(){
     if(state.step <= 0) return;
     _removeHighlight();
+    const curStep = TOUR_STEPS[state.step];
+    _callHook(curStep && curStep.onLeave);
+
     const prevIdx = state.step - 1;
     const prevStep = TOUR_STEPS[prevIdx];
     state.step = prevIdx;
@@ -326,11 +387,15 @@
     }
 
     localStorage.setItem(LS_STEP, String(state.step));
+    _callHook(prevStep.onEnter);
     _render();
   }
 
   function end(){
     _removeHighlight();
+    // Appel du onLeave de l'étape courante (ex. fermer la sidebar si elle était ouverte)
+    const curStep = TOUR_STEPS[state.step];
+    _callHook(curStep && curStep.onLeave);
     state.active = false;
     state.step = 0;
     try {

@@ -258,14 +258,12 @@ window.startVoiceContexte=function(fieldId){
 window.handleGenerate=async()=>{
   document.querySelectorAll("input[data-fid],textarea[data-fid]").forEach(el=>{S.fields[el.dataset.fid]=el.value;});
   const e=S.entreprise,f=S.fields;
-  const req=S.emailMode==="reponse"?["client_nom","message"]:["client_nom","avancement"];
+  const req=["client_nom","message"];
   const miss=req.filter(id=>!(f[id]||"").trim());
   if(miss.length){alert("Champs manquants : "+miss.join(", "));return;}
   set({loading:true,generatedText:""});
   try{
-    const prompt=S.emailMode==="reponse"
-      ?`Rédige une réponse email professionnelle en français pour ${e.nom}.\n${e.contexte_ia?`Contexte sur l'activité :\n${e.contexte_ia}\n`:""}\nTon : ${(S.emailTons||["vouvoiement"]).join(" + ")}\nClient : ${f.client_nom}\nMessage : ${f.message}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`
-      :`Rédige un email de mise à jour professionnel en français pour ${e.nom}.\nTon : ${(S.emailTons||["vouvoiement"]).join(" + ")}\nClient : ${f.client_nom}\nPrestation / lieu : ${f.adresse_travaux||""}\nAvancement : ${f.avancement}\nProchaine étape : ${f.suite||"à définir"}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`;
+    const prompt=`Rédige une réponse email professionnelle en français pour ${e.nom}.\n${e.contexte_ia?`Contexte sur l'activité :\n${e.contexte_ia}\n`:""}\nTon : ${(S.emailTons||["vouvoiement"]).join(" + ")}\nClient : ${f.client_nom}\nMessage : ${f.message}\nContexte : ${f.contexte||"aucun"}\nSigne "${e.nom}".`;
     const{text,usage:ue}=await callClaude(prompt,500);
     logTokens("email",ue);
     window.__emailBody=text;
@@ -274,7 +272,6 @@ window.handleGenerate=async()=>{
 };
 window.copyText=text=>{navigator.clipboard.writeText(text);set({copied:true});setTimeout(()=>set({copied:false}),2000);};
 window.toggleTon=function(ton){const t=S.emailTons||[];S.emailTons=t.includes(ton)?t.filter(x=>x!==ton):[...t,ton];renderPage();};
-window.setEmailMode=m=>set({emailMode:m,fields:{},generatedText:""});
 
 /* ── Gmail helpers ── */
 function decodeBase64Utf8(str){try{return decodeURIComponent(escape(atob(str.replace(/-/g,"+").replace(/_/g,"/"))));}catch(e){return atob(str.replace(/-/g,"+").replace(/_/g,"/"));}}
@@ -352,15 +349,10 @@ function renderEmail(){
   const f=S.fields;
   const tonsHtml=["vouvoiement","tutoiement","amical","institutionnel","ferme"].map(ton=>{const active=(S.emailTons||[]).includes(ton);return`<button onclick="toggleTon('${ton}')" style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${active?"var(--amber)":"var(--border-hi)"};background:${active?"var(--amber-dim)":"transparent"};color:${active?"var(--amber)":"var(--muted)"};font-weight:${active?"600":"400"};font-family:var(--fb);transition:all .2s;">${active?"✓ ":""}${ton.charAt(0).toUpperCase()+ton.slice(1)}</button>`;}).join("");
   const reponseFields=`<div class="field"><label class="label">Nom du client</label><input type="text" value="${esc(f.client_nom||"")}" placeholder="Ex: M. Martin" data-fid="client_nom" oninput="S.fields['client_nom']=this.value" /></div><div class="field"><label class="label">Message reçu du client</label><textarea placeholder="Colle ici le message du client..." data-fid="message">${esc(f.message||"")}</textarea></div><div class="field"><label class="label" style="display:flex;align-items:center;gap:6px;">Contexte <span class="opt">(optionnel)</span><button onclick="startVoiceContexte('contexte')" style="background:${S.voiceContextField==="contexte"?"#E24B4A":"var(--amber)"};border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#080b14;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Dicter le contexte">${S.voiceContextField==="contexte"?"⏹":"🎙"}</button></label><textarea placeholder="Ex: infos que le client ne connaît pas encore..." data-fid="contexte">${esc(f.contexte||"")}</textarea></div>`;
-  const suiviFields=`<div class="field"><label class="label">Nom du client</label><input type="text" value="${esc(f.client_nom||"")}" placeholder="Ex: M. Martin" data-fid="client_nom" oninput="S.fields['client_nom']=this.value" /></div><div class="field"><label class="label">Prestation / lieu <span class="opt">(optionnel)</span></label><input type="text" value="${esc(f.adresse_travaux||"")}" placeholder="Ex: Rénovation salle de bain, 12 rue..." data-fid="adresse_travaux" oninput="S.fields['adresse_travaux']=this.value" /></div><div class="field"><label class="label">Avancement</label><textarea placeholder="Ex: Installation terminée, mise en service demain..." data-fid="avancement">${esc(f.avancement||"")}</textarea></div><div class="field"><label class="label">Prochaine étape <span class="opt">(optionnel)</span></label><input type="text" value="${esc(f.suite||"")}" placeholder="Ex: Retour jeudi matin" data-fid="suite" oninput="S.fields['suite']=this.value" /></div><div class="field"><label class="label" style="display:flex;align-items:center;gap:6px;">Contexte <span class="opt">(optionnel)</span><button onclick="startVoiceContexte('contexte')" style="background:${S.voiceContextField==="contexte"?"#E24B4A":"var(--amber)"};border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#080b14;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Dicter le contexte">${S.voiceContextField==="contexte"?"⏹":"🎙"}</button></label><textarea placeholder="Ex: infos supplémentaires..." data-fid="contexte">${esc(f.contexte||"")}</textarea></div>`;
   return`<div class="card">
     <div class="section-head" style="margin-top:0"><div class="section-icon">✉️</div><span class="section-title">Rédiger une réponse</span><div class="section-line"></div></div>
-    <div class="mode-tabs">
-      <button class="mode-btn ${S.emailMode==="reponse"?"active":""}" onclick="setEmailMode('reponse')">📩 Réponse client</button>
-      <button class="mode-btn ${S.emailMode==="suivi"?"active":""}" onclick="setEmailMode('suivi')">📋 Mise à jour prestation</button>
-    </div>
     <div style="margin-bottom:16px;"><label class="label" style="margin-bottom:8px;">Ton de la réponse <span style="font-weight:400;font-size:10px;color:var(--muted);">(plusieurs choix possibles)</span></label><div style="display:flex;gap:6px;flex-wrap:wrap;">${tonsHtml}</div></div>
-    ${S.emailMode==="reponse"?reponseFields:suiviFields}
+    ${reponseFields}
     <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":"Générer l'email"}</button>
     ${S.generatedText?`<div class="result-box"><div class="result-header"><span style="font-size:13px;font-weight:500;color:var(--muted);">Email généré</span><button class="btn-small ${S.copied?"btn-green":"btn-gray"}" onclick="copyText(window.__emailBody||'')">${S.copied?"Copié ✓":"Copier"}</button></div><pre>${esc(S.generatedText)}</pre></div>`:""}
   </div>`;
