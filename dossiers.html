@@ -576,7 +576,24 @@ function renderDossierCard(dos){
           ${doc.type==="devis"&&!doc.accepte?(isPro?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);opacity:.45;" onclick="window.PlanGuard?.showProModal('Signature électronique')">🔒 Signature</button>`):""}
           ${doc.type==="devis"&&!doc.accepte?(isPro?`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);opacity:.45;" onclick="window.PlanGuard?.showProModal('Relances clients IA')">🔒 Relance</button>`):""}
           ${doc.type==="facture"?`${doc.paye?`<span class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;">✓ Payée le ${doc.date_paye}</span>`:`<button class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border-color:rgba(74,222,128,.3);" onclick="markPaye('${dos.id}','${doc.docNumber}')">💶 Marquer payée</button>`}${!doc.paye?(S.rappelLoadingId===doc.docNumber?`<button class="btn-small" disabled>⏳ Génération...</button>`:isPro?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);" onclick="genererRappelPaiement('${dos.id}','${doc.docNumber}')">📨 Rappel</button>`:`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);opacity:.45;" onclick="window.PlanGuard?.showProModal('Rappels de paiement IA')">🔒 Rappel</button>`):""}
-          <button class="btn-small" style="background:${doc.factpulse_id?"rgba(74,222,128,.12)":"rgba(83,74,183,.15)"};color:${doc.factpulse_id?"var(--green)":"#9d95f5"};border-color:${doc.factpulse_id?"rgba(74,222,128,.3)":"rgba(83,74,183,.3)"};" onclick="emettreFacture('${dos.id}','${doc.docNumber}')">${S.emettreId===doc.docNumber?"⏳ Envoi...":(doc.factpulse_id?"✅ Émise":"⚡ Émettre")}</button>`:""  }
+          ${(() => {
+            const autoActive = S.entreprise?.facturation_electronique_active === true;
+            const isEmise = !!doc.factpulse_id;
+            const isLoading = S.emettreId === doc.docNumber;
+            // 3 états :
+            //   1. Émise → vert "✅ Émise"
+            //   2. Auto activée + non émise → orange "⚠️ Réémettre" (anomalie à corriger)
+            //   3. Auto désactivée + non émise → violet "⚡ Émettre" (mode manuel)
+            let bg, col, bd, label;
+            if (isEmise) {
+              bg="rgba(74,222,128,.12)"; col="var(--green)"; bd="rgba(74,222,128,.3)"; label="✅ Émise";
+            } else if (autoActive) {
+              bg="rgba(255,160,40,.12)"; col="var(--amber)"; bd="rgba(255,160,40,.3)"; label="⚠️ Réémettre";
+            } else {
+              bg="rgba(83,74,183,.15)"; col="#9d95f5"; bd="rgba(83,74,183,.3)"; label="⚡ Émettre";
+            }
+            return `<button class="btn-small" style="background:${bg};color:${col};border-color:${bd};" onclick="emettreFacture('${dos.id}','${doc.docNumber}')" title="${autoActive&&!isEmise?'L’émission automatique a échoué — cliquer pour réessayer':''}">${isLoading?"⏳ Envoi...":label}</button>`;
+          })()}`:""  }
           ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button>`:`<button class="btn-small" style="color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
         </div>
       </div>
