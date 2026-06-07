@@ -420,10 +420,13 @@ async function _doConvert(dosId,docNum,dateFacture){
   await upsertDossier(dos);
   set({convertingId:null,pendingConvert:null,showDatePrestModal:false});
   checkDevisAConvertir();
-  // Auto-émission FactPulse DÉSACTIVÉE temporairement (quota brûlé par re-clics).
-  // L'utilisateur déclenche manuellement via le bouton "⚡ Émettre" dans le dossier.
-  // À réactiver une fois la page d'activation Facturation Électronique en place.
-  // if(S.entreprise?.siret){try{await window.emettreFacture(dosId,factNum,{silent:true});}catch(e){console.warn("Auto-émission FactPulse:",e.message);}}
+  // Auto-émission FactPulse — déclenchée UNIQUEMENT si l'utilisateur a activé
+  // la facturation électronique dans Paramètres → Facturation électronique.
+  // La garde d'idempotence côté Edge Function empêche les doubles appels.
+  if(S.entreprise?.facturation_electronique_active===true && S.entreprise?.siret){
+    try { await window.emettreFacture(dosId,factNum,{silent:true}); }
+    catch(e){ console.warn("Auto-émission FactPulse:",e.message); }
+  }
 }
 window.startRename=function(id){const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;set({renamingDossierId:id,renamingDossierVal:dos.nom||""});};
 window.renameDossier=async function(id){
@@ -676,7 +679,7 @@ async function loadUserData(userId){
   try{
     const{data:profil,error:pe}=await sb.from("profils").select("*").eq("user_id",userId).single();
     if(pe&&pe.code!=="PGRST116")console.error("Erreur profil:",pe.message);
-    if(profil){S.entreprise={nom:profil.nom||"",adresse:profil.adresse||"",tel:profil.tel||"",email:profil.email||"",siret:profil.siret||"",taux_horaire:profil.taux_horaire||"",assujetti_tva:profil.assujetti_tva||false,secteur:profil.secteur||"",conditions_paiement:profil.conditions_paiement||"",delai_paiement:profil.delai_paiement||"30",validite_devis:profil.validite_devis||3,rc_pro_assureur:profil.rc_pro_assureur||"",rc_pro_police:profil.rc_pro_police||"",decennale_assureur:profil.decennale_assureur||"",decennale_police:profil.decennale_police||"",certifications:profil.certifications||"",nature_operation:profil.nature_operation||"",contexte_ia:profil.contexte_ia||"",iban:profil.iban||"",onboarding_done:profil.onboarding_done||false,logo_base64:profil.logo_base64||null,couleur_pdf:profil.couleur_pdf||null};}
+    if(profil){S.entreprise={nom:profil.nom||"",adresse:profil.adresse||"",tel:profil.tel||"",email:profil.email||"",siret:profil.siret||"",taux_horaire:profil.taux_horaire||"",assujetti_tva:profil.assujetti_tva||false,secteur:profil.secteur||"",conditions_paiement:profil.conditions_paiement||"",delai_paiement:profil.delai_paiement||"30",validite_devis:profil.validite_devis||3,rc_pro_assureur:profil.rc_pro_assureur||"",rc_pro_police:profil.rc_pro_police||"",decennale_assureur:profil.decennale_assureur||"",decennale_police:profil.decennale_police||"",certifications:profil.certifications||"",nature_operation:profil.nature_operation||"",contexte_ia:profil.contexte_ia||"",iban:profil.iban||"",onboarding_done:profil.onboarding_done||false,logo_base64:profil.logo_base64||null,couleur_pdf:profil.couleur_pdf||null,facturation_electronique_active:profil.facturation_electronique_active===true};}
     const{data:dossiers,error:de}=await sb.from("dossiers").select("*").eq("user_id",userId).order("updated_at",{ascending:false});
     if(de)console.error("Erreur dossiers:",de.message);
     if(dossiers&&dossiers.length>0){S.dossiers=dossiers.map(d=>{let docs=[];try{docs=typeof d.documents==="string"?JSON.parse(d.documents):(d.documents||[]);}catch(e){docs=[];}return{...d,documents:docs};});S.dossiers.forEach(d=>(d.documents||[]).forEach(doc=>{if(doc.docNumber)storeDoc(doc);}));}

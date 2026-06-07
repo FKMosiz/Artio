@@ -658,7 +658,8 @@ async function loadUserData(userId){
           iban:profil.iban||"",
           onboarding_done:profil.onboarding_done||false,
           logo_base64:profil.logo_base64||null,
-          couleur_pdf:profil.couleur_pdf||null
+          couleur_pdf:profil.couleur_pdf||null,
+          facturation_electronique_active:profil.facturation_electronique_active===true
       };
       S.profilSaved=!!profil.nom;
       // Migration : on lit en priorité google_*, fallback gmail_* legacy
@@ -1657,13 +1658,13 @@ async function _doConvert(dosId,docNum,dateFacture){
   storeDoc(factDoc);
   await upsertDossier(dos);set({convertingId:null,pendingConvert:null,showDatePrestModal:false});
   checkDevisAConvertir();
-  // Auto-émission FactPulse DÉSACTIVÉE temporairement (quota brûlé par re-clics).
-  // L'utilisateur déclenche manuellement via le bouton "⚡ Émettre" dans le dossier.
-  // À réactiver une fois la page d'activation Facturation Électronique en place.
-  // if(S.entreprise?.siret){
-  //   try{await window.emettreFacture(dosId,factNum,{silent:true});}
-  //   catch(e){console.warn("Auto-émission FactPulse échouée:",e.message);}
-  // }
+  // Auto-émission FactPulse — déclenchée UNIQUEMENT si l'utilisateur a activé
+  // la facturation électronique dans Paramètres → Facturation électronique.
+  // La garde d'idempotence côté Edge Function empêche les doubles appels.
+  if(S.entreprise?.facturation_electronique_active===true && S.entreprise?.siret){
+    try{await window.emettreFacture(dosId,factNum,{silent:true});}
+    catch(e){console.warn("Auto-émission FactPulse échouée:",e.message);}
+  }
 }
 window.startRename=function(id){
   const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;
