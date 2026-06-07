@@ -718,7 +718,7 @@ async function upsertDossier(dos){
       nom:dos.nom||"",
       client:dos.client||"",
       statut:dos.statut||"devis_envoye",
-      documents:JSON.stringify(dos.documents||[]),
+      documents:dos.documents||[],
       created_at:new Date().toISOString(),
       updated_at:new Date().toISOString()
     },{onConflict:"id"});

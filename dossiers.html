@@ -217,7 +217,7 @@ window.openClientOverlay=function(nom){set({openClientOverlay:nom,openDossier:nu
 window.closeClientOverlay=function(){set({openClientOverlay:null,openDossier:null,previewDocNum:null,deleteConfirm:null});};
 async function upsertDossier(dos){
   try{
-    const{error}=await sb.from("dossiers").upsert({id:dos.id,user_id:S.user.id,nom:dos.nom||"",client:dos.client||"",statut:dos.statut||"devis_envoye",documents:JSON.stringify(dos.documents||[]),created_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"id"});
+    const{error}=await sb.from("dossiers").upsert({id:dos.id,user_id:S.user.id,nom:dos.nom||"",client:dos.client||"",statut:dos.statut||"devis_envoye",documents:dos.documents||[],created_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"id"});
     if(error){console.error("upsertDossier:",error.message);alert("Erreur de sauvegarde : "+error.message);}
   }catch(e){alert("Erreur de sauvegarde : "+e.message);}
 }
