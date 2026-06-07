@@ -1428,7 +1428,8 @@ const nom=civStr+(travStr?" — "+travStr:"");
     S.dossiers=[dos,...S.dossiers];
     // entryMode conservé pour pouvoir "Convertir" depuis le formulaire — réinitialisé à la fermeture
     set({loading:false,generatedDoc:doc,openDossier:dos.id});
-  }catch(err){set({loading:false});alert("Erreur : "+err.message)}
+    showToast("✅ "+(tab==="devis"?"Devis":"Facture")+" généré"+(tab==="facture"?"e":"")+" avec succès — "+docNumber);
+  }catch(err){set({loading:false});showToast("❌ Erreur lors de la génération : "+err.message);}
 };
 
 // ——— DOSSIERS ACTIONS ———
