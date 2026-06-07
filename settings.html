@@ -820,11 +820,11 @@ function renderFacturationElectronique() {
 async function activerFacturationElectronique() {
   if (!user) return;
   if (!profil.siret || profil.siret.replace(/\s/g,"").length < 9) {
-    showToast("⚠️ SIRET manquant — renseignez-le dans l'onglet Mon entreprise.");
+    toast("⚠️ SIRET manquant — renseignez-le dans l'onglet Mon entreprise.");
     return;
   }
   if (!facturationElectroniqueMandatAccepte) {
-    showToast("⚠️ Vous devez accepter le mandat de transmission.");
+    toast("⚠️ Vous devez accepter le mandat de transmission.");
     return;
   }
   syncing = true;
@@ -837,13 +837,13 @@ async function activerFacturationElectronique() {
   }).eq("user_id", user.id);
   syncing = false;
   if (error) {
-    showToast("❌ Erreur lors de l'activation : " + error.message);
+    toast("❌ Erreur lors de l'activation : " + error.message);
     render();
     return;
   }
   facturationElectroniqueActive = true;
   facturationElectroniqueActivatedAt = activatedAt;
-  showToast("✅ Facturation électronique activée — vos prochaines factures seront émises automatiquement.");
+  toast("✅ Facturation électronique activée — vos prochaines factures seront émises automatiquement.");
   render();
 }
 
