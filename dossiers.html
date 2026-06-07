@@ -391,7 +391,11 @@ window.emettreFacture=async function(dosId,docNum,opts){
     const result=await resp.json();
     if(!resp.ok||!result.success){const msg=result?.error||result?.message||"Erreur inconnue";if(!silent)showToast("❌ FactPulse : "+msg);else console.warn("FactPulse silent:",msg);set({emettreId:null});return;}
     const{data:freshDos}=await sb.from("dossiers").select("*").eq("id",dosId).single();
-    if(freshDos){const idx=S.dossiers.findIndex(d=>d.id===dosId);if(idx>=0)S.dossiers[idx]=freshDos;}
+    if(freshDos){
+      // Normaliser documents (peut arriver comme string JSON depuis Supabase)
+      try{freshDos.documents=typeof freshDos.documents==="string"?JSON.parse(freshDos.documents):(freshDos.documents||[]);}catch(e){freshDos.documents=[];}
+      const idx=S.dossiers.findIndex(d=>d.id===dosId);if(idx>=0)S.dossiers[idx]=freshDos;
+    }
     set({emettreId:null,dossiers:[...S.dossiers]});
     if(!silent)showToast("✅ Facture émise électroniquement ! Flow ID : "+(result.flow_id||result.factpulse_id||"émis"));
   }catch(e){if(!silent)showToast("❌ Erreur réseau : "+e.message);set({emettreId:null});}

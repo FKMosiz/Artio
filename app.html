@@ -1613,6 +1613,8 @@ window.emettreFacture=async function(dosId,docNum,opts){
     // On rafraîchit le dossier local depuis la BDD pour récupérer l'état à jour.
     const{data:freshDos}=await sb.from("dossiers").select("*").eq("id",dosId).single();
     if(freshDos){
+      // Normaliser documents (peut arriver comme string JSON depuis Supabase)
+      try{freshDos.documents=typeof freshDos.documents==="string"?JSON.parse(freshDos.documents):(freshDos.documents||[]);}catch(e){freshDos.documents=[];}
       const idx=S.dossiers.findIndex(d=>d.id===dosId);
       if(idx>=0)S.dossiers[idx]=freshDos;
     }
