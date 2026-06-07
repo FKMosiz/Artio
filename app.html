@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
@@ -1569,6 +1569,11 @@ window.emettreFacture=async function(dosId,docNum,opts){
   const silent=opts&&opts.silent===true;
   const dos=S.dossiers.find(d=>d.id===dosId);if(!dos)return;
   const doc=dos.documents.find(d=>d.docNumber===docNum);if(!doc)return;
+  // ⚡ GARDE D'IDEMPOTENCE : si déjà émise, on ne rappelle PAS FactPulse.
+  if(doc.factpulse_id){
+    if(!silent)showToast("✅ Cette facture a déjà été émise (Flow ID : "+doc.factpulse_id+")");
+    return;
+  }
   if(!S.entreprise?.siret){
     if(!silent)showToast("⚠️ SIRET manquant dans ton profil — va dans Paramètres.");
     return;
@@ -1649,15 +1654,13 @@ async function _doConvert(dosId,docNum,dateFacture){
   storeDoc(factDoc);
   await upsertDossier(dos);set({convertingId:null,pendingConvert:null,showDatePrestModal:false});
   checkDevisAConvertir();
-  // Auto-émission FactPulse : déclenchée si SIRET pro présent.
-  // L'auth FactPulse est gérée côté serveur via secrets — pas besoin
-  // de token côté frontend. Si l'utilisateur n'a pas configuré FactPulse
-  // ou si le client est B2C, l'Edge Function renverra une erreur claire
-  // qu'on log silencieusement.
-  if(S.entreprise?.siret){
-    try{await window.emettreFacture(dosId,factNum,{silent:true});}
-    catch(e){console.warn("Auto-émission FactPulse échouée:",e.message);}
-  }
+  // Auto-émission FactPulse DÉSACTIVÉE temporairement (quota brûlé par re-clics).
+  // L'utilisateur déclenche manuellement via le bouton "⚡ Émettre" dans le dossier.
+  // À réactiver une fois la page d'activation Facturation Électronique en place.
+  // if(S.entreprise?.siret){
+  //   try{await window.emettreFacture(dosId,factNum,{silent:true});}
+  //   catch(e){console.warn("Auto-émission FactPulse échouée:",e.message);}
+  // }
 }
 window.startRename=function(id){
   const dos=S.dossiers.find(d=>d.id===id);if(!dos)return;
