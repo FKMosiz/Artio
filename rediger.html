@@ -10,6 +10,9 @@
   <script src="plan-guard.js?v=1"></script>
   <script src="tour.js?v=1"></script>
   <script>const PAGE_PLAN_REQUIRED = "solo";</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="pdf-generator.js?v=1"></script>
   <style>
 :root,[data-theme="dark"]{--bg:#080b14;--surface:#0e1220;--surface-2:#141829;--surface-3:#1a2035;--border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.13);--text:#e2e5f1;--muted:#6b7494;--amber:#f5a742;--amber-dim:rgba(245,167,66,0.12);--amber-glow:rgba(245,167,66,0.28);--teal:#3ecfcf;--teal-dim:rgba(62,207,207,0.11);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--green:#4ade80;--fh:'Space Grotesk',sans-serif;--fb:'Plus Jakarta Sans',sans-serif}
 [data-theme="light"]{--bg:#faf8f3;--surface:#ffffff;--surface-2:#f3efe6;--surface-3:#ece7dc;--border:rgba(20,18,12,0.08);--border-hi:rgba(20,18,12,0.16);--text:#1a1a1f;--muted:#6a6b78;--amber:#d97706;--amber-dim:rgba(217,119,6,0.10);--amber-glow:rgba(217,119,6,0.22);--teal:#0d9488;--teal-dim:rgba(13,148,136,0.10);--red:#dc2626;--green:#16a34a}
@@ -155,8 +158,11 @@ const FUNCTIONS_URL=SUPABASE_URL+"/functions/v1";
 const{createClient}=supabase;
 const sb=window.sb=createClient(SUPABASE_URL,SUPABASE_KEY);
 
-function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
+/* ══════════════════════════════════════════════════════════
+   ÉTAT GLOBAL
+   ══════════════════════════════════════════════════════════ */
 let S={
   user:null,
   langue:"fr",
@@ -169,6 +175,7 @@ let S={
   generatedText:"",
   copied:false,
   voiceContextField:null,
+  // Gmail
   gmailEmail:null,
   gmailAccessToken:null,
   gmailTokenExpiry:null,
@@ -176,10 +183,23 @@ let S={
   emailsLoading:false,
   emailsError:"",
   expandedEmail:null,
-  emailReplyDraft:{},
+  // Réponses
+  emailReplyDraft:{},      // { [id]: {loading,text} }  ← réponse IA
+  emailDirectDraft:{},     // { [id]: {text} }           ← réponse directe
+  replyMode:{},            // { [id]: "ia"|"direct"|null }
+  // Pièces jointes
+  emailAttachments:{},     // { [id]: [{filename,contentType,data}] }
+  showAttachPicker:null,   // emailId du picker ouvert
+  dossiers:[],
+  dossiersLoaded:false,
+  // Supprimer
+  showDeleteMenu:null,     // emailId du menu ouvert
 };
 function set(patch){Object.assign(S,patch);renderPage();}
 
+/* ══════════════════════════════════════════════════════════
+   IA / UTILS
+   ══════════════════════════════════════════════════════════ */
 async function callClaude(prompt,maxTokens=400,retries=5){
   if(window.PlanGuard&&window.PlanGuard.isFree()){_showReadonlyAlert("La génération par IA nécessite un abonnement actif.");throw new Error("plan_required");}
   const{data:{session}}=await sb.auth.getSession();
@@ -195,16 +215,13 @@ async function callClaude(prompt,maxTokens=400,retries=5){
       }
       return{text:d.content?.map(b=>b.text||"").join("")||"",usage:d.usage||null};
     }catch(e){
-      if(attempt===retries){if(e.message==="plan_required")throw e;throw new Error("L'IA est momentanément surchargée. Réessayez dans quelques instants.");}
+      if(attempt===retries){if(e.message==="plan_required")throw e;throw new Error("L'IA est momentanément surchargée. Réessayez.");}
       if(e.message==="plan_required")throw e;
       await new Promise(r=>setTimeout(r,1500*Math.pow(1.5,attempt)));
     }
   }
 }
-
-async function logTokens(feature,usage){
-  try{if(!usage||!S.user?.id)return;const i=usage.input_tokens||0,o=usage.output_tokens||0;await sb.from("token_logs").insert({user_id:S.user.id,feature,input_tokens:i,output_tokens:o,total_tokens:i+o,cout_estime:(i*0.000003)+(o*0.000015)});}catch(e){console.debug("logTokens:",e.message);}
-}
+async function logTokens(feature,usage){try{if(!usage||!S.user?.id)return;const i=usage.input_tokens||0,o=usage.output_tokens||0;await sb.from("token_logs").insert({user_id:S.user.id,feature,input_tokens:i,output_tokens:o,total_tokens:i+o,cout_estime:(i*0.000003)+(o*0.000015)});}catch(e){console.debug("logTokens:",e.message);}}
 
 function _showReadonlyAlert(msg){
   const existing=document.getElementById("pg-readonly-alert");if(existing)existing.remove();
@@ -215,13 +232,15 @@ function _showReadonlyAlert(msg){
   document.body.appendChild(el);el.addEventListener("click",e=>{if(e.target===el)el.remove();});
 }
 
-function showToast(msg){
+function showToast(msg,dur=4500){
   let t=document.getElementById("artio-toast");
   if(!t){t=document.createElement("div");t.id="artio-toast";t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0e1220;border:1px solid rgba(255,255,255,0.13);color:#e2e5f1;padding:12px 24px;border-radius:12px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.5);transition:opacity .4s;";document.body.appendChild(t);}
-  t.textContent=msg;t.style.opacity="1";clearTimeout(t._to);t._to=setTimeout(()=>{t.style.opacity="0";},4500);
+  t.textContent=msg;t.style.opacity="1";clearTimeout(t._to);t._to=setTimeout(()=>{t.style.opacity="0";},dur);
 }
 
-/* ── Voice pour le champ contexte ── */
+/* ══════════════════════════════════════════════════════════
+   DICTÉE VOIX
+   ══════════════════════════════════════════════════════════ */
 let recognition=null,voiceBuffer="",voiceRunning=false,voiceCallback=null;
 function startVoiceGeneric(onResult){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -254,12 +273,13 @@ window.startVoiceContexte=function(fieldId){
   startVoiceGeneric(voiceCallback);
 };
 
-/* ── Email handleGenerate ── */
+/* ══════════════════════════════════════════════════════════
+   TAB EMAIL (rédaction IA sans Gmail)
+   ══════════════════════════════════════════════════════════ */
 window.handleGenerate=async()=>{
   document.querySelectorAll("input[data-fid],textarea[data-fid]").forEach(el=>{S.fields[el.dataset.fid]=el.value;});
   const e=S.entreprise,f=S.fields;
-  const req=["client_nom","message"];
-  const miss=req.filter(id=>!(f[id]||"").trim());
+  const miss=["client_nom","message"].filter(id=>!(f[id]||"").trim());
   if(miss.length){alert("Champs manquants : "+miss.join(", "));return;}
   set({loading:true,generatedText:""});
   try{
@@ -273,12 +293,43 @@ window.handleGenerate=async()=>{
 window.copyText=text=>{navigator.clipboard.writeText(text);set({copied:true});setTimeout(()=>set({copied:false}),2000);};
 window.toggleTon=function(ton){const t=S.emailTons||[];S.emailTons=t.includes(ton)?t.filter(x=>x!==ton):[...t,ton];renderPage();};
 
-/* ── Gmail helpers ── */
-function decodeBase64Utf8(str){try{return decodeURIComponent(escape(atob(str.replace(/-/g,"+").replace(/_/g,"/"))));}catch(e){return atob(str.replace(/-/g,"+").replace(/_/g,"/"));}}
-function cleanEmailSnippet(str){return(str||"").replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/\\r\\n|\\r|\\n/g," ").replace(/\r\n|\r|\n/g," ").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").slice(0,200);}
-function cleanEmailBody(str){return(str||"").replace(/\\r\\n|\\r|\\n/g,"\n").replace(/\r\n|\r/g,"\n").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br/>");}
+/* ══════════════════════════════════════════════════════════
+   GMAIL — HELPERS DE BASE
+   ══════════════════════════════════════════════════════════ */
+function decodeBase64Utf8(str){
+  try{return decodeURIComponent(escape(atob(str.replace(/-/g,"+").replace(/_/g,"/"))));}
+  catch(e){try{return atob(str.replace(/-/g,"+").replace(/_/g,"/"));}catch(e2){return "";}}
+}
+
+function cleanEmailSnippet(str){
+  return(str||"").replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">")
+    .replace(/\\r\\n|\\r|\\n/g," ").replace(/\r\n|\r|\n/g," ")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").slice(0,200);
+}
+
 function isGmailExpired(){return S.gmailTokenExpiry&&new Date()>new Date(S.gmailTokenExpiry);}
 
+/* ── Parser multipart récursif ─────────────────────────────
+   Descend dans tous les sous-parts pour trouver text/plain
+   et text/html, même imbriqués (multipart/alternative dans
+   multipart/mixed, etc.)
+   ─────────────────────────────────────────────────────────*/
+function extractEmailParts(payload){
+  let plain=null,html=null;
+  function walk(part){
+    if(!part)return;
+    const mime=(part.mimeType||"").toLowerCase();
+    if(mime==="text/plain"&&part.body?.data&&!plain) plain=part.body.data;
+    else if(mime==="text/html"&&part.body?.data&&!html) html=part.body.data;
+    if(part.parts&&part.parts.length>0) part.parts.forEach(walk);
+  }
+  walk(payload);
+  return{plain,html};
+}
+
+/* ══════════════════════════════════════════════════════════
+   GMAIL — DÉCONNEXION
+   ══════════════════════════════════════════════════════════ */
 async function gmailDisconnect(){
   if(!confirm("Déconnecter Google ? Cela désactivera l'envoi d'emails ET la synchronisation Google Calendar."))return;
   try{
@@ -289,55 +340,244 @@ async function gmailDisconnect(){
   }catch(e){alert("Erreur : "+e.message);}
 }
 
+/* ══════════════════════════════════════════════════════════
+   GMAIL — CHARGEMENT DES EMAILS
+   ══════════════════════════════════════════════════════════ */
 async function gmailFetchEmails(){
   if(!S.gmailEmail){alert("Connecte ton Gmail dans les paramètres.");return;}
   if(isGmailExpired()){S.gmailEmail=null;S.gmailAccessToken=null;S.gmailTokenExpiry=null;S.emails=[];showToast("⚠️ Session Gmail expirée — reconnecte-toi dans les paramètres");renderPage();return;}
   S.emailsLoading=true;S.emailsError="";renderPage();
   try{
-    const listRes=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread&maxResults=10",{headers:{"Authorization":"Bearer "+S.gmailAccessToken}});
+    const listRes=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread&maxResults=15",{headers:{"Authorization":"Bearer "+S.gmailAccessToken}});
     if(listRes.status===401){S.gmailEmail=null;S.gmailAccessToken=null;S.emailsError="Session expirée. Reconnecte Gmail dans les paramètres.";S.emailsLoading=false;renderPage();return;}
     const listData=await listRes.json();
     const messages=listData.messages||[];
+
+    // Chargement en parallèle (limité à 15 emails)
     const emails=await Promise.all(messages.map(async m=>{
       const r=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/"+m.id+"?format=full",{headers:{"Authorization":"Bearer "+S.gmailAccessToken}});
-      const d=await r.json();const headers=d.payload?.headers||[];const get=name=>headers.find(h=>h.name===name)?.value||"";
-      let body="";const parts=d.payload?.parts||[];
-      if(parts.length>0){const textPart=parts.find(p=>p.mimeType==="text/plain")||parts[0];if(textPart?.body?.data)body=decodeBase64Utf8(textPart.body.data);}
-      else if(d.payload?.body?.data)body=decodeBase64Utf8(d.payload.body.data);
-      return{id:m.id,threadId:d.threadId||m.id,messageId:get("Message-Id"),from:get("From"),subject:get("Subject"),date:get("Date"),body:body.slice(0,2000),snippet:d.snippet};
+      const d=await r.json();
+      const headers=d.payload?.headers||[];
+      const get=name=>headers.find(h=>h.name===name)?.value||"";
+
+      // ── Parser récursif ─────────────────────────────────
+      const{plain,html}=extractEmailParts(d.payload||{});
+      // Préférer plain text, fallback sur html (sera affiché en iframe)
+      let body="";
+      let bodyType="text"; // "text" ou "html"
+      if(plain){
+        body=decodeBase64Utf8(plain).slice(0,5000);
+        bodyType="text";
+      }else if(html){
+        body=decodeBase64Utf8(html); // pas de slice, l'iframe gère
+        bodyType="html";
+      }else if(d.payload?.body?.data){
+        body=decodeBase64Utf8(d.payload.body.data).slice(0,5000);
+        bodyType="text";
+      }
+
+      return{
+        id:m.id,
+        threadId:d.threadId||m.id,
+        messageId:get("Message-Id"),
+        from:get("From"),
+        subject:get("Subject"),
+        date:get("Date"),
+        body,
+        bodyType,
+        snippet:d.snippet,
+        labelIds:d.labelIds||[],
+      };
     }));
-    S.emails=emails;window.__emailBodies={};window.__emailMeta={};
-    emails.forEach(m=>{window.__emailBodies[m.id]=m.body||"";window.__emailMeta[m.id]={threadId:m.threadId,messageId:m.messageId};});
+
+    S.emails=emails;
+    window.__emailMeta={};
+    emails.forEach(m=>{window.__emailMeta[m.id]={threadId:m.threadId,messageId:m.messageId};});
     S.emailsLoading=false;renderPage();
   }catch(e){S.emailsError="Erreur : "+e.message;S.emailsLoading=false;renderPage();}
 }
 
-async function gmailSendReply(emailId,threadId,messageId,from,subject,replyBody){
-  if(!S.gmailEmail){showToast("⚠️ Google non connecté");return;}
-  try{
-    const cleanSubj=(subject||"").replace(/[‘’‚‛]/g,"'").replace(/[“”„‟]/g,'"').replace(/…/g,"...");
-    const subj=cleanSubj.startsWith("Re:")?cleanSubj:"Re: "+cleanSubj;
-    showToast("📤 Envoi en cours…");
-    const{data:{session}}=await sb.auth.getSession();if(!session){showToast("⚠️ Session expirée");return;}
-    const res=await fetch(FUNCTIONS_URL+"/gmail-send",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({to:from,subject:subj,text:replyBody,threadId:threadId||emailId,inReplyTo:messageId||null})});
-    const data=await res.json();
-    if(res.ok&&data.success){showToast("✅ Email envoyé dans le fil !");gmailFetchEmails();}
-    else{showToast("❌ Erreur Gmail : "+(data.error||"inconnue"));}
-  }catch(e){showToast("❌ Erreur : "+e.message);}
+/* ══════════════════════════════════════════════════════════
+   GMAIL — ENVOI
+   ══════════════════════════════════════════════════════════ */
+async function gmailSendEmail({emailId,threadId,messageId,to,subject,body,attachments=[]}){
+  if(!S.gmailEmail){showToast("⚠️ Google non connecté");return false;}
+  showToast("📤 Envoi en cours…");
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session){showToast("⚠️ Session expirée");return false;}
+  const cleanSubj=(subject||"").replace(/[''‚‛]/g,"'").replace(/[""„‟]/g,'"').replace(/…/g,"...");
+  const subj=cleanSubj.startsWith("Re:")?cleanSubj:"Re: "+cleanSubj;
+  const payload={to,subject:subj,text:body,threadId:threadId||emailId,inReplyTo:messageId||null};
+  if(attachments&&attachments.length>0) payload.attachments=attachments;
+  const res=await fetch(FUNCTIONS_URL+"/gmail-send",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  const data=await res.json();
+  if(res.ok&&data.success){showToast("✅ Email envoyé !");return true;}
+  showToast("❌ Erreur : "+(data.error||"inconnue"));return false;
 }
 
+/* Réponse IA */
 window.generateEmailReply=async function(emailId,from,subject,body){
-  S.emailReplyDraft={...(S.emailReplyDraft||{}),[emailId]:{loading:true,text:""}};renderPage();
+  S.replyMode={...S.replyMode,[emailId]:"ia"};
+  S.emailReplyDraft={...S.emailReplyDraft,[emailId]:{loading:true,text:""}};
+  renderPage();
   try{
     const e=S.entreprise;
     const{text:raw,usage:u0}=await callClaude(`Tu es l'assistant de ${e.nom||"l'entreprise"}. Rédige une réponse professionnelle à cet email.\n${e.contexte_ia?`\nContexte sur l'activité :\n${e.contexte_ia}\n`:""}\nTon : ${(S.emailTons||["vouvoiement"]).join(" + ")}\nDe : ${from}\nObjet : ${subject}\nMessage reçu :\n${body}\nSigne "${e.nom||""}".`,800);
     logTokens("email",u0);
-    S.emailReplyDraft={...(S.emailReplyDraft||{}),[emailId]:{loading:false,text:raw}};
-  }catch(err){S.emailReplyDraft={...(S.emailReplyDraft||{}),[emailId]:{loading:false,text:""}};alert("Erreur : "+err.message);}
+    S.emailReplyDraft={...S.emailReplyDraft,[emailId]:{loading:false,text:raw}};
+  }catch(err){S.emailReplyDraft={...S.emailReplyDraft,[emailId]:{loading:false,text:""}};showToast("❌ Erreur IA : "+err.message);}
   renderPage();
 };
 
-/* ── Render ── */
+/* Réponse directe sans IA */
+window.openDirectReply=function(emailId){
+  S.replyMode={...S.replyMode,[emailId]:"direct"};
+  if(!(S.emailDirectDraft||{})[emailId]){S.emailDirectDraft={...S.emailDirectDraft,[emailId]:{text:""}};}
+  renderPage();
+};
+
+window.cancelReply=function(emailId){
+  S.replyMode={...S.replyMode,[emailId]:null};
+  renderPage();
+};
+
+window.sendIAReply=async function(emailId,btn){
+  btn.disabled=true;btn.textContent="⏳ Envoi…";
+  try{
+    const t=document.getElementById("reply-ia-"+emailId)?.value||S.emailReplyDraft[emailId]?.text||"";
+    const meta=window.__emailMeta?.[emailId]||{};
+    const email=S.emails.find(m=>m.id===emailId);
+    const atts=S.emailAttachments?.[emailId]||[];
+    const ok=await gmailSendEmail({emailId,threadId:meta.threadId,messageId:meta.messageId,to:email?.from||"",subject:email?.subject||"",body:t,attachments:atts});
+    if(ok){S.emailReplyDraft[emailId]=null;S.replyMode[emailId]=null;S.emailAttachments[emailId]=[];gmailFetchEmails();}
+    else{btn.disabled=false;btn.textContent="📤 Envoyer";}
+  }catch(e){btn.disabled=false;btn.textContent="📤 Envoyer";showToast("❌ "+e.message);}
+};
+
+window.sendDirectReply=async function(emailId,btn){
+  btn.disabled=true;btn.textContent="⏳ Envoi…";
+  try{
+    const t=document.getElementById("reply-direct-"+emailId)?.value||S.emailDirectDraft[emailId]?.text||"";
+    if(!t.trim()){showToast("⚠️ Message vide");btn.disabled=false;btn.textContent="📤 Envoyer";return;}
+    const meta=window.__emailMeta?.[emailId]||{};
+    const email=S.emails.find(m=>m.id===emailId);
+    const atts=S.emailAttachments?.[emailId]||[];
+    const ok=await gmailSendEmail({emailId,threadId:meta.threadId,messageId:meta.messageId,to:email?.from||"",subject:email?.subject||"",body:t,attachments:atts});
+    if(ok){S.emailDirectDraft[emailId]=null;S.replyMode[emailId]=null;S.emailAttachments[emailId]=[];gmailFetchEmails();}
+    else{btn.disabled=false;btn.textContent="📤 Envoyer";}
+  }catch(e){btn.disabled=false;btn.textContent="📤 Envoyer";showToast("❌ "+e.message);}
+};
+
+/* ══════════════════════════════════════════════════════════
+   GMAIL — MODIFIER (archiver / corbeille / marquer lu)
+   ══════════════════════════════════════════════════════════ */
+window.gmailModify=async function(emailId,action){
+  S.showDeleteMenu=null;renderPage();
+  const labels={archive:"📥 Archivé",trash:"🗑 Déplacé dans la corbeille",markRead:"✓ Marqué comme lu"};
+  showToast("⏳ En cours…");
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session){showToast("⚠️ Session expirée");return;}
+    const res=await fetch(FUNCTIONS_URL+"/gmail-modify",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({messageId:emailId,action})});
+    const data=await res.json();
+    if(res.ok&&data.success){
+      showToast(labels[action]||"✅ Ok");
+      // Retirer l'email de la liste locale
+      S.emails=S.emails.filter(m=>m.id!==emailId);
+      renderPage();
+    }else{
+      showToast("❌ "+(data.error||"Erreur inconnue"));
+    }
+  }catch(e){showToast("❌ "+e.message);}
+};
+
+window.toggleDeleteMenu=function(emailId){
+  S.showDeleteMenu=S.showDeleteMenu===emailId?null:emailId;
+  renderPage();
+};
+
+/* ══════════════════════════════════════════════════════════
+   PIÈCES JOINTES
+   ══════════════════════════════════════════════════════════ */
+// Charger les dossiers depuis Supabase (lazy, une seule fois)
+async function gmailLoadDossiers(){
+  if(S.dossiersLoaded)return;
+  try{
+    const{data:{session}}=await sb.auth.getSession();if(!session)return;
+    const{data:rows}=await sb.from("dossiers").select("id,nom,client,documents").eq("user_id",session.user.id).order("updated_at",{ascending:false}).limit(50);
+    if(!rows)return;
+    // Extraire tous les docs (devis + factures) avec leurs métadonnées
+    const docs=[];
+    rows.forEach(d=>{
+      let documents=[];
+      try{documents=typeof d.documents==="string"?JSON.parse(d.documents):(d.documents||[]);}catch(e){}
+      documents.forEach(doc=>{
+        if(doc.docNumber){
+          docs.push({...doc,dossierId:d.id,dossierNom:d.nom||d.client||"",});
+        }
+      });
+    });
+    // Trier : factures en premier, puis devis, puis par date décroissante
+    docs.sort((a,b)=>{
+      if(a.type!==b.type)return a.type==="facture"?-1:1;
+      return (b.date||"").localeCompare(a.date||"");
+    });
+    S.dossiers=docs.slice(0,30);
+    S.dossiersLoaded=true;
+  }catch(e){console.error("gmailLoadDossiers:",e);}
+}
+
+window.openAttachPicker=async function(emailId){
+  if(S.showAttachPicker===emailId){S.showAttachPicker=null;renderPage();return;}
+  S.showAttachPicker=emailId;
+  renderPage();
+  await gmailLoadDossiers();
+  renderPage();
+};
+
+window.attachArtioDoc=async function(emailId,docIdx){
+  const doc=S.dossiers[docIdx];
+  if(!doc){return;}
+  showToast("⏳ Génération du PDF…");
+  try{
+    if(!window.ArtioPDF){throw new Error("pdf-generator.js non chargé");}
+    const b64=window.ArtioPDF.toBase64(doc);
+    const att={filename:doc.docNumber+".pdf",contentType:"application/pdf",data:b64};
+    S.emailAttachments[emailId]=[...(S.emailAttachments[emailId]||[]),att];
+    S.showAttachPicker=null;
+    renderPage();
+    showToast("📎 "+doc.docNumber+" ajouté");
+  }catch(e){showToast("❌ Erreur PDF : "+e.message);}
+};
+
+window.handleLocalFile=function(emailId,input){
+  const file=input.files?.[0];
+  if(!file){return;}
+  const MAX=10*1024*1024; // 10 MB
+  if(file.size>MAX){showToast("❌ Fichier trop volumineux (max 10 MB)");return;}
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const dataUrl=ev.target.result;
+    const b64=dataUrl.includes(",")?dataUrl.split(",")[1]:dataUrl;
+    const att={filename:file.name,contentType:file.type||"application/octet-stream",data:b64};
+    S.emailAttachments[emailId]=[...(S.emailAttachments[emailId]||[]),att];
+    S.showAttachPicker=null;
+    renderPage();
+    showToast("📎 "+file.name+" ajouté");
+  };
+  reader.readAsDataURL(file);
+};
+
+window.removeAttachment=function(emailId,idx){
+  const atts=[...(S.emailAttachments[emailId]||[])];
+  atts.splice(idx,1);
+  S.emailAttachments[emailId]=atts;
+  renderPage();
+};
+
+/* ══════════════════════════════════════════════════════════
+   RENDU — ONGLETS
+   ══════════════════════════════════════════════════════════ */
 function renderRedigerSeg(){
   const _pro=!!(window.PlanGuard&&window.PlanGuard.isPro());
   const penSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
@@ -345,35 +585,184 @@ function renderRedigerSeg(){
   return`<div class="seg-pills"><button class="seg-pill ${S.tab==="email"?"active":""}" onclick="set({tab:'email'})">${penSVG} Rédiger</button><button class="seg-pill ${S.tab==="emails_gmail"?"active":""} ${_pro?"":"locked"}" onclick="${_pro?"set({tab:'emails_gmail'})":" window.PlanGuard?.showProModal('Messagerie Gmail')"}">${inboxSVG} Messagerie${_pro?"":" 🔒"}</button></div>`;
 }
 
+/* ══════════════════════════════════════════════════════════
+   RENDU — TAB EMAIL
+   ══════════════════════════════════════════════════════════ */
 function renderEmail(){
   const f=S.fields;
   const tonsHtml=["vouvoiement","tutoiement","amical","institutionnel","ferme"].map(ton=>{const active=(S.emailTons||[]).includes(ton);return`<button onclick="toggleTon('${ton}')" style="padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid ${active?"var(--amber)":"var(--border-hi)"};background:${active?"var(--amber-dim)":"transparent"};color:${active?"var(--amber)":"var(--muted)"};font-weight:${active?"600":"400"};font-family:var(--fb);transition:all .2s;">${active?"✓ ":""}${ton.charAt(0).toUpperCase()+ton.slice(1)}</button>`;}).join("");
-  const reponseFields=`<div class="field"><label class="label">Nom du client</label><input type="text" value="${esc(f.client_nom||"")}" placeholder="Ex: M. Martin" data-fid="client_nom" oninput="S.fields['client_nom']=this.value" /></div><div class="field"><label class="label">Message reçu du client</label><textarea placeholder="Colle ici le message du client..." data-fid="message">${esc(f.message||"")}</textarea></div><div class="field"><label class="label" style="display:flex;align-items:center;gap:6px;">Contexte <span class="opt">(optionnel)</span><button onclick="startVoiceContexte('contexte')" style="background:${S.voiceContextField==="contexte"?"#E24B4A":"var(--amber)"};border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#080b14;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Dicter le contexte">${S.voiceContextField==="contexte"?"⏹":"🎙"}</button></label><textarea placeholder="Ex: infos que le client ne connaît pas encore..." data-fid="contexte">${esc(f.contexte||"")}</textarea></div>`;
   return`<div class="card">
     <div class="section-head" style="margin-top:0"><div class="section-icon">✉️</div><span class="section-title">Rédiger une réponse</span><div class="section-line"></div></div>
     <div style="margin-bottom:16px;"><label class="label" style="margin-bottom:8px;">Ton de la réponse <span style="font-weight:400;font-size:10px;color:var(--muted);">(plusieurs choix possibles)</span></label><div style="display:flex;gap:6px;flex-wrap:wrap;">${tonsHtml}</div></div>
-    ${reponseFields}
+    <div class="field"><label class="label">Nom du client</label><input type="text" value="${esc(f.client_nom||"")}" placeholder="Ex: M. Martin" data-fid="client_nom" oninput="S.fields['client_nom']=this.value"/></div>
+    <div class="field"><label class="label">Message reçu du client</label><textarea placeholder="Colle ici le message du client..." data-fid="message">${esc(f.message||"")}</textarea></div>
+    <div class="field"><label class="label" style="display:flex;align-items:center;gap:6px;">Contexte <span class="opt">(optionnel)</span><button onclick="startVoiceContexte('contexte')" style="background:${S.voiceContextField==="contexte"?"#E24B4A":"var(--amber)"};border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#080b14;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Dicter le contexte">${S.voiceContextField==="contexte"?"⏹":"🎙"}</button></label><textarea placeholder="Ex: infos que le client ne connaît pas encore..." data-fid="contexte">${esc(f.contexte||"")}</textarea></div>
     <button class="btn-primary" ${S.loading?"disabled":""} onclick="handleGenerate()">${S.loading?"Génération en cours...":"Générer l'email"}</button>
     ${S.generatedText?`<div class="result-box"><div class="result-header"><span style="font-size:13px;font-weight:500;color:var(--muted);">Email généré</span><button class="btn-small ${S.copied?"btn-green":"btn-gray"}" onclick="copyText(window.__emailBody||'')">${S.copied?"Copié ✓":"Copier"}</button></div><pre>${esc(S.generatedText)}</pre></div>`:""}
   </div>`;
 }
 
-function renderEmailsGmail(){
-  if(!S.gmailEmail||isGmailExpired()){
-    if(S.gmailEmail&&isGmailExpired()){return`<div class="card" style="text-align:center;padding:2rem;"><p style="font-size:28px;margin-bottom:12px;">⚠️</p><p style="font-weight:500;margin-bottom:8px;color:#f5a742;">Session Gmail expirée</p><p style="font-size:13px;color:#888;margin-bottom:20px;">${esc(S.gmailEmail)} — ton accès a expiré, reconnecte-toi pour continuer.</p><a href="settings.html?tab=gmail" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;font-family:var(--fh);text-align:center;box-shadow:0 0 24px var(--amber-glow)">🔄 Reconnecter Gmail</a></div>`;}
-    return`<div class="card" style="text-align:center;padding:2rem;"><p style="font-size:20px;margin-bottom:12px;">📧</p><p style="font-weight:500;margin-bottom:8px;">Connexion Gmail</p><p style="font-size:13px;color:#888;margin-bottom:20px;">Lis et réponds à tes emails directement depuis Artio.</p><a href="settings.html?tab=gmail" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;font-family:var(--fh);text-align:center;box-shadow:0 0 24px var(--amber-glow)">⚙ Connecter Gmail</a></div>`;
-  }
-  return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><p style="font-weight:500;">Emails non lus</p><div style="display:flex;gap:8px;"><button class="btn-small btn-blue" onclick="gmailFetchEmails()">${S.emailsLoading?"⏳ Chargement...":"🔄 Actualiser"}</button><button class="btn-small btn-gray" onclick="gmailDisconnect()">Déconnecter</button></div></div>${S.emailsError?`<div style="color:#E24B4A;font-size:13px;margin-bottom:12px;">${esc(S.emailsError)}</div>`:""}${S.emails.length===0&&!S.emailsLoading?`<div style="text-align:center;padding:2rem;color:#888;"><p>Aucun email non lu</p><button class="btn-primary" style="margin-top:12px;" onclick="gmailFetchEmails()">Charger les emails</button></div>`:""}${S.emails.map(m=>{const draft=(S.emailReplyDraft||{})[m.id];const safeFrom=esc(m.from).replace(/'/g,"\\'");const safeSubj=esc(m.subject||"").replace(/'/g,"\\'");return`<div class="dossier-card" style="margin-bottom:12px;"><div style="padding:14px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;"><p style="font-weight:500;font-size:14px;flex:1;">${esc(m.subject||"(sans objet)")}</p><span style="font-size:11px;color:#888;margin-left:8px;white-space:nowrap;">${esc((m.date||"").slice(0,16))}</span></div><p style="font-size:12px;color:#888;margin-bottom:8px;">${esc(m.from)}</p><p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:12px;">${cleanEmailSnippet(m.snippet)}</p>${S.expandedEmail===m.id?`<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px;line-height:1.7;color:var(--text);max-height:300px;overflow-y:auto;">${cleanEmailBody(m.body)}</div><button class="btn-small btn-gray" style="margin-bottom:10px;" onclick="set({expandedEmail:null})">▲ Réduire</button>`:`<button class="btn-small btn-gray" style="margin-bottom:10px;" onclick="set({expandedEmail:'${m.id}'})">👁 Voir le message</button>`}${draft?.loading?`<div style="padding:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;">⏳ Réponse en cours de génération...</div>`:draft?.text?`<div style="margin-top:4px;"><textarea id="reply-${m.id}" style="width:100%;min-height:320px;font-size:13px;line-height:1.6;padding:12px;background:var(--surface-2);border:1px solid var(--amber);border-radius:10px;color:var(--text);font-family:var(--fb);resize:vertical;" oninput="S.emailReplyDraft['${m.id}'].text=this.value">${esc(draft.text)}</textarea><div style="display:flex;gap:8px;margin-top:8px;"><button class="btn-small btn-green" id="send-btn-${m.id}" onclick="(async(btn)=>{btn.disabled=true;btn.textContent='⏳ Envoi…';try{const t=document.getElementById('reply-${m.id}').value;const meta=window.__emailMeta?.['${m.id}']||{};await gmailSendReply('${m.id}',meta.threadId,meta.messageId,'${safeFrom}','${safeSubj}',t);btn.textContent='✅ Envoyé !';await new Promise(r=>setTimeout(r,1200));S.emailReplyDraft['${m.id}']=null;renderPage();}catch(e){btn.disabled=false;btn.textContent='📤 Envoyer';}})(this)">📤 Envoyer</button><button class="btn-small btn-gray" onclick="S.emailReplyDraft['${m.id}']=null;renderPage()">✕ Annuler</button></div></div>`:`<button class="btn-small btn-blue" onclick="generateEmailReply('${m.id}','${safeFrom}','${safeSubj}',window.__emailBodies?.['${m.id}']||'')">🤖 Générer une réponse</button>`}</div></div>`;}).join("")}</div>`;
+/* ══════════════════════════════════════════════════════════
+   RENDU — MESSAGERIE GMAIL
+   ══════════════════════════════════════════════════════════ */
+function renderAttachments(emailId){
+  const atts=S.emailAttachments?.[emailId]||[];
+  if(atts.length===0)return"";
+  return`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${atts.map((a,i)=>`<div style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--teal-dim);border:1px solid rgba(62,207,207,.3);border-radius:20px;font-size:12px;color:var(--teal);max-width:220px;overflow:hidden;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(a.filename)}</span><button onclick="removeAttachment('${emailId}',${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1;flex-shrink:0;padding:0 0 0 2px;" title="Retirer">×</button></div>`).join("")}</div>`;
 }
 
+function renderAttachPicker(emailId){
+  if(S.showAttachPicker!==emailId)return"";
+  const docs=S.dossiers||[];
+  const docsHtml=docs.length===0
+    ?`<div style="font-size:12px;color:var(--muted);padding:8px;">Aucun devis/facture trouvé dans vos dossiers</div>`
+    :docs.map((d,i)=>`<button onclick="attachArtioDoc('${emailId}',${i})" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:none;border:none;cursor:pointer;border-radius:8px;text-align:left;font-family:var(--fb);transition:background .15s;" onmouseover="this.style.background='var(--surface-3)'" onmouseout="this.style.background='none'"><span style="font-size:16px;">${d.type==="facture"?"🧾":"📄"}</span><div style="flex:1;overflow:hidden;"><div style="font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(d.docNumber)} — ${esc(d.dossierNom)}</div><div style="font-size:11px;color:var(--muted);">${esc(d.date||"")} · ${d.ttc?d.ttc.toFixed(2)+" €":""}</div></div></button>`).join("");
+  return`<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;">
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">📎 Joindre un document</div>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">Devis & factures Artio</div>
+      <div style="max-height:200px;overflow-y:auto;">${docsHtml}</div>
+    </div>
+    <div style="height:1px;background:var(--border);margin:10px 0;"></div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">Fichier de l'appareil</div>
+    <label style="display:inline-flex;align-items:center;gap:7px;padding:7px 14px;background:var(--surface);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text);transition:border-color .2s;" onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='var(--border)'">
+      📁 Parcourir…
+      <input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx" style="display:none;" onchange="handleLocalFile('${emailId}',this)"/>
+    </label>
+    <span style="font-size:11px;color:var(--muted);margin-left:8px;">PDF, images, Word, Excel (max 10 MB)</span>
+  </div>`;
+}
+
+function renderReplyArea(email){
+  const mode=(S.replyMode||{})[email.id];
+  const atts=S.emailAttachments?.[email.id]||[];
+
+  // ── Boutons d'action (toujours visibles) ─────────────────
+  const actionBar=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+    <button class="btn-small btn-blue" onclick="generateEmailReply('${email.id}','${esc(email.from).replace(/'/g,"\\'")}','${esc(email.subject||"").replace(/'/g,"\\'")}','${esc((email.bodyType==="text"?email.body:"")).replace(/'/g,"\\'")}')">🤖 Répondre avec l'IA</button>
+    <button class="btn-small btn-gray" onclick="openDirectReply('${email.id}')">✏️ Répondre directement</button>
+    <button class="btn-small btn-gray" onclick="openAttachPicker('${email.id}')" title="Joindre un document">📎${atts.length>0?" ("+atts.length+")":""}</button>
+    <div style="position:relative;display:inline-block;">
+      <button class="btn-small" onclick="toggleDeleteMenu('${email.id}')" style="background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,.3);">🗑</button>
+      ${S.showDeleteMenu===email.id?`<div style="position:absolute;right:0;top:calc(100% + 4px);background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:6px;z-index:20;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,.4);">
+        <button onclick="gmailModify('${email.id}','archive')" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:none;border:none;cursor:pointer;border-radius:7px;font-family:var(--fb);font-size:13px;color:var(--text);text-align:left;" onmouseover="this.style.background='var(--surface-3)'" onmouseout="this.style.background='none'">📥 Archiver</button>
+        <button onclick="gmailModify('${email.id}','trash')" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:none;border:none;cursor:pointer;border-radius:7px;font-family:var(--fb);font-size:13px;color:var(--red);text-align:left;" onmouseover="this.style.background='var(--red-dim)'" onmouseout="this.style.background='none'">🗑 Corbeille</button>
+      </div>`:""}
+    </div>
+  </div>`;
+
+  // ── Picker pièces jointes ─────────────────────────────────
+  const attachPickerHtml=renderAttachPicker(email.id);
+
+  // ── Pièces jointes attachées ──────────────────────────────
+  const attachmentsHtml=renderAttachments(email.id);
+
+  // ── Zone de réponse ───────────────────────────────────────
+  let replyHtml="";
+  if(mode==="ia"){
+    const draft=(S.emailReplyDraft||{})[email.id];
+    if(draft?.loading){
+      replyHtml=`<div style="padding:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;">⏳ Réponse en cours de génération par l'IA…</div>`;
+    }else if(draft?.text){
+      replyHtml=`<div style="margin-top:4px;">
+        <textarea id="reply-ia-${email.id}" style="width:100%;min-height:220px;font-size:13px;line-height:1.6;padding:12px;background:var(--surface-2);border:1px solid var(--amber);border-radius:10px;color:var(--text);font-family:var(--fb);resize:vertical;" oninput="S.emailReplyDraft['${email.id}'].text=this.value">${esc(draft.text)}</textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn-small btn-green" onclick="sendIAReply('${email.id}',this)">📤 Envoyer</button>
+          <button class="btn-small btn-gray" onclick="cancelReply('${email.id}')">✕ Annuler</button>
+        </div>
+      </div>`;
+    }
+  }else if(mode==="direct"){
+    const draft=(S.emailDirectDraft||{})[email.id];
+    replyHtml=`<div style="margin-top:4px;">
+      <textarea id="reply-direct-${email.id}" style="width:100%;min-height:140px;font-size:13px;line-height:1.6;padding:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);resize:vertical;" placeholder="Écrivez votre réponse…" oninput="S.emailDirectDraft['${email.id}']={text:this.value}">${esc((draft?.text)||"")}</textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn-small btn-green" onclick="sendDirectReply('${email.id}',this)">📤 Envoyer</button>
+        <button class="btn-small btn-gray" onclick="cancelReply('${email.id}')">✕ Annuler</button>
+      </div>
+    </div>`;
+  }
+
+  return actionBar+attachPickerHtml+attachmentsHtml+replyHtml;
+}
+
+function renderEmailBody(email){
+  if(!email.body)return`<div style="font-style:italic;color:var(--muted);font-size:12px;">Corps vide.</div>`;
+  if(email.bodyType==="html"){
+    // Iframe sandboxée — pas de scripts, pas de navigation
+    const srcdoc=email.body.replace(/"/g,"&quot;");
+    return`<iframe srcdoc="${srcdoc}" sandbox="allow-same-origin" style="width:100%;min-height:180px;border:none;border-radius:8px;background:#fff;" onload="try{this.style.height=Math.min(this.contentDocument.body.scrollHeight+20,600)+'px';}catch(e){}"></iframe>`;
+  }
+  // Texte brut
+  const text=email.body.replace(/\r\n|\r|\n/g,"\n").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br/>");
+  return`<div style="font-size:12px;line-height:1.7;color:var(--text);">${text}</div>`;
+}
+
+function renderEmailCard(email){
+  const isExpanded=S.expandedEmail===email.id;
+  return`<div class="dossier-card" style="margin-bottom:12px;" onclick="${S.showDeleteMenu===email.id?"event.stopPropagation&&event.stopPropagation()":""}">
+    <div style="padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+        <p style="font-weight:500;font-size:14px;flex:1;padding-right:8px;">${esc(email.subject||"(sans objet)")}</p>
+        <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${esc((email.date||"").slice(0,16))}</span>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">${esc(email.from)}</p>
+      <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:12px;">${cleanEmailSnippet(email.snippet)}</p>
+
+      ${isExpanded
+        ?`<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;max-height:600px;overflow-y:auto;">${renderEmailBody(email)}</div>
+           <button class="btn-small btn-gray" style="margin-bottom:12px;" onclick="set({expandedEmail:null})">▲ Réduire</button>`
+        :`<button class="btn-small btn-gray" style="margin-bottom:12px;" onclick="set({expandedEmail:'${email.id}'})">👁 Voir le message</button>`
+      }
+
+      ${renderReplyArea(email)}
+    </div>
+  </div>`;
+}
+
+function renderEmailsGmail(){
+  if(!S.gmailEmail||isGmailExpired()){
+    if(S.gmailEmail&&isGmailExpired()){
+      return`<div class="card" style="text-align:center;padding:2rem;"><p style="font-size:28px;margin-bottom:12px;">⚠️</p><p style="font-weight:500;margin-bottom:8px;color:#f5a742;">Session Gmail expirée</p><p style="font-size:13px;color:var(--muted);margin-bottom:20px;">${esc(S.gmailEmail)} — reconnecte-toi pour continuer.</p><a href="settings.html?tab=gmail" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;text-align:center;box-shadow:0 0 24px var(--amber-glow)">🔄 Reconnecter Gmail</a></div>`;
+    }
+    return`<div class="card" style="text-align:center;padding:2rem;"><p style="font-size:20px;margin-bottom:12px;">📧</p><p style="font-weight:500;margin-bottom:8px;">Connexion Gmail</p><p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Lis et réponds à tes emails directement depuis Artio.</p><a href="settings.html?tab=gmail" style="display:block;padding:13px;background:var(--amber);color:#080b14;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;text-align:center;box-shadow:0 0 24px var(--amber-glow)">⚙ Connecter Gmail</a></div>`;
+  }
+
+  const emailCount=S.emails.length;
+  return`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div>
+        <p style="font-weight:500;">Emails non lus${emailCount>0?" ("+emailCount+")":""}</p>
+        <p style="font-size:11px;color:var(--muted);margin-top:2px;">${esc(S.gmailEmail)}</p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-small btn-blue" onclick="gmailFetchEmails()">${S.emailsLoading?"⏳":"🔄"} Actualiser</button>
+        <button class="btn-small btn-gray" onclick="gmailDisconnect()">Déconnecter</button>
+      </div>
+    </div>
+    ${S.emailsError?`<div style="color:var(--red);font-size:13px;margin-bottom:12px;">⚠️ ${esc(S.emailsError)}</div>`:""}
+    ${emailCount===0&&!S.emailsLoading
+      ?`<div style="text-align:center;padding:2rem;color:var(--muted);"><p style="font-size:20px;margin-bottom:8px;">📭</p><p>Aucun email non lu</p><button class="btn-primary" style="margin-top:12px;" onclick="gmailFetchEmails()">Charger les emails</button></div>`
+      :S.emails.map(renderEmailCard).join("")
+    }
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RENDU PRINCIPAL
+   ══════════════════════════════════════════════════════════ */
 function renderPage(){
   const root=document.getElementById("app-root");if(!root)return;
+  // Fermer les menus contextuels au clic en dehors
   let html=`<div style="font-family:var(--fh);font-size:22px;font-weight:700;margin-bottom:20px;margin-top:8px;">✉️ Rédiger</div>`;
   html+=renderRedigerSeg();
   html+=(S.tab==="emails_gmail"?renderEmailsGmail():renderEmail());
   root.innerHTML=html;
 }
 
+/* ══════════════════════════════════════════════════════════
+   INIT AUTH
+   ══════════════════════════════════════════════════════════ */
 async function initAuth(){
   const theme=localStorage.getItem("artio-theme")||"dark";
   document.documentElement.setAttribute("data-theme",theme);
@@ -383,7 +772,13 @@ async function initAuth(){
   window.PlanGuard?.init?.(session);
   try{
     const{data:profil}=await sb.from("profils").select("nom,secteur,contexte_ia,google_email,google_access_token,google_token_expiry,gmail_email,gmail_access_token,gmail_token_expiry").eq("user_id",session.user.id).single();
-    if(profil){S.entreprise={nom:profil.nom||"",secteur:profil.secteur||"",contexte_ia:profil.contexte_ia||""};S.gmailEmail=profil.google_email||profil.gmail_email||null;S.gmailAccessToken=profil.google_access_token||profil.gmail_access_token||null;const expiryRaw=profil.google_token_expiry||profil.gmail_token_expiry;S.gmailTokenExpiry=expiryRaw?new Date(expiryRaw):null;}
+    if(profil){
+      S.entreprise={nom:profil.nom||"",secteur:profil.secteur||"",contexte_ia:profil.contexte_ia||""};
+      S.gmailEmail=profil.google_email||profil.gmail_email||null;
+      S.gmailAccessToken=profil.google_access_token||profil.gmail_access_token||null;
+      const expiryRaw=profil.google_token_expiry||profil.gmail_token_expiry;
+      S.gmailTokenExpiry=expiryRaw?new Date(expiryRaw):null;
+    }
   }catch(e){console.error("loadProfil:",e);}
   // Pré-remplissage depuis dossiers.html (relance/rappel)
   const sp=new URLSearchParams(window.location.search);
@@ -393,9 +788,10 @@ async function initAuth(){
     const clientEmail=localStorage.getItem("artio-email-client-email")||"";
     if(body){window.__emailBody=body;S.generatedText=body;S.fields.client_nom=clientNom||S.fields.client_nom;S.fields.client_email=clientEmail||S.fields.client_email;localStorage.removeItem("artio-email-body");localStorage.removeItem("artio-email-client-nom");localStorage.removeItem("artio-email-client-email");history.replaceState(null,"",window.location.pathname);}
   }
+  // Fermer les menus contextuels au clic sur le document
+  document.addEventListener("click",()=>{if(S.showDeleteMenu||S.showAttachPicker){S.showDeleteMenu=null;S.showAttachPicker=null;renderPage();}});
   sb.auth.onAuthStateChange((event,sess)=>{if(!sess)location.href="login.html";});
   renderPage();
-  // ── Tutoriel interactif : reprend si en cours ──
   if(window.ArtioTour) window.ArtioTour.autoStart();
 }
 initAuth();
