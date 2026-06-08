@@ -98,6 +98,8 @@ pre{white-space:pre-wrap;font-size:13px;line-height:1.75;font-family:var(--fb);c
 [data-theme="dark"] .sidebar-theme .icon-moon{display:none}
 [data-theme="dark"] .sidebar-theme .icon-sun{display:inline-block}
 @media(max-width:767px){.sidebar.open{width:100%}}
+.pulse-dot{animation:pulseDot 2s ease-in-out infinite}
+@keyframes pulseDot{0%,100%{opacity:.35}50%{opacity:1}}
   </style>
 </head>
 <body>
@@ -398,6 +400,72 @@ async function gmailFetchEmails(){
 }
 
 /* ══════════════════════════════════════════════════════════
+   POLLING AUTO-REFRESH (toutes les 5s)
+   ══════════════════════════════════════════════════════════ */
+let _pollingTimer=null;
+
+// L'utilisateur est-il en train d'interagir avec un email ?
+// Si oui, on ne casse pas son UI : on fetch quand même mais on ne re-render pas
+function _userIsBusyWithEmails(){
+  if(S.expandedEmail) return true;
+  if(S.showDeleteMenu||S.showAttachPicker) return true;
+  const modes=Object.values(S.replyMode||{});
+  if(modes.some(m=>m==="ia"||m==="direct")) return true;
+  // Brouillon non-vide en cours
+  for(const k in (S.emailDirectDraft||{})){
+    if((S.emailDirectDraft[k]?.text||"").trim().length>0) return true;
+  }
+  return false;
+}
+
+async function gmailAutoRefresh(){
+  // On ne polle que sur l'onglet Messagerie, avec une session valide
+  if(S.tab!=="emails_gmail") return;
+  if(!S.gmailEmail||isGmailExpired()) return;
+  if(S.emailsLoading) return;
+
+  try{
+    // Fetch silencieux de la liste seulement (pas les détails) pour comparer
+    const listRes=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread&maxResults=15",{headers:{"Authorization":"Bearer "+S.gmailAccessToken}});
+    if(listRes.status===401){
+      // Session Gmail morte — on arrête le polling
+      S.gmailEmail=null;S.gmailAccessToken=null;
+      S.emailsError="Session expirée. Reconnecte Gmail dans les paramètres.";
+      renderPage();return;
+    }
+    if(!listRes.ok) return;
+    const listData=await listRes.json();
+    const newIds=(listData.messages||[]).map(m=>m.id).sort().join(",");
+    const currentIds=S.emails.map(m=>m.id).sort().join(",");
+
+    // Rien n'a changé → on ne fait rien (économise 15 requêtes détails)
+    if(newIds===currentIds) return;
+
+    // Liste différente → l'utilisateur est-il occupé ?
+    if(_userIsBusyWithEmails()){
+      // On laisse l'UI tranquille — l'utilisateur verra les nouveaux emails
+      // après avoir fermé son interaction (au prochain tick de polling)
+      return;
+    }
+
+    // Sinon on fetch tous les détails (déclenche un re-render)
+    await gmailFetchEmails();
+  }catch(e){
+    // Silencieux : on n'embête pas l'utilisateur avec les erreurs de polling
+    console.debug("gmailAutoRefresh:",e?.message||e);
+  }
+}
+
+function startEmailsPolling(){
+  if(_pollingTimer) return;
+  _pollingTimer=setInterval(gmailAutoRefresh,5000);
+}
+function stopEmailsPolling(){
+  if(_pollingTimer){clearInterval(_pollingTimer);_pollingTimer=null;}
+}
+window.addEventListener("beforeunload",stopEmailsPolling);
+
+/* ══════════════════════════════════════════════════════════
    GMAIL — ENVOI
    ══════════════════════════════════════════════════════════ */
 async function gmailSendEmail({emailId,threadId,messageId,to,subject,body,attachments=[]}){
@@ -578,13 +646,31 @@ window.removeAttachment=function(emailId,idx){
 };
 
 /* ══════════════════════════════════════════════════════════
+   SWITCH TAB (gère le polling auto)
+   ══════════════════════════════════════════════════════════ */
+window.switchTab=function(newTab){
+  const oldTab=S.tab;
+  S.tab=newTab;
+  if(newTab==="emails_gmail"){
+    // Fetch immédiat à l'arrivée sur l'onglet si on n'a rien chargé
+    if(S.gmailEmail&&!isGmailExpired()&&S.emails.length===0){
+      gmailFetchEmails();
+    }
+    startEmailsPolling();
+  }else if(oldTab==="emails_gmail"){
+    stopEmailsPolling();
+  }
+  renderPage();
+};
+
+/* ══════════════════════════════════════════════════════════
    RENDU — ONGLETS
    ══════════════════════════════════════════════════════════ */
 function renderRedigerSeg(){
   const _pro=!!(window.PlanGuard&&window.PlanGuard.isPro());
   const penSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
   const inboxSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>';
-  return`<div class="seg-pills"><button class="seg-pill ${S.tab==="email"?"active":""}" onclick="set({tab:'email'})">${penSVG} Rédiger</button><button class="seg-pill ${S.tab==="emails_gmail"?"active":""} ${_pro?"":"locked"}" onclick="${_pro?"set({tab:'emails_gmail'})":" window.PlanGuard?.showProModal('Messagerie Gmail')"}">${inboxSVG} Messagerie${_pro?"":" 🔒"}</button></div>`;
+  return`<div class="seg-pills"><button class="seg-pill ${S.tab==="email"?"active":""}" onclick="switchTab('email')">${penSVG} Rédiger</button><button class="seg-pill ${S.tab==="emails_gmail"?"active":""} ${_pro?"":"locked"}" onclick="${_pro?"switchTab('emails_gmail')":" window.PlanGuard?.showProModal('Messagerie Gmail')"}">${inboxSVG} Messagerie${_pro?"":" 🔒"}</button></div>`;
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -737,14 +823,17 @@ function renderEmailsGmail(){
         <p style="font-weight:500;">Emails non lus${emailCount>0?" ("+emailCount+")":""}</p>
         <p style="font-size:11px;color:var(--muted);margin-top:2px;">${esc(S.gmailEmail)}</p>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-small btn-blue" onclick="gmailFetchEmails()">${S.emailsLoading?"⏳":"🔄"} Actualiser</button>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span style="font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:5px;">
+          <span class="pulse-dot" style="width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;"></span>
+          ${S.emailsLoading?"Actualisation…":"Auto"}
+        </span>
         <button class="btn-small btn-gray" onclick="gmailDisconnect()">Déconnecter</button>
       </div>
     </div>
     ${S.emailsError?`<div style="color:var(--red);font-size:13px;margin-bottom:12px;">⚠️ ${esc(S.emailsError)}</div>`:""}
     ${emailCount===0&&!S.emailsLoading
-      ?`<div style="text-align:center;padding:2rem;color:var(--muted);"><p style="font-size:20px;margin-bottom:8px;">📭</p><p>Aucun email non lu</p><button class="btn-primary" style="margin-top:12px;" onclick="gmailFetchEmails()">Charger les emails</button></div>`
+      ?`<div style="text-align:center;padding:2rem;color:var(--muted);"><p style="font-size:20px;margin-bottom:8px;">📭</p><p>Aucun email non lu</p><p style="font-size:11px;margin-top:8px;">La boîte se mettra à jour automatiquement</p></div>`
       :S.emails.map(renderEmailCard).join("")
     }
   </div>`;
@@ -798,6 +887,11 @@ async function initAuth(){
   });
   sb.auth.onAuthStateChange((event,sess)=>{if(!sess)location.href="login.html";});
   renderPage();
+  // Si on arrive directement sur l'onglet Messagerie, démarrer le polling
+  if(S.tab==="emails_gmail"&&S.gmailEmail&&!isGmailExpired()){
+    if(S.emails.length===0) gmailFetchEmails();
+    startEmailsPolling();
+  }
   if(window.ArtioTour) window.ArtioTour.autoStart();
 }
 initAuth();
