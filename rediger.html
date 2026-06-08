@@ -34,7 +34,7 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:var(--fb);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;display:flex;overflow:hidden;font-size:13.5px}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow:hidden;font-size:13.5px;min-height:100vh}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 input,textarea{font-family:inherit;color:inherit;outline:none}
 ::-webkit-scrollbar{width:6px;height:6px}
@@ -74,7 +74,7 @@ kbd{font-family:var(--fm);font-size:10.5px;padding:2px 6px;border:1px solid var(
 .kbd-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted)}
 
 /* ─────────────────────────────────────── MAIN */
-.main{flex:1;display:flex;flex-direction:column;min-width:0;height:100vh;overflow:hidden}
+.main{width:100%;display:flex;flex-direction:column;min-width:0;height:100vh;overflow:hidden}
 .topbar{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
 .crumb{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted)}
 .crumb b{color:var(--text);font-weight:600}
@@ -268,6 +268,7 @@ kbd{font-family:var(--fm);font-size:10.5px;padding:2px 6px;border:1px solid var(
 .del-menu button.red{color:var(--red)}
 .del-menu button.red:hover{background:var(--red-dim)}
 .attach-pop{position:absolute;left:0;top:calc(100% + 6px);background:var(--surface-2);border:1px solid var(--border);border-radius:11px;padding:10px;min-width:280px;max-width:340px;z-index:300;box-shadow:0 6px 28px rgba(0,0,0,.55);max-height:340px;overflow:hidden;display:flex;flex-direction:column}
+.attach-pop.cmp{position:static;width:100%;min-width:0;max-width:none;margin-bottom:8px;box-shadow:none;max-height:none}
 .attach-pop h5{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:4px 4px 6px}
 .attach-pop-list{flex:1;overflow-y:auto;max-height:180px}
 .attach-pop-doc{display:flex;gap:8px;align-items:center;width:100%;padding:7px 8px;background:none;border:none;border-radius:7px;text-align:left;font-family:var(--fb);cursor:pointer}
@@ -282,74 +283,66 @@ kbd{font-family:var(--fm);font-size:10.5px;padding:2px 6px;border:1px solid var(
 .li-disconnected{padding:40px 24px;text-align:center;color:var(--muted)}
 .li-disconnected a{display:inline-block;margin-top:14px;padding:11px 22px;background:var(--amber);color:#080b14;border-radius:11px;font-weight:700;text-decoration:none;font-family:var(--fh);font-size:13px}
 .has-pos{position:relative;display:inline-block}
+
+/* ─────── SIDEBAR GLOBALE ARTIO ─────── */
+.sidebar-trigger{position:fixed;top:9px;left:14px;z-index:60;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;transition:background .15s}
+.sidebar-trigger:hover{background:var(--surface-3)}
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:70;opacity:0;pointer-events:none;transition:opacity .2s}
+.sidebar-overlay.open{opacity:1;pointer-events:auto}
+.sidebar{position:fixed;top:0;left:-280px;bottom:0;width:280px;background:var(--surface);border-right:1px solid var(--border);z-index:80;transition:left .25s ease;display:flex;flex-direction:column}
+.sidebar.open{left:0}
+.sidebar-head{display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo{width:28px;height:28px}
+.sidebar-brand{font-family:var(--fh);font-weight:700;font-size:17px;flex:1}
+.sidebar-close{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;cursor:pointer;color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center}
+.sidebar-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.sidebar-link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;color:var(--muted);text-decoration:none;background:transparent;border:none;text-align:left;cursor:pointer;transition:background .12s,color .12s;font-family:var(--fb);width:100%}
+.sidebar-link:hover{background:var(--surface-2);color:var(--text)}
+.sidebar-link.active{background:var(--amber-dim);color:var(--amber);font-weight:600}
+.sidebar-sep{height:1px;background:var(--border);margin:8px 12px}
+.sidebar-logout{color:var(--red)}
+.sidebar-foot{padding:12px 10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:2px}
+.sidebar-theme{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;width:36px;height:36px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center}
+@media(max-width:767px){.sidebar.open{width:100%}}
+
+/* Topbar : padding-left pour laisser place au hamburger */
+.topbar{padding-left:62px!important}
 </style>
 </head>
 <body>
 
-<!-- ════ RAIL ════════════════════════════════════════ -->
-<nav class="rail">
-  <a href="home.html" class="rail-logo" style="text-decoration:none">A</a>
-  <a href="home.html" class="rail-btn" title="Accueil" style="text-decoration:none">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-  </a>
-  <a href="app.html" class="rail-btn" title="Créer" style="text-decoration:none">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
-  </a>
-  <a href="dossiers.html" class="rail-btn" title="Dossiers" style="text-decoration:none">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-  </a>
-  <a href="rediger.html" class="rail-btn on" title="Rédiger" style="text-decoration:none">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>
-  </a>
-  <a href="clients.html" class="rail-btn" title="Clients" style="text-decoration:none">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-  </a>
-  <a href="dashboard.html" class="rail-btn" title="Tableau de bord" style="text-decoration:none">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 4 6-6"/></svg>
-  </a>
-  <a href="calendar.html" class="rail-btn" title="Calendrier" style="text-decoration:none">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-  </a>
-  <div class="rail-spacer"></div>
-  <div class="rail-foot">
-    <button class="rail-btn" onclick="toggleTheme()" title="Thème">
-      <svg id="th-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <svg id="th-sun" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+<!-- ════ SIDEBAR GLOBALE ARTIO ════════════════════ -->
+<button class="sidebar-trigger" onclick="toggleSidebar()" aria-label="Menu">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+<aside class="sidebar">
+  <div class="sidebar-head">
+    <img src="artio-icon.png" alt="" class="sidebar-logo"/>
+    <span class="sidebar-brand">Artio</span>
+    <button class="sidebar-close" onclick="closeSidebar()" aria-label="Fermer">×</button>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="home.html" class="sidebar-link">🏠 Accueil</a>
+    <a href="app.html" class="sidebar-link">🎙 Créer</a>
+    <a href="dossiers.html" class="sidebar-link">📁 Dossiers</a>
+    <a href="rediger.html" class="sidebar-link active">✉️ Rédiger</a>
+    <a href="clients.html" class="sidebar-link">👥 Clients</a>
+    <a href="dashboard.html" class="sidebar-link">📊 Tableau de bord</a>
+    <a href="calendar.html" class="sidebar-link">📅 Calendrier</a>
+  </nav>
+  <div class="sidebar-foot">
+    <a href="aide.html" class="sidebar-link">❔ Aide</a>
+    <a href="settings.html" class="sidebar-link">⚙️ Paramètres</a>
+    <div class="sidebar-sep"></div>
+    <button class="sidebar-link sidebar-logout" onclick="handleLogout()">↪ Déconnexion</button>
+    <button class="sidebar-theme" onclick="toggleTheme()" title="Thème" style="margin-top:6px;align-self:flex-end;">
+      <svg class="icon-moon" id="th-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" id="th-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
     </button>
-    <a href="settings.html" class="rail-btn" title="Paramètres" style="text-decoration:none">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    </a>
-    <div class="rail-avatar" id="user-avatar" onclick="handleLogout()" title="Déconnexion">A</div>
-  </div>
-</nav>
-
-<!-- ════ NAV PANE ════════════════════════════════════ -->
-<aside class="nav">
-  <div class="nav-head">
-    <h2>Rédiger</h2>
-  </div>
-
-  <div class="nav-sect"><span>Boîte de réception</span></div>
-  <div class="nav-items">
-    <div class="nav-it on" id="nav-unread">
-      <span class="nav-it-l"><span class="dot" style="background:var(--amber)"></span>Non lus</span>
-      <span class="nav-it-n" id="cnt-unread">—</span>
-    </div>
-  </div>
-
-  <div class="nav-sect"><span>Composer</span></div>
-  <div class="nav-items">
-    <div class="nav-it" onclick="setTab('cmp')">
-      <span class="nav-it-l">✎ Nouveau message</span>
-    </div>
-  </div>
-
-  <div class="nav-spacer"></div>
-  <div class="nav-foot">
-    <div class="kbd-row"><span id="gmail-status" style="font-size:11px;color:var(--muted)">Non connecté</span></div>
-    <div class="kbd-row"><a href="settings.html?tab=gmail" style="font-size:11px;color:var(--amber);text-decoration:none">⚙ Paramètres Gmail</a></div>
   </div>
 </aside>
+
 
 <!-- ════ MAIN ═════════════════════════════════════════ -->
 <div class="main">
@@ -1073,7 +1066,7 @@ function renderCompose(){
   ).join("");
 
   const attachPicker=S.showComposeAttachPicker?`
-    <div class="attach-pop" onclick="event.stopPropagation()">
+    <div class="attach-pop cmp" onclick="event.stopPropagation()">
       <h5>Devis & factures Artio</h5>
       <div class="attach-pop-list">
         ${S.dossiers.length===0?`<div style="padding:10px;font-size:12px;color:var(--muted)">Aucun document trouvé</div>`:
@@ -1135,12 +1128,6 @@ function renderCompose(){
       </div>
 
       <aside class="cmp-side">
-        <div class="sc">
-          <h4>◇ Contexte IA</h4>
-          <p>Sonnet 4 · entreprise <b style="color:var(--text)">${esc(S.entreprise.nom||"non renseignée")}</b>${S.entreprise.secteur?" · "+esc(S.entreprise.secteur):""}.</p>
-          ${!S.entreprise.contexte_ia?`<p style="color:var(--amber);margin-top:8px;font-size:11px">💡 Ajoute un contexte IA dans tes paramètres pour des emails plus personnalisés.</p>`:""}
-        </div>
-
         <div class="sc">
           <h4>✎ Reformuler</h4>
           <div class="sc-sug">
@@ -1226,6 +1213,8 @@ window.toggleTheme=function(){
 
 async function handleLogout(){await sb.auth.signOut();location.href="login.html";}
 window.handleLogout=handleLogout;
+window.toggleSidebar=function(){document.querySelector(".sidebar").classList.toggle("open");document.querySelector(".sidebar-overlay").classList.toggle("open");};
+window.closeSidebar=function(){document.querySelector(".sidebar").classList.remove("open");document.querySelector(".sidebar-overlay").classList.remove("open");};
 
 /* ─── INIT ─── */
 async function initAuth(){
