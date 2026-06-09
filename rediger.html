@@ -512,10 +512,8 @@ const S={
   user:null,
   entreprise:{nom:"",secteur:"",contexte_ia:""},
   tab:"inbox",
-  // Gmail
+  // Gmail (token géré côté serveur via gmail-fetch)
   gmailEmail:null,
-  gmailAccessToken:null,
-  gmailTokenExpiry:null,
   emails:[],
   emailsLoading:false,
   emailsError:"",
@@ -524,10 +522,10 @@ const S={
   emailFilter:"unread",  // "unread" | "all"
   emailSearchQ:"",
   // Threads (cache des conversations complètes)
-  threads:{},            // { [threadId]: [messages] }
+  threads:{},
   threadLoading:false,
   // Reply
-  replyMode:"ia",        // "ia" | "man"
+  replyMode:"ia",
   replyText:"",
   replyTons:["Vouvoiement"],
   replyAttachments:[],
@@ -602,7 +600,42 @@ function decodeBase64Utf8(s){
   try{return decodeURIComponent(escape(atob(s.replace(/-/g,"+").replace(/_/g,"/"))));}
   catch(e){try{return atob(s.replace(/-/g,"+").replace(/_/g,"/"));}catch(e2){return "";}}
 }
-function isGmailExpired(){return S.gmailTokenExpiry&&new Date()>new Date(S.gmailTokenExpiry);}
+
+/* ─── HELPER GMAIL API (via Edge Function gmail-fetch) ───
+   Refresh automatique du token côté serveur.
+   Le client n'a plus à gérer l'expiration.
+   ───────────────────────────────────────────────────── */
+async function gmailApi(action,params={}){
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session)throw new Error("Session Artio expirée");
+  const r=await fetch(FUNCTIONS_URL+"/gmail-fetch",{
+    method:"POST",
+    headers:{
+      "Authorization":"Bearer "+session.access_token,
+      "Content-Type":"application/json",
+    },
+    body:JSON.stringify({action,...params}),
+  });
+  const d=await r.json();
+  if(!r.ok||!d.success){
+    const err=new Error(d.error||"Erreur Gmail");
+    if(d.code)err.code=d.code;
+    throw err;
+  }
+  return d;
+}
+
+// Gère les erreurs spécifiques de réauthentification Google
+function handleGmailError(err){
+  if(err.code==="reauth_required"){
+    S.gmailEmail=null;
+    S.emails=[];S.threads={};S.selectedEmailId=null;
+    S.emailsError="Session Google révoquée — reconnecte Gmail dans les paramètres.";
+    renderAll();
+    return true;
+  }
+  return false;
+}
 
 /* Parser multipart récursif */
 function extractEmailParts(payload){
@@ -678,44 +711,40 @@ function cleanSnippet(s){
 
 /* ─── GMAIL FETCH ─── */
 async function gmailFetchEmails(){
-  if(!S.gmailEmail||isGmailExpired())return;
+  if(!S.gmailEmail)return;
   S.emailsLoading=true;renderInbox();
   try{
-    // Récupérer les 50 derniers emails de l'inbox (lus + non lus)
-    const listRes=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?q=in:inbox&maxResults=50",{headers:{"Authorization":"Bearer "+S.gmailAccessToken}});
-    if(listRes.status===401){
-      S.gmailEmail=null;S.gmailAccessToken=null;
-      S.emailsError="Session Gmail expirée. Reconnecte-toi.";S.emailsLoading=false;renderAll();return;
-    }
-    const listData=await listRes.json();
-    const msgs=listData.messages||[];
-    const emails=await Promise.all(msgs.map(async m=>{
-      const r=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/"+m.id+"?format=full",{headers:{"Authorization":"Bearer "+S.gmailAccessToken}});
-      const d=await r.json();
-      const hh=d.payload?.headers||[];
+    // Récupérer les 50 derniers emails de l'inbox via Edge Function (token refresh auto)
+    const d=await gmailApi("list",{query:"in:inbox",maxResults:50});
+    const rawEmails=d.emails||[];
+    const emails=rawEmails.map(rawMsg=>{
+      const hh=rawMsg.payload?.headers||[];
       const get=n=>hh.find(h=>h.name===n)?.value||"";
-      const{plain,html,hasAttach}=extractEmailParts(d.payload||{});
+      const{plain,html,hasAttach,attachments}=extractEmailParts(rawMsg.payload||{});
       let body="",bodyType="text";
       if(plain){body=decodeBase64Utf8(plain).slice(0,8000);bodyType="text";}
       else if(html){body=decodeBase64Utf8(html);bodyType="html";}
-      else if(d.payload?.body?.data){body=decodeBase64Utf8(d.payload.body.data).slice(0,8000);}
+      else if(rawMsg.payload?.body?.data){body=decodeBase64Utf8(rawMsg.payload.body.data).slice(0,8000);}
       return{
-        id:m.id,threadId:d.threadId||m.id,messageId:get("Message-Id"),
+        id:rawMsg.id,threadId:rawMsg.threadId||rawMsg.id,messageId:get("Message-Id"),
         from:get("From"),subject:get("Subject"),date:get("Date"),
-        body,bodyType,hasAttach,snippet:d.snippet,
-        labelIds:d.labelIds||[],
+        body,bodyType,hasAttach,
+        attachments:attachments||[],
+        snippet:rawMsg.snippet,
+        labelIds:rawMsg.labelIds||[],
       };
-    }));
+    });
     S.emails=emails;
-    // Réinitialiser le cache des threads si on rafraîchit la liste
     S.threads={};
     const visibleEmails=getFilteredEmails();
     if(!S.selectedEmailId&&visibleEmails.length>0)S.selectedEmailId=visibleEmails[0].id;
     if(S.selectedEmailId&&!emails.find(e=>e.id===S.selectedEmailId))S.selectedEmailId=visibleEmails[0]?.id||null;
-    S.emailsLoading=false;renderInbox();
-    // Précharger le thread du 1er email
+    S.emailsLoading=false;S.emailsError="";renderInbox();
     if(S.selectedEmailId)loadSelectedThread();
-  }catch(e){S.emailsError="Erreur : "+e.message;S.emailsLoading=false;renderInbox();}
+  }catch(e){
+    if(handleGmailError(e))return;
+    S.emailsError="Erreur : "+e.message;S.emailsLoading=false;renderInbox();
+  }
 }
 
 /* ─── FILTRES + RECHERCHE ─── */
@@ -782,19 +811,18 @@ function parseGmailMessage(d){
 async function fetchThread(threadId){
   if(S.threads[threadId])return S.threads[threadId];
   try{
-    const r=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/threads/"+threadId+"?format=full",{headers:{"Authorization":"Bearer "+S.gmailAccessToken}});
-    if(!r.ok)return [];
-    const d=await r.json();
-    if(!d.messages)return [];
-    // Trier par date croissante (plus ancien en haut)
-    const msgs=d.messages.map(parseGmailMessage).sort((a,b)=>{
+    const d=await gmailApi("thread",{threadId});
+    const msgs=(d.thread?.messages||[]).map(parseGmailMessage).sort((a,b)=>{
       const da=new Date(a.date||0).getTime();
       const db=new Date(b.date||0).getTime();
       return da-db;
     });
     S.threads[threadId]=msgs;
     return msgs;
-  }catch(e){console.error("fetchThread:",e);return [];}
+  }catch(e){
+    if(handleGmailError(e))return [];
+    console.error("fetchThread:",e);return [];
+  }
 }
 
 async function loadSelectedThread(){
@@ -826,12 +854,9 @@ function _attSizeFmt(bytes){
 }
 
 window.downloadAttachment=async function(messageId,attachmentId,filename,mimeType){
-  if(!S.gmailAccessToken){showToast("⚠️ Session Gmail manquante");return;}
-  if(isGmailExpired()){showToast("⚠️ Session expirée — reconnecte Gmail");return;}
   showToast("⏳ Téléchargement…");
   try{
-    const r=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/"+messageId+"/attachments/"+attachmentId,{headers:{"Authorization":"Bearer "+S.gmailAccessToken}});
-    const d=await r.json();
+    const d=await gmailApi("attachment",{messageId,attachmentId});
     if(!d.data)throw new Error("Données manquantes");
     // Base64 URL-safe → standard
     const b64=d.data.replace(/-/g,"+").replace(/_/g,"/");
@@ -845,7 +870,10 @@ window.downloadAttachment=async function(messageId,attachmentId,filename,mimeTyp
     document.body.appendChild(a);a.click();
     setTimeout(()=>{URL.revokeObjectURL(url);document.body.removeChild(a);},150);
     showToast("✅ "+filename);
-  }catch(e){showToast("❌ "+e.message);}
+  }catch(e){
+    if(handleGmailError(e))return;
+    showToast("❌ "+e.message);
+  }
 };
 
 /* ─── POLLING AUTO ─── */
@@ -854,22 +882,19 @@ function _userBusy(){
   return S.replyText.trim().length>0||S.replyGenerating||S.showDeleteMenu||S.showAttachPicker||S.tab==="cmp";
 }
 async function gmailAutoRefresh(){
-  if(S.tab!=="inbox"||!S.gmailEmail||isGmailExpired()||S.emailsLoading)return;
+  if(S.tab!=="inbox"||!S.gmailEmail||S.emailsLoading)return;
   try{
-    // Pour le polling on regarde toujours les non-lus (changement de quantité = nouvel email)
-    const r=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread&maxResults=15",{headers:{"Authorization":"Bearer "+S.gmailAccessToken}});
-    if(r.status===401){
-      S.gmailEmail=null;S.gmailAccessToken=null;S.emailsError="Session expirée.";renderAll();return;
-    }
-    if(!r.ok)return;
-    const d=await r.json();
-    const newIds=(d.messages||[]).map(m=>m.id).sort().join(",");
-    // Comparer avec les emails UNREAD actuellement en mémoire
+    // Polling léger : juste les IDs des non-lus pour détecter un nouvel email
+    const d=await gmailApi("list",{query:"is:unread",maxResults:15,idsOnly:true});
+    const newIds=(d.messageIds||[]).sort().join(",");
     const curUnreadIds=S.emails.filter(m=>(m.labelIds||[]).includes("UNREAD")).map(m=>m.id).sort().join(",");
     if(newIds===curUnreadIds)return;
     if(_userBusy())return;
     await gmailFetchEmails();
-  }catch(e){console.debug("autoRefresh:",e?.message);}
+  }catch(e){
+    if(handleGmailError(e))return;
+    console.debug("autoRefresh:",e?.message);
+  }
 }
 function startPolling(){if(_pollingTimer)return;_pollingTimer=setInterval(gmailAutoRefresh,5000);}
 function stopPolling(){if(_pollingTimer){clearInterval(_pollingTimer);_pollingTimer=null;}}
@@ -900,7 +925,7 @@ window.gmailDisconnect=async function(){
     const{data:{session}}=await sb.auth.getSession();if(!session)return;
     const res=await fetch(FUNCTIONS_URL+"/google-disconnect",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:"{}"});
     if(!res.ok){const d=await res.json().catch(()=>({}));alert("Erreur : "+(d.error||"inconnue"));return;}
-    S.gmailEmail=null;S.gmailAccessToken=null;S.emails=[];S.selectedEmailId=null;renderAll();
+    S.gmailEmail=null;S.emails=[];S.threads={};S.selectedEmailId=null;renderAll();
   }catch(e){alert("Erreur : "+e.message);}
 };
 
@@ -1276,16 +1301,6 @@ function renderEmailList(){
     </div>`;
     return;
   }
-  if(isGmailExpired()){
-    el.innerHTML=`<div class="list-toolbar"><div class="count">Messagerie</div></div>
-    <div class="li-disconnected">
-      <div style="font-size:24px;margin-bottom:6px;">⚠️</div>
-      <div style="font-weight:600;color:var(--amber);margin-bottom:6px;">Session Gmail expirée</div>
-      <div style="font-size:12px;line-height:1.5;">${esc(S.gmailEmail)}</div>
-      <a href="settings.html?tab=gmail">🔄 Reconnecter</a>
-    </div>`;
-    return;
-  }
 
   const unreadCount=S.emails.filter(m=>(m.labelIds||[]).includes("UNREAD")).length;
   const totalCount=S.emails.length;
@@ -1595,7 +1610,7 @@ window.setTab=function(t){
     inbox.classList.remove('off');compose.classList.remove('on');
     ti.classList.add('on');tc.classList.remove('on');
     if(crumb)crumb.textContent='Non lus · '+S.emails.length;
-    if(S.gmailEmail&&!isGmailExpired()){
+    if(S.gmailEmail){
       if(S.emails.length===0)gmailFetchEmails();
       startPolling();
     }
@@ -1640,12 +1655,10 @@ async function initAuth(){
   window.PlanGuard?.init?.(session);
 
   try{
-    const{data:profil}=await sb.from("profils").select("nom,secteur,contexte_ia,google_email,google_access_token,google_token_expiry").eq("user_id",session.user.id).single();
+    const{data:profil}=await sb.from("profils").select("nom,secteur,contexte_ia,google_email").eq("user_id",session.user.id).single();
     if(profil){
       S.entreprise={nom:profil.nom||"",secteur:profil.secteur||"",contexte_ia:profil.contexte_ia||""};
       S.gmailEmail=profil.google_email||null;
-      S.gmailAccessToken=profil.google_access_token||null;
-      S.gmailTokenExpiry=profil.google_token_expiry?new Date(profil.google_token_expiry):null;
     }
   }catch(e){console.error("loadProfil:",e);}
 
@@ -1689,7 +1702,7 @@ async function initAuth(){
     if(ti)ti.classList.add('on');if(tc)tc.classList.remove('on');
   }
 
-  if(S.gmailEmail&&!isGmailExpired()&&S.tab==="inbox"){
+  if(S.gmailEmail&&S.tab==="inbox"){
     gmailFetchEmails();
     startPolling();
   }
