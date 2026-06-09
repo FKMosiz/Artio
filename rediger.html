@@ -305,6 +305,32 @@ kbd{font-family:var(--fm);font-size:10.5px;padding:2px 6px;border:1px solid var(
 .sidebar-theme{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;width:36px;height:36px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center}
 @media(max-width:767px){.sidebar.open{width:100%}}
 
+/* ─────── MODAL PIÈCES JOINTES ─────── */
+.pj-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s}
+.pj-overlay.open{opacity:1;pointer-events:auto}
+.pj-modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,.6);overflow:hidden;transform:translateY(8px);transition:transform .2s}
+.pj-overlay.open .pj-modal{transform:translateY(0)}
+.pj-modal-head{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--border)}
+.pj-modal-head h3{font-family:var(--fh);font-size:15px;font-weight:700;color:var(--text);flex:1}
+.pj-modal-close{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;color:var(--muted);font-size:20px;display:flex;align-items:center;justify-content:center}
+.pj-modal-search{padding:12px 18px 8px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.pj-modal-search svg{color:var(--muted)}
+.pj-modal-search input{flex:1;background:transparent;border:none;outline:none;font-size:13px;color:var(--text);font-family:var(--fb)}
+.pj-modal-body{flex:1;overflow-y:auto;padding:8px}
+.pj-section-h{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:10px 12px 4px}
+.pj-section-h.acc{color:var(--amber)}
+.pj-item{display:flex;gap:10px;align-items:center;width:100%;padding:10px 12px;background:none;border:none;border-radius:9px;text-align:left;font-family:var(--fb);cursor:pointer;transition:background .12s}
+.pj-item:hover{background:var(--surface-2)}
+.pj-item .icn{font-size:18px;flex-shrink:0;width:28px;text-align:center}
+.pj-item .nm{font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pj-item .meta{font-size:11px;color:var(--muted);margin-top:1px}
+.pj-modal-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.pj-modal-foot label{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;background:var(--amber-dim);border:1px solid rgba(245,167,66,.3);border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;color:var(--amber);transition:.14s}
+.pj-modal-foot label:hover{background:var(--amber);color:#080b14}
+.pj-modal-foot label input{display:none}
+.pj-modal-foot .hint{font-size:11px;color:var(--muted);flex:1}
+.pj-empty{padding:30px 18px;text-align:center;color:var(--muted);font-size:13px}
+
 /* Topbar : padding-left pour laisser place au hamburger */
 .topbar{padding-left:62px!important}
 </style>
@@ -385,6 +411,30 @@ kbd{font-family:var(--fm);font-size:10.5px;padding:2px 6px;border:1px solid var(
 
 <!-- Toast container -->
 <div id="artio-toast" class="toast"></div>
+
+<!-- ════ MODAL PIÈCES JOINTES ═══════════════════════ -->
+<div class="pj-overlay" id="pj-overlay" onclick="if(event.target===this)closePjModal()">
+  <div class="pj-modal">
+    <div class="pj-modal-head">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      <h3>Joindre un document</h3>
+      <button class="pj-modal-close" onclick="closePjModal()" aria-label="Fermer">×</button>
+    </div>
+    <div class="pj-modal-search">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="pj-search" placeholder="Rechercher un devis, une facture…" oninput="renderPjModalBody()"/>
+    </div>
+    <div class="pj-modal-body" id="pj-body"></div>
+    <div class="pj-modal-foot">
+      <label>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Fichier de l'appareil
+        <input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx" onchange="pjAttachLocal(this)"/>
+      </label>
+      <span class="hint">PDF, images, Word, Excel · max 10 MB</span>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ════════════════════════════════════════════════════════════
@@ -664,6 +714,117 @@ async function loadDossiers(){
   }catch(e){console.error("loadDossiers:",e);}
 }
 
+/* ─── MODALE PIÈCES JOINTES (centrée) ───
+   Contexte : "reply" (réponse depuis messagerie) ou "compose" (nouveau msg)
+   ────────────────────────────────────── */
+let _pjContext=null;     // "reply" | "compose"
+let _pjClientEmail=null; // email du client concerné (mode reply)
+
+window.openPjModal=async function(context){
+  _pjContext=context;
+  _pjClientEmail=null;
+  if(context==="reply"){
+    const m=S.emails.find(e=>e.id===S.selectedEmailId);
+    if(m){_pjClientEmail=senderEmail(m.from).toLowerCase();}
+  }
+  await loadDossiers();
+  const inp=document.getElementById("pj-search");if(inp)inp.value="";
+  renderPjModalBody();
+  document.getElementById("pj-overlay").classList.add("open");
+};
+
+window.closePjModal=function(){
+  document.getElementById("pj-overlay").classList.remove("open");
+  _pjContext=null;_pjClientEmail=null;
+};
+
+function _pjItemHtml(d,idx){
+  return `<button class="pj-item" onclick="pjPickDoc(${idx})">
+    <span class="icn">${d.type==="facture"?"🧾":"📄"}</span>
+    <div style="flex:1;min-width:0">
+      <div class="nm">${esc(d.docNumber)} — ${esc(d.dossierNom||d.client?.nom||"")}</div>
+      <div class="meta">${esc(d.date||"")}${d.ttc?" · "+d.ttc.toFixed(2)+" €":""}</div>
+    </div>
+  </button>`;
+}
+
+window.renderPjModalBody=function(){
+  const body=document.getElementById("pj-body");if(!body)return;
+  const q=(document.getElementById("pj-search")?.value||"").trim().toLowerCase();
+  let docs=S.dossiers.slice();
+
+  // Filtrer par recherche
+  if(q){
+    docs=docs.filter(d=>{
+      const txt=((d.docNumber||"")+" "+(d.dossierNom||"")+" "+(d.client?.nom||"")+" "+(d.client?.email||"")).toLowerCase();
+      return txt.includes(q);
+    });
+  }
+
+  // Section "suggéré" si on est en réponse et qu'on a l'email du client
+  let suggestedHtml="";
+  if(_pjContext==="reply"&&_pjClientEmail&&!q){
+    const sug=docs.filter(d=>(d.client?.email||"").toLowerCase()===_pjClientEmail);
+    if(sug.length>0){
+      suggestedHtml=`<div class="pj-section-h acc">⭐ Suggéré pour ce client</div>`+
+        sug.map((d,i)=>_pjItemHtml(d,S.dossiers.indexOf(d))).join("");
+      // Retirer les suggérés du reste
+      docs=docs.filter(d=>(d.client?.email||"").toLowerCase()!==_pjClientEmail);
+    }
+  }
+
+  // Section "Tous mes documents"
+  const allHtml=docs.length===0
+    ?(q?`<div class="pj-empty">Aucun résultat pour "${esc(q)}"</div>`:`<div class="pj-empty">Aucun devis ou facture dans tes dossiers</div>`)
+    :docs.map(d=>_pjItemHtml(d,S.dossiers.indexOf(d))).join("");
+
+  const allHeader=docs.length>0?`<div class="pj-section-h">${q?"Résultats":"Tous mes documents"}</div>`:"";
+  body.innerHTML=suggestedHtml+allHeader+allHtml;
+};
+
+window.pjPickDoc=async function(idx){
+  const doc=S.dossiers[idx];if(!doc)return;
+  showToast("⏳ Génération du PDF…");
+  try{
+    if(!window.ArtioPDF)throw new Error("pdf-generator non chargé");
+    const b64=window.ArtioPDF.toBase64(doc);
+    const att={filename:doc.docNumber+".pdf",contentType:"application/pdf",data:b64};
+    if(_pjContext==="reply"){
+      S.replyAttachments.push(att);
+      closePjModal();
+      renderInbox();
+    }else{
+      S.composer.attachments.push(att);
+      closePjModal();
+      renderCompose();
+    }
+    showToast("📎 "+doc.docNumber+" ajouté");
+  }catch(e){showToast("❌ "+e.message);}
+};
+
+window.pjAttachLocal=function(input){
+  const f=input.files?.[0];if(!f)return;
+  if(f.size>10*1024*1024){showToast("❌ Fichier > 10 MB");return;}
+  const r=new FileReader();
+  r.onload=ev=>{
+    const url=ev.target.result;
+    const b64=url.includes(",")?url.split(",")[1]:url;
+    const att={filename:f.name,contentType:f.type||"application/octet-stream",data:b64};
+    if(_pjContext==="reply"){
+      S.replyAttachments.push(att);
+      closePjModal();
+      renderInbox();
+    }else{
+      S.composer.attachments.push(att);
+      closePjModal();
+      renderCompose();
+    }
+    showToast("📎 "+f.name+" ajouté");
+    input.value="";
+  };
+  r.readAsDataURL(f);
+};
+
 /* ─── ACTIONS REPLY ─── */
 window.selectEmail=function(id){
   S.selectedEmailId=id;
@@ -681,12 +842,6 @@ window.toggleReplyTon=function(ton){
 };
 window.onReplyInput=function(el){S.replyText=el.value;};
 window.toggleDeleteMenu=function(e){if(e)e.stopPropagation();S.showDeleteMenu=!S.showDeleteMenu;renderInbox();};
-window.toggleAttachPicker=async function(e){
-  if(e)e.stopPropagation();
-  S.showAttachPicker=!S.showAttachPicker;
-  if(S.showAttachPicker){await loadDossiers();}
-  renderInbox();
-};
 
 window.generateReplyIA=async function(){
   const email=S.emails.find(m=>m.id===S.selectedEmailId);
@@ -726,30 +881,6 @@ window.sendReply=async function(btn){
   }else if(btn){btn.disabled=false;btn.innerHTML='Envoyer';}
 };
 
-window.attachArtioDoc=async function(idx){
-  const doc=S.dossiers[idx];if(!doc)return;
-  showToast("⏳ Génération PDF…");
-  try{
-    if(!window.ArtioPDF)throw new Error("pdf-generator non chargé");
-    const b64=window.ArtioPDF.toBase64(doc);
-    S.replyAttachments.push({filename:doc.docNumber+".pdf",contentType:"application/pdf",data:b64});
-    S.showAttachPicker=false;renderInbox();
-    showToast("📎 "+doc.docNumber+" ajouté");
-  }catch(e){showToast("❌ "+e.message);}
-};
-window.attachLocalFile=function(input){
-  const f=input.files?.[0];if(!f)return;
-  if(f.size>10*1024*1024){showToast("❌ Fichier > 10 MB");return;}
-  const r=new FileReader();
-  r.onload=ev=>{
-    const url=ev.target.result;
-    const b64=url.includes(",")?url.split(",")[1]:url;
-    S.replyAttachments.push({filename:f.name,contentType:f.type||"application/octet-stream",data:b64});
-    S.showAttachPicker=false;renderInbox();
-    showToast("📎 "+f.name+" ajouté");
-  };
-  r.readAsDataURL(f);
-};
 window.removeReplyAttachment=function(idx){S.replyAttachments.splice(idx,1);renderReplyDock();};
 
 /* ─── COMPOSER ACTIONS ─── */
@@ -760,34 +891,6 @@ window.toggleComposerTon=function(ton){
   renderCompose();
 };
 window.setComposerMode=function(mode){S.composer.mode=mode;renderCompose();};
-window.toggleComposeAttachPicker=async function(e){
-  if(e)e.stopPropagation();
-  S.showComposeAttachPicker=!S.showComposeAttachPicker;
-  if(S.showComposeAttachPicker)await loadDossiers();
-  renderCompose();
-};
-window.attachComposerArtioDoc=async function(idx){
-  const doc=S.dossiers[idx];if(!doc)return;
-  showToast("⏳ Génération PDF…");
-  try{
-    const b64=window.ArtioPDF.toBase64(doc);
-    S.composer.attachments.push({filename:doc.docNumber+".pdf",contentType:"application/pdf",data:b64});
-    S.showComposeAttachPicker=false;renderCompose();
-    showToast("📎 "+doc.docNumber);
-  }catch(e){showToast("❌ "+e.message);}
-};
-window.attachComposerLocalFile=function(input){
-  const f=input.files?.[0];if(!f)return;
-  if(f.size>10*1024*1024){showToast("❌ Fichier > 10 MB");return;}
-  const r=new FileReader();
-  r.onload=ev=>{
-    const url=ev.target.result;
-    const b64=url.includes(",")?url.split(",")[1]:url;
-    S.composer.attachments.push({filename:f.name,contentType:f.type||"application/octet-stream",data:b64});
-    S.showComposeAttachPicker=false;renderCompose();
-  };
-  r.readAsDataURL(f);
-};
 window.removeComposerAttachment=function(idx){S.composer.attachments.splice(idx,1);renderCompose();};
 
 window.composerGenerate=async function(){
@@ -810,21 +913,26 @@ Réponds directement avec le texte de l'email (pas de markdown). Signe "${e.nom|
   }
 };
 
-window.composerSend=async function(btn){
-  const c=S.composer;
-  const to=document.getElementById("cmp-to")?.value||c.to;
-  const subj=document.getElementById("cmp-subj")?.value||c.subject;
-  const body=document.getElementById("cmp-body")?.value||c.body;
-  if(!to.trim()){showToast("⚠️ Destinataire manquant");return;}
-  if(!subj.trim()){showToast("⚠️ Sujet manquant");return;}
-  if(!body.trim()){showToast("⚠️ Corps vide");return;}
-  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Envoi…';}
-  const ok=await gmailSendEmail({to,subject:subj,body,attachments:c.attachments});
-  if(ok){
-    S.composer={to:"",cc:"",subject:"",body:"",tons:["Vouvoiement","Chaleureux"],mode:"ia",contexte:"",message_recu:"",attachments:[],generating:false};
-    setTab("inbox");
-    gmailFetchEmails();
-  }else if(btn){btn.disabled=false;btn.innerHTML='Envoyer';}
+window.composerCopy=async function(btn){
+  const body=document.getElementById("cmp-body")?.value||S.composer.body;
+  if(!body.trim()){showToast("⚠️ Aucun texte à copier");return;}
+  try{
+    await navigator.clipboard.writeText(body);
+    showToast("✅ Texte copié dans le presse-papier");
+    if(btn){
+      const orig=btn.innerHTML;
+      btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copié !';
+      setTimeout(()=>{if(btn)btn.innerHTML=orig;},1800);
+    }
+  }catch(e){
+    // Fallback : textarea temporaire
+    const ta=document.createElement("textarea");ta.value=body;
+    ta.style.position="fixed";ta.style.left="-9999px";
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy");showToast("✅ Texte copié");}
+    catch(e2){showToast("❌ Impossible de copier — sélectionne le texte manuellement");}
+    document.body.removeChild(ta);
+  }
 };
 
 window.composerReformulate=async function(instruction){
@@ -986,27 +1094,6 @@ function renderReplyDock(){
     `<span class="dock-chip">📎 ${esc(a.filename)} <button onclick="removeReplyAttachment(${i})" style="background:none;border:none;color:var(--teal);cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 4px">×</button></span>`
   ).join("");
 
-  const attachPicker=S.showAttachPicker?`
-    <div class="attach-pop" onclick="event.stopPropagation()">
-      <h5>Devis & factures Artio</h5>
-      <div class="attach-pop-list">
-        ${S.dossiers.length===0?`<div style="padding:10px;font-size:12px;color:var(--muted)">Aucun document trouvé</div>`:
-          S.dossiers.map((d,i)=>`<button class="attach-pop-doc" onclick="attachArtioDoc(${i})">
-            <span class="icn">${d.type==="facture"?"🧾":"📄"}</span>
-            <div style="flex:1;min-width:0">
-              <div class="nm">${esc(d.docNumber)} — ${esc(d.dossierNom)}</div>
-              <div class="meta">${esc(d.date||"")}${d.ttc?" · "+d.ttc.toFixed(2)+" €":""}</div>
-            </div>
-          </button>`).join("")}
-      </div>
-      <div class="attach-pop-sep"></div>
-      <label class="attach-pop-file">
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-        Fichier de l'appareil
-        <input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx" onchange="attachLocalFile(this)"/>
-      </label>
-    </div>`:"";
-
   const tonsHtml=allTons.map(t=>`<span class="dock-tone-p ${S.replyTons.includes(t)?"on":""}" onclick="toggleReplyTon('${t}')">${t}</span>`).join("");
 
   let textareaContent;
@@ -1035,14 +1122,11 @@ function renderReplyDock(){
     <div class="dock-compose">
       ${textareaContent}
       <div class="dock-foot">
-        ${attachChips}
-        <div class="has-pos">
-          <button class="btn-ghost" onclick="toggleAttachPicker(event)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-            Joindre
-          </button>
-          ${attachPicker}
-        </div>
+        <div class="dock-chip-wrap">${attachChips}</div>
+        <button class="btn-ghost" onclick="openPjModal('reply')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          Joindre
+        </button>
         ${S.replyMode==="ia"?`<button class="btn-ghost" onclick="generateReplyIA()" ${S.replyGenerating?"disabled":""}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
           ${S.replyText?"Régénérer":"Générer"}
@@ -1065,26 +1149,6 @@ function renderCompose(){
     `<span class="dock-chip">📎 ${esc(a.filename)} <button onclick="removeComposerAttachment(${i})" style="background:none;border:none;color:var(--teal);cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 4px">×</button></span>`
   ).join("");
 
-  const attachPicker=S.showComposeAttachPicker?`
-    <div class="attach-pop cmp" onclick="event.stopPropagation()">
-      <h5>Devis & factures Artio</h5>
-      <div class="attach-pop-list">
-        ${S.dossiers.length===0?`<div style="padding:10px;font-size:12px;color:var(--muted)">Aucun document trouvé</div>`:
-          S.dossiers.map((d,i)=>`<button class="attach-pop-doc" onclick="attachComposerArtioDoc(${i})">
-            <span class="icn">${d.type==="facture"?"🧾":"📄"}</span>
-            <div style="flex:1;min-width:0">
-              <div class="nm">${esc(d.docNumber)} — ${esc(d.dossierNom)}</div>
-              <div class="meta">${esc(d.date||"")}${d.ttc?" · "+d.ttc.toFixed(2)+" €":""}</div>
-            </div>
-          </button>`).join("")}
-      </div>
-      <div class="attach-pop-sep"></div>
-      <label class="attach-pop-file">
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-        Fichier de l'appareil
-        <input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xlsx" onchange="attachComposerLocalFile(this)"/>
-      </label>
-    </div>`:"";
 
   const tonsHtml=allTons.map(t=>`<span class="cmp-tone-p ${c.tons.includes(t)?"on":""}" onclick="toggleComposerTon('${t}')">${t}</span>`).join("");
 
@@ -1093,14 +1157,6 @@ function renderCompose(){
     :`<textarea class="cmp-textarea" id="cmp-body" placeholder="${c.mode==="ia"?"Cliquez sur 'Générer' pour que l'IA rédige l'email…":"Écrivez votre email…"}" oninput="onComposerField('body',this.value)">${esc(c.body)}</textarea>`;
 
   el.innerHTML=`
-    <div class="cmp-topbar">
-      <label>À</label>
-      <input id="cmp-to" value="${esc(c.to)}" placeholder="email du destinataire" oninput="onComposerField('to',this.value)"/>
-      <div class="sep"></div>
-      <label>Cc</label>
-      <input id="cmp-cc" value="${esc(c.cc)}" placeholder="optionnel" style="min-width:130px" oninput="onComposerField('cc',this.value)"/>
-    </div>
-
     <div class="cmp-tabs">
       <button class="cmp-tab ${c.mode==="ia"?"on":""}" onclick="setComposerMode('ia')">Brouillon IA</button>
       <button class="cmp-tab ${c.mode==="man"?"on":""}" onclick="setComposerMode('man')">Écrire manuellement</button>
@@ -1112,8 +1168,6 @@ function renderCompose(){
 
     <div class="cmp-body">
       <div class="cmp-editor">
-        <input class="cmp-subj" id="cmp-subj" value="${esc(c.subject)}" placeholder="Sujet…" oninput="onComposerField('subject',this.value)"/>
-        <div class="cmp-hr"></div>
         ${c.mode==="ia"?`
           <div style="margin-bottom:14px">
             <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Message reçu du client <span style="font-weight:400;text-transform:none;letter-spacing:0">(optionnel)</span></div>
@@ -1142,10 +1196,7 @@ function renderCompose(){
           <h4>📎 Pièces jointes</h4>
           <div class="sc-sug">
             ${c.attachments.map((a,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--teal-dim);border-radius:8px;font-size:12px;color:var(--teal);font-weight:600">📎 ${esc(a.filename)}<button onclick="removeComposerAttachment(${i})" style="margin-left:auto;background:none;border:none;color:var(--teal);cursor:pointer;font-size:16px;line-height:1">×</button></div>`).join("")}
-            <div class="has-pos">
-              <button style="border-style:dashed;width:100%" onclick="toggleComposeAttachPicker(event)">+ Joindre un document</button>
-              ${attachPicker}
-            </div>
+            <button style="border-style:dashed;width:100%" onclick="openPjModal('compose')">+ Joindre un document</button>
           </div>
         </div>
       </aside>
@@ -1158,9 +1209,9 @@ function renderCompose(){
         ${c.body?"Régénérer":"Générer"}
       </button>`:""}
       <div class="sp"></div>
-      <button class="btn-send" onclick="composerSend(this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        Envoyer
+      <button class="btn-send" onclick="composerCopy(this)" ${!c.body?"disabled style=\"opacity:.5;cursor:not-allowed\"":""}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copier le texte
       </button>
     </div>`;
 }
@@ -1255,12 +1306,30 @@ async function initAuth(){
     }
   });
 
-  // Démarrage
+  // Démarrage — choisir l'onglet selon le plan
+  // Pro : Messagerie par défaut (Gmail accessible)
+  // Free/Solo : Composer par défaut (génération de texte uniquement)
+  const isPro=window.PlanGuard?.isPro?.()??false;
+  S.tab=isPro?"inbox":"cmp";
   renderAll();
-  if(S.gmailEmail&&!isGmailExpired()){
+  // Activer la bonne classe sur les boutons de la topbar
+  const ti=document.getElementById('t-inbox'),tc=document.getElementById('t-cmp');
+  const cb=document.getElementById('crumb-sub');
+  if(S.tab==="cmp"){
+    document.getElementById('inbox').classList.add('off');
+    document.getElementById('compose').classList.add('on');
+    if(ti)ti.classList.remove('on');if(tc)tc.classList.add('on');
+    if(cb)cb.textContent='Nouveau message';
+  }else{
+    if(ti)ti.classList.add('on');if(tc)tc.classList.remove('on');
+  }
+
+  if(S.gmailEmail&&!isGmailExpired()&&S.tab==="inbox"){
     gmailFetchEmails();
     startPolling();
   }
+  // Précharger les dossiers pour la modale PJ
+  loadDossiers();
   if(window.ArtioTour)window.ArtioTour.autoStart();
 }
 initAuth();
