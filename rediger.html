@@ -348,6 +348,17 @@ kbd{font-family:var(--fm);font-size:10.5px;padding:2px 6px;border:1px solid var(
 .bubble-body iframe.email-iframe{max-width:100%;min-height:140px}
 .bubble.loading{align-self:center;padding:8px 14px;background:transparent;border:none;color:var(--muted);font-size:12px;display:flex;align-items:center;gap:8px}
 
+/* ─────── PIÈCES JOINTES DANS LA BULLE ─────── */
+.bubble-atts{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.bubble-att{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;background:var(--surface);border:1px solid var(--border);border-radius:9px;cursor:pointer;font-family:var(--fb);text-decoration:none;color:var(--text);transition:.13s;max-width:100%}
+.bubble-att:hover{border-color:var(--amber);background:var(--amber-dim)}
+.bubble-att-icn{font-size:18px;flex-shrink:0;line-height:1}
+.bubble-att-info{display:flex;flex-direction:column;min-width:0;flex:1}
+.bubble-att-nm{font-size:12.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.bubble-att-meta{font-size:10.5px;color:var(--muted);margin-top:1px}
+.bubble-att-dl{flex-shrink:0;color:var(--amber);opacity:.7}
+.bubble-att:hover .bubble-att-dl{opacity:1}
+
 /* ─────── FILTRES & RECHERCHE LISTE ─────── */
 .list-filters{display:flex;align-items:center;gap:6px;padding:9px 13px 6px}
 .filter-tab{padding:5px 12px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--fb);transition:.12s}
@@ -596,17 +607,34 @@ function isGmailExpired(){return S.gmailTokenExpiry&&new Date()>new Date(S.gmail
 /* Parser multipart récursif */
 function extractEmailParts(payload){
   let plain=null,html=null,hasAttach=false;
+  const attachments=[];
   function walk(p){
     if(!p)return;
     const m=(p.mimeType||"").toLowerCase();
-    const disp=(p.headers||[]).find(h=>h.name.toLowerCase()==="content-disposition")?.value||"";
-    if(/attachment/i.test(disp))hasAttach=true;
-    if(m==="text/plain"&&p.body?.data&&!plain)plain=p.body.data;
-    else if(m==="text/html"&&p.body?.data&&!html)html=p.body.data;
+    const headers=p.headers||[];
+    const disp=headers.find(h=>h.name?.toLowerCase()==="content-disposition")?.value||"";
+    const isAttach=/attachment/i.test(disp)||(p.filename&&p.filename.length>0&&p.body?.attachmentId);
+    if(isAttach&&p.body?.attachmentId){
+      hasAttach=true;
+      let filename=p.filename||"";
+      if(!filename){
+        const mm=disp.match(/filename[*]?=(?:"?(?:UTF-8''|UTF-8'')?([^";\s]+)"?)/i);
+        if(mm){try{filename=decodeURIComponent(mm[1]);}catch(e){filename=mm[1];}}
+      }
+      attachments.push({
+        attachmentId:p.body.attachmentId,
+        filename:filename||"piece-jointe",
+        mimeType:p.mimeType||"application/octet-stream",
+        size:p.body.size||0,
+      });
+    }else{
+      if(m==="text/plain"&&p.body?.data&&!plain)plain=p.body.data;
+      else if(m==="text/html"&&p.body?.data&&!html)html=p.body.data;
+    }
     if(p.parts&&p.parts.length>0)p.parts.forEach(walk);
   }
   walk(payload);
-  return{plain,html,hasAttach};
+  return{plain,html,hasAttach,attachments};
 }
 
 /* Sender display "Marie Dubois <m@x.fr>" → "Marie Dubois" */
@@ -735,7 +763,7 @@ window.clearEmailSearch=function(){
 function parseGmailMessage(d){
   const hh=d.payload?.headers||[];
   const get=n=>hh.find(h=>h.name===n)?.value||"";
-  const{plain,html,hasAttach}=extractEmailParts(d.payload||{});
+  const{plain,html,hasAttach,attachments}=extractEmailParts(d.payload||{});
   let body="",bodyType="text";
   if(plain){body=decodeBase64Utf8(plain).slice(0,12000);bodyType="text";}
   else if(html){body=decodeBase64Utf8(html);bodyType="html";}
@@ -745,6 +773,7 @@ function parseGmailMessage(d){
     from:get("From"),to:get("To"),
     subject:get("Subject"),date:get("Date"),
     body,bodyType,hasAttach,
+    attachments:attachments||[],
     labelIds:d.labelIds||[],
     isSent:(d.labelIds||[]).includes("SENT"),
   };
@@ -776,6 +805,48 @@ async function loadSelectedThread(){
   await fetchThread(m.threadId);
   S.threadLoading=false;renderEmailRead();
 }
+
+/* ─── TÉLÉCHARGEMENT PIÈCE JOINTE ─── */
+function _attIcon(mime){
+  if(!mime)return"📎";
+  if(/pdf/i.test(mime))return"📄";
+  if(/image/i.test(mime))return"🖼";
+  if(/word|document|msword/i.test(mime))return"📝";
+  if(/sheet|excel/i.test(mime))return"📊";
+  if(/zip|rar|compress/i.test(mime))return"🗜";
+  if(/audio/i.test(mime))return"🎵";
+  if(/video/i.test(mime))return"🎬";
+  return"📎";
+}
+function _attSizeFmt(bytes){
+  if(!bytes||bytes<=0)return"";
+  if(bytes<1024)return bytes+" o";
+  if(bytes<1024*1024)return Math.round(bytes/1024)+" Ko";
+  return (bytes/1024/1024).toFixed(1).replace(".",",")+" Mo";
+}
+
+window.downloadAttachment=async function(messageId,attachmentId,filename,mimeType){
+  if(!S.gmailAccessToken){showToast("⚠️ Session Gmail manquante");return;}
+  if(isGmailExpired()){showToast("⚠️ Session expirée — reconnecte Gmail");return;}
+  showToast("⏳ Téléchargement…");
+  try{
+    const r=await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/"+messageId+"/attachments/"+attachmentId,{headers:{"Authorization":"Bearer "+S.gmailAccessToken}});
+    const d=await r.json();
+    if(!d.data)throw new Error("Données manquantes");
+    // Base64 URL-safe → standard
+    const b64=d.data.replace(/-/g,"+").replace(/_/g,"/");
+    const binary=atob(b64);
+    const bytes=new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+    const blob=new Blob([bytes],{type:mimeType||"application/octet-stream"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;a.download=filename||"piece-jointe";
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);document.body.removeChild(a);},150);
+    showToast("✅ "+filename);
+  }catch(e){showToast("❌ "+e.message);}
+};
 
 /* ─── POLLING AUTO ─── */
 let _pollingTimer=null;
@@ -896,7 +967,11 @@ window.onReplyCcInput=function(val){
 };
 function renderCcDropdown(val){
   const dd=document.getElementById("cc-dropdown");if(!dd)return;
-  const q=(val||"").trim().toLowerCase();
+  // Récupérer la partie en cours de frappe (après la dernière virgule)
+  let q=(val||"");
+  const lastComma=q.lastIndexOf(",");
+  if(lastComma>=0)q=q.slice(lastComma+1);
+  q=q.trim().toLowerCase();
   if(!q||q.length<1){dd.classList.remove("open");dd.innerHTML="";return;}
   const matches=S.clients.filter(c=>{
     return (c.nom||"").toLowerCase().includes(q)||(c.email||"").toLowerCase().includes(q);
@@ -910,9 +985,17 @@ function renderCcDropdown(val){
   dd.classList.add("open");
 }
 window.pickCcClient=function(email){
-  // Concaténer si déjà des adresses dedans
-  const cur=(S.replyCc||"").trim();
-  S.replyCc=cur?(cur.endsWith(",")?cur+" "+email:cur+", "+email):email;
+  // Remplacer la dernière partie en cours de frappe (après la dernière virgule)
+  let cur=(S.replyCc||"");
+  const lastComma=cur.lastIndexOf(",");
+  if(lastComma>=0){
+    // Conserver tout ce qui est avant la dernière virgule + nouvel email
+    cur=cur.slice(0,lastComma+1).trimEnd()+" "+email;
+  }else{
+    // Pas de virgule : on remplace tout
+    cur=email;
+  }
+  S.replyCc=cur;
   const dd=document.getElementById("cc-dropdown");if(dd){dd.classList.remove("open");dd.innerHTML="";}
   const inp=document.getElementById("reply-cc-input");if(inp){inp.value=S.replyCc;inp.focus();}
 };
@@ -1291,13 +1374,27 @@ function renderEmailRead(){
     }else{
       body=esc(msg.body).split(/\n\n+/).map(p=>`<p>${p.replace(/\n/g,"<br/>")}</p>`).join("");
     }
+    // Pièces jointes (téléchargeables)
+    const atts=msg.attachments||[];
+    const attsHtml=atts.length>0?`<div class="bubble-atts">${atts.map(a=>{
+      const ic=_attIcon(a.mimeType);
+      const sz=_attSizeFmt(a.size);
+      return `<button class="bubble-att" onclick="downloadAttachment('${msg.id}','${esc(a.attachmentId)}','${esc(a.filename).replace(/'/g,"\\'")}','${esc(a.mimeType)}')" title="Télécharger ${esc(a.filename)}">
+        <span class="bubble-att-icn">${ic}</span>
+        <div class="bubble-att-info">
+          <span class="bubble-att-nm">${esc(a.filename)}</span>
+          ${sz?`<span class="bubble-att-meta">${sz}</span>`:""}
+        </div>
+        <svg class="bubble-att-dl" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>`;
+    }).join("")}</div>`:"";
     return `<div class="bubble ${isSent?'sent':'received'}">
       <div class="bubble-meta">
         <span class="bubble-from">${isSent?"Vous":esc(nm)}</span>
-        ${msg.hasAttach?'<span title="Pièce jointe">📎</span>':""}
         <span class="bubble-time">${esc(formatDate(msg.date))}</span>
       </div>
       <div class="bubble-body">${body}</div>
+      ${attsHtml}
     </div>`;
   }
 
