@@ -1461,23 +1461,13 @@ function renderEmailRead(){
 function renderReplyDock(){
   const el=document.getElementById("reply-dock");if(!el)return;
   const m=S.emails.find(e=>e.id===S.selectedEmailId);if(!m)return;
-  const allTons=["Vouvoiement","Tutoiement","Chaleureux","Concis","Ferme","Institutionnel"];
+  const isMobile=window.innerWidth<=680;
 
   const attachChips=S.replyAttachments.map((a,i)=>
     `<span class="dock-chip">📎 ${esc(a.filename)} <button onclick="removeReplyAttachment(${i})" style="background:none;border:none;color:var(--teal);cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 4px">×</button></span>`
   ).join("");
 
-  const tonsHtml=allTons.map(t=>`<span class="dock-tone-p ${S.replyTons.includes(t)?"on":""}" onclick="toggleReplyTon('${t}')">${t}</span>`).join("");
-
-  let textareaContent;
-  if(S.replyGenerating){
-    textareaContent=`<div style="padding:14px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px"><span class="spinner"></span> L'IA rédige votre réponse…</div>`;
-  }else{
-    const placeholder=S.replyMode==="ia"?"Cliquez sur 'Générer' pour que l'IA rédige une réponse…":"Écrivez votre réponse…";
-    textareaContent=`<textarea class="dock-textarea" id="reply-textarea" placeholder="${placeholder}" oninput="onReplyInput(this)">${esc(S.replyText)}</textarea>`;
-  }
-
-  // Cc bloc (toggle via "Ajouter Cc")
+  // Cc bloc
   const ccBlock=S.replyShowCc?`
     <div class="dock-cc-row">
       <span class="dock-cc-label">Cc</span>
@@ -1490,35 +1480,30 @@ function renderReplyDock(){
 
   const addCcBtn=!S.replyShowCc?`<button class="dock-add-cc" onclick="toggleReplyCc()">+ Ajouter Cc</button>`:"";
 
+  // Textarea : compacte sur mobile
+  const textareaStyle=isMobile?"min-height:54px;max-height:90px":"min-height:110px";
+  let textareaContent;
+  if(S.replyGenerating){
+    textareaContent=`<div style="padding:10px 14px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px"><span class="spinner"></span> L'IA rédige…</div>`;
+  }else{
+    textareaContent=`<textarea class="dock-textarea" id="reply-textarea" placeholder="Cliquez sur 'Générer' ou écrivez directement…" oninput="onReplyInput(this)" style="${textareaStyle}">${esc(S.replyText)}</textarea>`;
+  }
+
   el.innerHTML=`
     ${ccBlock}
-    <div class="dock-tabs">
-      <button class="dock-tab ${S.replyMode==="ia"?"on":""}" onclick="setReplyMode('ia')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6z"/></svg>
-        Brouillon IA
-      </button>
-      <button class="dock-tab manual ${S.replyMode==="man"?"on":""}" onclick="setReplyMode('man')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-        Écrire moi-même
-      </button>
-      ${addCcBtn}
-      <div class="dock-sp"></div>
-      <div class="dock-tone">
-        <span>Ton :</span>${tonsHtml}
-      </div>
-    </div>
     <div class="dock-compose">
       ${textareaContent}
       <div class="dock-foot">
         <div class="dock-chip-wrap">${attachChips}</div>
+        ${addCcBtn}
         <button class="btn-ghost" onclick="openPjModal('reply')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           Joindre
         </button>
-        ${S.replyMode==="ia"?`<button class="btn-ghost" onclick="generateReplyIA()" ${S.replyGenerating?"disabled":""}>
+        <button class="btn-ghost" onclick="generateReplyIA()" ${S.replyGenerating?"disabled":""}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
           ${S.replyText?"Régénérer":"Générer"}
-        </button>`:""}
+        </button>
         <button class="btn-send" onclick="sendReply(this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           Envoyer
@@ -1531,41 +1516,25 @@ function renderReplyDock(){
 function renderCompose(){
   const el=document.getElementById("compose");if(!el)return;
   const c=S.composer;
-  const allTons=["Vouvoiement","Tutoiement","Chaleureux","Institutionnel","Concis","Ferme"];
-
   const attachChips=c.attachments.map((a,i)=>
     `<span class="dock-chip">📎 ${esc(a.filename)} <button onclick="removeComposerAttachment(${i})" style="background:none;border:none;color:var(--teal);cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 4px">×</button></span>`
   ).join("");
 
-
-  const tonsHtml=allTons.map(t=>`<span class="cmp-tone-p ${c.tons.includes(t)?"on":""}" onclick="toggleComposerTon('${t}')">${t}</span>`).join("");
-
   const bodyTextarea=c.generating
     ?`<div style="padding:20px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:10px"><span class="spinner"></span> L'IA rédige votre email…</div>`
-    :`<textarea class="cmp-textarea" id="cmp-body" placeholder="${c.mode==="ia"?"Cliquez sur 'Générer' pour que l'IA rédige l'email…":"Écrivez votre email…"}" oninput="onComposerField('body',this.value)">${esc(c.body)}</textarea>`;
+    :`<textarea class="cmp-textarea" id="cmp-body" placeholder="Cliquez sur 'Générer' ou écrivez directement…" oninput="onComposerField('body',this.value)">${esc(c.body)}</textarea>`;
 
   el.innerHTML=`
-    <div class="cmp-tabs">
-      <button class="cmp-tab ${c.mode==="ia"?"on":""}" onclick="setComposerMode('ia')">Brouillon IA</button>
-      <button class="cmp-tab ${c.mode==="man"?"on":""}" onclick="setComposerMode('man')">Écrire manuellement</button>
-      <div class="sp"></div>
-      <div class="cmp-tone">
-        <span>Ton</span>${tonsHtml}
-      </div>
-    </div>
-
     <div class="cmp-body">
       <div class="cmp-editor">
-        ${c.mode==="ia"?`
-          <div style="margin-bottom:14px">
-            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Message reçu du client <span style="font-weight:400;text-transform:none;letter-spacing:0">(optionnel)</span></div>
-            <textarea style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;color:var(--text);font-family:var(--fb);min-height:60px;resize:vertical" placeholder="Colle ici le message du client si tu réponds à un mail externe…" oninput="onComposerField('message_recu',this.value)">${esc(c.message_recu)}</textarea>
-          </div>
-          <div style="margin-bottom:14px">
-            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Ce que tu veux dire</div>
-            <textarea style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;color:var(--text);font-family:var(--fb);min-height:60px;resize:vertical" placeholder="Ex: confirmer le RDV, proposer un créneau, annoncer le prix…" oninput="onComposerField('contexte',this.value)">${esc(c.contexte)}</textarea>
-          </div>
-        `:""}
+        <div style="margin-bottom:14px">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Message reçu du client <span style="font-weight:400;text-transform:none;letter-spacing:0">(optionnel)</span></div>
+          <textarea style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;color:var(--text);font-family:var(--fb);min-height:60px;resize:vertical" placeholder="Colle ici le message du client si tu réponds à un mail externe…" oninput="onComposerField('message_recu',this.value)">${esc(c.message_recu)}</textarea>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Ce que tu veux dire</div>
+          <textarea style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;color:var(--text);font-family:var(--fb);min-height:60px;resize:vertical" placeholder="Ex: confirmer le RDV, proposer un créneau, annoncer le prix…" oninput="onComposerField('contexte',this.value)">${esc(c.contexte)}</textarea>
+        </div>
         ${bodyTextarea}
       </div>
 
@@ -1592,10 +1561,10 @@ function renderCompose(){
 
     <div class="cmp-foot">
       ${attachChips}
-      ${c.mode==="ia"?`<button class="btn-ghost" onclick="composerGenerate()" ${c.generating?"disabled":""}>
+      <button class="btn-ghost" onclick="composerGenerate()" ${c.generating?"disabled":""}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
         ${c.body?"Régénérer":"Générer"}
-      </button>`:""}
+      </button>
       <div class="sp"></div>
       <button class="btn-send" onclick="composerCopy(this)" ${!c.body?"disabled style=\"opacity:.5;cursor:not-allowed\"":""}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
