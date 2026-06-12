@@ -12,6 +12,7 @@
   <script>const PAGE_PLAN_REQUIRED = "solo";</script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="pdf-generator.js?v=1"></script>
   <style>
 :root,[data-theme="dark"]{--bg:#080b14;--surface:#0e1220;--surface-2:#141829;--surface-3:#1a2035;--border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.13);--text:#e2e5f1;--muted:#6b7494;--amber:#f5a742;--amber-dim:rgba(245,167,66,0.12);--amber-glow:rgba(245,167,66,0.28);--teal:#3ecfcf;--teal-dim:rgba(62,207,207,0.11);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--green:#4ade80;--fh:'Space Grotesk',sans-serif;--fb:'Plus Jakarta Sans',sans-serif}
 [data-theme="light"]{--bg:#faf8f3;--surface:#ffffff;--surface-2:#f3efe6;--surface-3:#ece7dc;--border:rgba(20,18,12,0.08);--border-hi:rgba(20,18,12,0.16);--text:#1a1a1f;--muted:#6a6b78;--amber:#d97706;--amber-dim:rgba(217,119,6,0.10);--amber-glow:rgba(217,119,6,0.22);--teal:#0d9488;--teal-dim:rgba(13,148,136,0.10);--red:#dc2626;--green:#16a34a}
@@ -185,7 +186,6 @@ const SUPABASE_KEY="sb_publishable_dbf0DrGQr377jyftcE-rYw_SK5nzZJw";
 const FUNCTIONS_URL=SUPABASE_URL+"/functions/v1";
 const{createClient}=supabase;
 const sb=window.sb=createClient(SUPABASE_URL,SUPABASE_KEY);
-const LOGO_WHITE="";
 const DOC_STORE={};
 function storeDoc(doc){const key=doc.docNumber;DOC_STORE[key]=doc;return key}
 function getDoc(key){return DOC_STORE[key]}
@@ -450,42 +450,6 @@ window.confirmDeleteDoc=async(dosId,docNum)=>{
   set({deleteConfirm:null,previewDocNum:null});
 };
 
-function generatePDF(doc){
-  const{jsPDF}=window.jspdf;const pdf=new jsPDF({unit:"mm",format:"a4"});
-  const W=210,m=18,cW=W-2*m,rX=W-m;let y=m;
-  const pdfColor=doc.entreprise.couleur_pdf||"#378ADD";
-  const rgb=(pdfColor.match(/[0-9a-f]{2}/gi)||["37","8a","dd"]).map(h=>parseInt(h,16));
-  if(doc.entreprise.logo_base64){try{const props=pdf.getImageProperties(doc.entreprise.logo_base64);const ratio=props.width/props.height;const logoW=Math.min(14*ratio,55);pdf.addImage(doc.entreprise.logo_base64,"PNG",m,y-2,logoW,14);y+=17;}catch(e){pdf.setFontSize(16).setFont(undefined,"bold").text(doc.entreprise.nom,m,y);y+=6;}}
-  else{pdf.setFontSize(16).setFont(undefined,"bold").text(doc.entreprise.nom,m,y);y+=6;}
-  pdf.setFontSize(9).setFont(undefined,"normal").text(doc.entreprise.adresse,m,y);y+=5;
-  pdf.text("Tél : "+doc.entreprise.tel,m,y);y+=4;pdf.text("Email : "+doc.entreprise.email,m,y);y+=4;pdf.text("SIRET : "+doc.entreprise.siret,m,y);y+=4;
-  if(doc.entreprise?.iban){pdf.text("IBAN : "+doc.entreprise.iban,m,y);y+=4;}
-  if(doc.entreprise?.rc_pro_assureur){pdf.text("RC Pro : "+doc.entreprise.rc_pro_assureur+(doc.entreprise.rc_pro_police?" — Pol. "+doc.entreprise.rc_pro_police:""),m,y);y+=4;}
-  pdf.setFontSize(20).setFont(undefined,"bold").text(doc.type==="devis"?"DEVIS":"FACTURE",rX,m,{align:"right"});
-  pdf.setFontSize(10).setFont(undefined,"normal");pdf.text("N° "+doc.docNumber,rX,m+9,{align:"right"});pdf.text("Date : "+doc.date,rX,m+15,{align:"right"});
-  if(doc.validUntil)pdf.text("Valable jusqu'au : "+doc.validUntil,rX,m+21,{align:"right"});
-  let yOff=doc.validUntil?27:21;
-  if(doc.date_prestation){const dp=new Date(doc.date_prestation).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});const hp=doc.heure_prestation?" à "+doc.heure_prestation+(doc.heure_fin_prestation?" → "+doc.heure_fin_prestation:""):"";pdf.text((doc.type==="devis"?"Prestation prévue : ":"Prestation réalisée : ")+dp+hp,rX,m+yOff,{align:"right"});}
-  y=58;pdf.setDrawColor(...rgb).setLineWidth(0.4).line(m,y,W-m,y);pdf.setLineWidth(0.2);y+=8;
-  pdf.setFontSize(9).setFont(undefined,"bold").text("CLIENT",m,y);y+=5;pdf.setFont(undefined,"normal").text(doc.client.nom,m,y);y+=4;pdf.text(doc.client.adresse,m,y);y+=4;
-  if(doc.client.tel){pdf.text("Tél : "+doc.client.tel,m,y);y+=4;}
-  y+=3;pdf.setFont(undefined,"bold").text("DESCRIPTION DE LA PRESTATION",m,y);y+=5;pdf.setFont(undefined,"normal");
-  const dl=pdf.splitTextToSize(doc.description,cW);pdf.text(dl,m,y);y+=dl.length*4.5+6;
-  const moRow=doc.nb_heures&&parseFloat(doc.nb_heures)>0?["Temps de travail ("+doc.nb_heures+"h × "+doc.entreprise.taux_horaire+"€/h)",doc.nb_heures,parseFloat(doc.entreprise.taux_horaire).toFixed(2)+" €",doc.moHT.toFixed(2)+" €"]:null;
-  const tb=[...(moRow?[moRow]:[]),...doc.pieces.filter(p=>p.description&&p.quantite&&p.prix_unitaire).map(p=>[p.description,p.quantite,parseFloat(p.prix_unitaire).toFixed(2)+" €",(parseFloat(p.quantite)*parseFloat(p.prix_unitaire)).toFixed(2)+" €"])];
-  pdf.autoTable({startY:y,head:[["Description","Qté","Prix unit. HT","Total HT"]],body:tb,margin:{left:m,right:m},styles:{fontSize:9,cellPadding:3,overflow:"linebreak",valign:"top"},headStyles:{fillColor:rgb,textColor:255,fontStyle:"bold"},columnStyles:{0:{cellWidth:85,overflow:"linebreak"},1:{cellWidth:18,halign:"center"},2:{cellWidth:32,halign:"right"},3:{cellWidth:27,halign:"right"}}});
-  y=pdf.lastAutoTable.finalY+6;
-  pdf.setFontSize(9).setFont(undefined,"normal");pdf.text("Total HT :",135,y);pdf.text(doc.totalHT.toFixed(2)+" €",rX,y,{align:"right"});y+=5;
-  if(doc.entreprise.assujetti_tva){pdf.text("TVA ("+doc.tvaRate+"%) :",135,y);pdf.text(doc.tva.toFixed(2)+" €",rX,y,{align:"right"});y+=5;}
-  pdf.setFont(undefined,"bold").setFontSize(11).text(doc.entreprise.assujetti_tva?"TOTAL TTC :":"TOTAL :",145,y);pdf.text(doc.ttc.toFixed(2)+" €",rX,y,{align:"right"});y+=10;
-  if(!doc.entreprise.assujetti_tva){pdf.setFont(undefined,"italic").setFontSize(8).setTextColor(100);pdf.text("TVA non applicable, art. 293 B du CGI",m,y);y+=5;}
-  pdf.setFont(undefined,"normal").setFontSize(8).setTextColor(80);
-  if(doc.type==="devis"){const condMap={"30_reception":"Paiement à réception de facture.","30_jours":"Paiement à 30 jours date de facture.","45_jours":"Paiement à 45 jours date de facture.","60_jours":"Paiement à 60 jours date de facture.","acompte_30":"30% d'acompte à la commande, solde à réception.","acompte_50":"50% d'acompte à la commande, solde à réception.","3_versements":"Règlement en 3 versements égaux.","custom":"Voir conditions spécifiques.","":"Paiement à réception de facture."};const condTxt=condMap[doc.entreprise.conditions_paiement||""]||"Paiement à réception de facture.";const fullCondTxt="Conditions : "+condTxt+(doc.validite_jours?" Devis valable "+doc.validite_jours+" jour"+(doc.validite_jours>1?"s":"")+".":" ");const condLines=pdf.splitTextToSize(fullCondTxt,cW);pdf.text(condLines,m,y);y+=condLines.length*4+6;pdf.setTextColor(0).setFontSize(9).text("Bon pour accord — Date et signature :",m,y);y+=14;pdf.setDrawColor(180).line(m,y,m+80,y);}
-  else{pdf.text("Paiement à 30 jours. Pénalités de retard : 3× le taux légal. Indemnité forfaitaire : 40 €.",m,y);}
-  try{pdf.addImage("data:image/png;base64,"+LOGO_WHITE,"PNG",m,280,22,7)}catch{}
-  pdf.setFontSize(7).setTextColor(150).text(doc.entreprise.nom+" — SIRET : "+doc.entreprise.siret,W/2,287,{align:"center"});
-  pdf.save(doc.docNumber+".pdf");
-}
 window.downloadPDF=function(key){const doc=getDoc(key);if(!doc){alert("Document introuvable.");return;}try{generatePDF(doc);}catch(e){alert("Erreur PDF : "+e.message);}}
 
 window.downloadSignedProof=async function(docNumber){
@@ -514,7 +478,7 @@ window.downloadSignedProof=async function(docNumber){
     [[created,"🔗","Lien de signature créé et envoyé au client"],[signed,"📧","Code OTP envoyé à : "+(sig.signer_email||"—")],[signed,"✅","Code OTP vérifié — email authentifié"],[signed,"🔒","Intégrité SHA-256 vérifiée : "+(sig.hash_verified?"Conforme":"Non vérifiée")],[signed,"✍️","Document signé par : "+(sig.signer_email||doc.client?.nom||"—")],[signed,"🌐","IP du signataire : "+(sig.signer_ip||"—")]].forEach(([dt,icon,label])=>{pdf.setTextColor(120).text(dt,aDateX,ay);pdf.setTextColor(60).text(icon+" "+label,aEvX,ay);ay+=6;});y+=64;
     pdf.setFont(undefined,"italic").setFontSize(6.5).setTextColor(120);pdf.text("Empreinte SHA-256 : "+(sig.doc_hash||"—"),m,y);y+=4;pdf.text("ID transaction Supabase : "+(sig.id||"—"),m,y);y+=4;if(sig.resend_confirmation_id){pdf.text("ID email Resend : "+sig.resend_confirmation_id,m,y);y+=4;}
     pdf.text("Preuve générée le "+new Date().toLocaleString("fr-FR")+" — Artio · monartio.fr — Conforme règlement eIDAS",m,y);
-    try{pdf.addImage("data:image/png;base64,"+LOGO_WHITE,"PNG",m,280,22,7);}catch{}pdf.setFontSize(7).setTextColor(150).text((e.nom||"")+" — SIRET : "+(e.siret||""),W/2,287,{align:"center"});
+    try{if(window.ARTIO_LOGO_WHITE)pdf.addImage("data:image/png;base64,"+window.ARTIO_LOGO_WHITE,"PNG",m,280,22,7);}catch{}pdf.setFontSize(7).setTextColor(150).text((e.nom||"")+" — SIRET : "+(e.siret||""),W/2,287,{align:"center"});
     pdf.save("PREUVE_SIGNATURE_"+docNumber+".pdf");
   }catch(err){alert("Erreur : "+err.message);}
 };
@@ -578,21 +542,17 @@ function renderDossierCard(dos){
           ${doc.type==="facture"?`${doc.paye?`<span class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;">✓ Payée le ${doc.date_paye}</span>`:`<button class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border-color:rgba(74,222,128,.3);" onclick="markPaye('${dos.id}','${doc.docNumber}')">💶 Marquer payée</button>`}${!doc.paye?(S.rappelLoadingId===doc.docNumber?`<button class="btn-small" disabled>⏳ Génération...</button>`:isPro?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);" onclick="genererRappelPaiement('${dos.id}','${doc.docNumber}')">📨 Rappel</button>`:`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);opacity:.45;" onclick="window.PlanGuard?.showProModal('Rappels de paiement IA')">🔒 Rappel</button>`):""}
           ${(() => {
             const autoActive = S.entreprise?.facturation_electronique_active === true;
+            // Si la facturation électronique n'est pas activée → rien (feature désactivée)
+            if (!autoActive) return "";
             const isEmise = !!doc.factpulse_id;
             const isLoading = S.emettreId === doc.docNumber;
-            // 3 états :
-            //   1. Émise → vert "✅ Émise"
-            //   2. Auto activée + non émise → orange "⚠️ Réémettre" (anomalie à corriger)
-            //   3. Auto désactivée + non émise → violet "⚡ Émettre" (mode manuel)
-            let bg, col, bd, label;
+            // 2 états quand auto activée :
+            //   1. Émise → badge vert "✅ Émise" (non cliquable, statut)
+            //   2. Non émise → bouton orange "⚠️ Réémettre" (l'auto a échoué, action corrective)
             if (isEmise) {
-              bg="rgba(74,222,128,.12)"; col="var(--green)"; bd="rgba(74,222,128,.3)"; label="✅ Émise";
-            } else if (autoActive) {
-              bg="rgba(255,160,40,.12)"; col="var(--amber)"; bd="rgba(255,160,40,.3)"; label="⚠️ Réémettre";
-            } else {
-              bg="rgba(83,74,183,.15)"; col="#9d95f5"; bd="rgba(83,74,183,.3)"; label="⚡ Émettre";
+              return `<span class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;">✅ Émise</span>`;
             }
-            return `<button class="btn-small" style="background:${bg};color:${col};border-color:${bd};" onclick="emettreFacture('${dos.id}','${doc.docNumber}')" title="${autoActive&&!isEmise?'L’émission automatique a échoué — cliquer pour réessayer':''}">${isLoading?"⏳ Envoi...":label}</button>`;
+            return `<button class="btn-small" style="background:rgba(255,160,40,.12);color:var(--amber);border-color:rgba(255,160,40,.3);" onclick="emettreFacture('${dos.id}','${doc.docNumber}')" title="L’émission automatique a échoué — cliquer pour réessayer">${isLoading?"⏳ Envoi...":"⚠️ Réémettre"}</button>`;
           })()}`:""  }
           ${S.deleteConfirm===doc.docNumber?`<button class="btn-small btn-red" onclick="confirmDeleteDoc('${dos.id}','${doc.docNumber}')">Confirmer</button><button class="btn-small" onclick="set({deleteConfirm:null})">Annuler</button>`:`<button class="btn-small" style="color:#A32D2D;border-color:#F09595;" onclick="set({deleteConfirm:'${doc.docNumber}'})">🗑</button>`}
         </div>
