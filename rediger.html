@@ -242,18 +242,22 @@ kbd{font-family:var(--fm);font-size:10.5px;padding:2px 6px;border:1px solid var(
 @media(max-width:1050px){.list{width:320px}}
 @media(max-width:880px){.nav{display:none}}
 @media(max-width:680px){
-  .rail{width:46px}
-  .rail-btn{width:32px;height:32px}
+  .rail{display:none}
   .list{width:100%;border-right:none}
-  .read{display:none;position:fixed;inset:0 0 0 46px;z-index:50;background:var(--bg)}
+  .read{display:none;position:fixed;inset:0;z-index:50;background:var(--bg);flex-direction:column}
   .read.mobile-open{display:flex}
-  .topbar{padding:8px 12px;flex-wrap:wrap}
+  /* Bouton retour dans le header du mail */
+  .mobile-back-btn{display:flex;align-items:center;gap:8px;padding:10px 14px 0;flex-shrink:0;color:var(--amber);font-size:13.5px;font-weight:600;font-family:var(--fh);cursor:pointer;background:none;border:none;width:100%}
+  .mobile-back-btn svg{width:18px;height:18px}
+  .topbar{padding:8px 14px;flex-wrap:wrap;padding-left:58px!important}
   .search-bar{display:none}
   .live{display:none}
   .read-hdr,.read-actions{padding-left:14px;padding-right:14px}
   .read-body{padding:16px 14px}
   .dock{padding:11px 12px 13px}
   .cmp-topbar,.cmp-tabs,.cmp-editor,.cmp-foot{padding-left:14px;padding-right:14px}
+  /* Topbar : hamburger reste visible */
+  .sidebar-trigger{z-index:60}
 }
 .email-iframe{width:100%;border:none;border-radius:8px;background:#fff;min-height:260px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0e1220;border:1px solid rgba(255,255,255,0.13);color:#e2e5f1;padding:11px 22px;border-radius:11px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.5);transition:opacity .35s;opacity:0;pointer-events:none}
@@ -1416,12 +1420,16 @@ function renderEmailRead(){
   const threadHtml=messages.map(renderBubble).join("");
   const loadingHtml=S.threadLoading&&!thread?`<div class="bubble loading"><span class="spinner"></span> Chargement de la conversation…</div>`:"";
 
-  const backBtn=window.innerWidth<=680?`<button class="icon-btn" onclick="closeMobileEmail()" title="Retour" style="margin-right:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>`:"";
+  const isMobile=window.innerWidth<=680;
+  const backBtn=isMobile?`<button class="mobile-back-btn" onclick="closeMobileEmail()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Retour
+  </button>`:"";
 
   el.innerHTML=`
+    ${backBtn}
     <div class="read-hdr">
       <div class="read-meta-row">
-        ${backBtn}
         ${tags.join("")}
         ${messages.length>1?`<span class="tag tag-teal">💬 ${messages.length} messages</span>`:""}
         <div class="read-acts">
