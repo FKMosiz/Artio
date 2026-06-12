@@ -385,9 +385,29 @@ window.emettreFacture=async function(dosId,docNum,opts){
   if(!clientSiret){if(silent)return;set({showSiretModal:{dosId,docNum}});return;}
   set({emettreId:docNum});
   try{
+    // ── Génération du PDF source côté frontend ───────────────────
+    // FactPulse a besoin d'un PDF "régulier" pour y embedder le XML CII.
+    // On construit un doc complet avec entreprise + client, puis on
+    // génère le PDF en base64 via pdf-generator.js.
+    const docPourPDF={
+      ...doc,
+      entreprise:S.entreprise,
+      client:{...(doc.client||{}),...(S.clients.find(c=>c.nom===dos.client)||{})}
+    };
+    let sourcePdfB64;
+    try{
+      if(!window.ArtioPDF||typeof window.ArtioPDF.toBase64!=="function"){
+        throw new Error("pdf-generator.js non chargé");
+      }
+      sourcePdfB64=window.ArtioPDF.toBase64(docPourPDF);
+    }catch(pdfErr){
+      if(!silent)showToast("❌ Génération PDF impossible : "+pdfErr.message);
+      set({emettreId:null});return;
+    }
+
     const{data:{session}}=await sb.auth.getSession();
     if(!session){if(!silent)showToast("⚠️ Session expirée. Reconnecte-toi.");set({emettreId:null});return;}
-    const resp=await fetch(FUNCTIONS_URL+"/index-factpulse",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({dossier_id:dosId,doc_number:docNum})});
+    const resp=await fetch(FUNCTIONS_URL+"/index-factpulse",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({dossier_id:dosId,doc_number:docNum,source_pdf:sourcePdfB64})});
     const result=await resp.json();
     if(!resp.ok||!result.success){const msg=result?.error||result?.message||"Erreur inconnue";if(!silent)showToast("❌ FactPulse : "+msg);else console.warn("FactPulse silent:",msg);set({emettreId:null});return;}
     const{data:freshDos}=await sb.from("dossiers").select("*").eq("id",dosId).single();
