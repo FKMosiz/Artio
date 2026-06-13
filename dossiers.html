@@ -582,7 +582,7 @@ function renderDossierCard(dos){
         :`<button class="btn-small" style="font-size:11px;" onclick="set({previewDocNum:'${doc.docNumber}'})">👁 Aperçu</button>`}
     </div>`;
   }).join("");
-  return`<div class="dossier-card"${needsRelance?' style="border-left:3px solid #FFB74D;"':''}><div class="dossier-header" onclick="toggleDossier('${dos.id}')"><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;"><span class="badge" style="background:${st.bg};color:${st.color};">${st.label}</span>${needsRelance?'<span style="font-size:10px;background:#FFF3E0;color:#E65100;padding:2px 6px;border-radius:4px;">📩 À relancer</span>':'' }<span style="font-size:13px;font-weight:500;">${esc(dos.nom)}</span></div><p style="font-size:12px;color:#888;">${(dos.documents||[]).length} document${(dos.documents||[]).length>1?"s":""} · ${dos.createdAt||""}</p></div><div style="display:flex;align-items:center;gap:8px;margin-left:12px;">${dos.statut!=="termine"?`<button class="btn-small btn-teal" onclick="event.stopPropagation();markTermine('${dos.id}')">✓ Clôturer</button>`:""} ${S.renamingDossierId===dos.id?`<input value="${esc(S.renamingDossierVal)}" onclick="event.stopPropagation()" oninput="S.renamingDossierVal=this.value" onkeydown="if(event.key==='Enter')renameDossier('${dos.id}')" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #378ADD;width:150px;"/><button class="btn-small btn-blue" onclick="event.stopPropagation();renameDossier('${dos.id}')">OK</button><button class="btn-small" onclick="event.stopPropagation();set({renamingDossierId:null})">✕</button>`:`<button class="btn-small" onclick="event.stopPropagation();startRename('${dos.id}')">✏</button>`}<button class="btn-small" onclick="event.stopPropagation();if(window.confirm('Supprimer ce dossier définitivement ?'))confirmDeleteDossier('${dos.id}')" style="color:#A32D2D;border-color:#F09595;">🗑</button></div></div>${isOpen?`<div style="padding:12px;border-top:0.5px solid var(--border);">${docsHTML}</div>`:""}</div>`;
+  return`<div class="dossier-card" data-dos-id="${dos.id}"${needsRelance?' style="border-left:3px solid #FFB74D;"':''}><div class="dossier-header" onclick="toggleDossier('${dos.id}')"><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;"><span class="badge" style="background:${st.bg};color:${st.color};">${st.label}</span>${needsRelance?'<span style="font-size:10px;background:#FFF3E0;color:#E65100;padding:2px 6px;border-radius:4px;">📩 À relancer</span>':'' }<span style="font-size:13px;font-weight:500;">${esc(dos.nom)}</span></div><p style="font-size:12px;color:#888;">${(dos.documents||[]).length} document${(dos.documents||[]).length>1?"s":""} · ${dos.createdAt||""}</p></div><div style="display:flex;align-items:center;gap:8px;margin-left:12px;">${dos.statut!=="termine"?`<button class="btn-small btn-teal" onclick="event.stopPropagation();markTermine('${dos.id}')">✓ Clôturer</button>`:""} ${S.renamingDossierId===dos.id?`<input value="${esc(S.renamingDossierVal)}" onclick="event.stopPropagation()" oninput="S.renamingDossierVal=this.value" onkeydown="if(event.key==='Enter')renameDossier('${dos.id}')" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #378ADD;width:150px;"/><button class="btn-small btn-blue" onclick="event.stopPropagation();renameDossier('${dos.id}')">OK</button><button class="btn-small" onclick="event.stopPropagation();set({renamingDossierId:null})">✕</button>`:`<button class="btn-small" onclick="event.stopPropagation();startRename('${dos.id}')">✏</button>`}<button class="btn-small" onclick="event.stopPropagation();if(window.confirm('Supprimer ce dossier définitivement ?'))confirmDeleteDossier('${dos.id}')" style="color:#A32D2D;border-color:#F09595;">🗑</button></div></div>${isOpen?`<div style="padding:12px;border-top:0.5px solid var(--border);">${docsHTML}</div>`:""}</div>`;
 }
 
 function renderHistorique(){
@@ -685,6 +685,19 @@ async function loadUserData(userId){
   }catch(e){console.error("loadUserData exception:",e);}
   checkDevisAConvertir();
   renderPage();
+  // Ouvrir un dossier spécifique depuis un lien externe (ex: email relance paiement J+30)
+  const dosParam=new URLSearchParams(window.location.search).get("dossier");
+  if(dosParam){
+    const dosFound=S.dossiers.find(d=>d.id===dosParam);
+    if(dosFound){
+      set({openDossier:dosParam});
+      history.replaceState(null,"",window.location.pathname);
+      setTimeout(()=>{
+        const el=document.querySelector(`[data-dos-id="${dosParam}"]`);
+        if(el) el.scrollIntoView({behavior:"smooth",block:"center"});
+      },300);
+    }
+  }
 }
 
 async function initAuth(){
