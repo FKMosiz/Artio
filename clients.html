@@ -109,15 +109,13 @@ body {
 /* ── MAIN LAYOUT (master-detail) ── */
 .page {
   flex: 1;
-  padding: calc(var(--nav-h) + 16px) 16px 16px;
+  padding: var(--nav-h) 0 0;
   width: 100%;
 }
 .master-detail {
   display: flex;
-  height: calc(100vh - var(--nav-h) - 32px);
+  height: calc(100vh - var(--nav-h));
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
   overflow: hidden;
 }
 
@@ -524,11 +522,11 @@ textarea.field-input { resize: vertical; min-height: 60px; }
 
 /* MOBILE — stack vertically, master/detail toggle */
 @media (max-width: 767px) {
-  .page { padding: calc(var(--nav-h) + 8px) 8px 8px; }
+  .page { padding: var(--nav-h) 0 0; }
   .master-detail {
-    height: calc(100vh - var(--nav-h) - 16px);
+    height: calc(100vh - var(--nav-h));
     flex-direction: column;
-    border-radius: 12px;
+    border-radius: 0;
   }
   .dcl {
     width: 100%;
