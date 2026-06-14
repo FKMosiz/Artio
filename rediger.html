@@ -1733,6 +1733,38 @@ async function initAuth(){
   const isPro=window.PlanGuard?.isPro?.()??false;
   S.tab=isPro?"inbox":"cmp";
   renderAll();
+
+  // ── Pré-remplir le composer depuis localStorage (rappel/relance/mise en demeure depuis dossiers.html) ──
+  try{
+    const prefillBody    = localStorage.getItem("artio-email-body");
+    const prefillSubject = localStorage.getItem("artio-email-subject");
+    const prefillNom     = localStorage.getItem("artio-email-client-nom");
+    const prefillEmail   = localStorage.getItem("artio-email-client-email");
+    if(prefillBody){
+      // Forcer l'onglet composer
+      S.tab="cmp";
+      S.composer.body    = prefillBody;
+      S.composer.subject = prefillSubject || "";
+      S.composer.to      = prefillEmail   || "";
+      // Afficher l'onglet composer
+      const inbox=document.getElementById("inbox");
+      const compose=document.getElementById("compose");
+      const ti=document.getElementById("t-inbox");
+      const tc=document.getElementById("t-cmp");
+      const cb=document.getElementById("crumb-sub");
+      if(inbox)  inbox.classList.add("off");
+      if(compose){compose.classList.remove("off");compose.classList.add("on");}
+      if(ti)ti.classList.remove("on");
+      if(tc)tc.classList.add("on");
+      if(cb)cb.textContent=prefillNom?("Message pour "+prefillNom):"Nouveau message";
+      renderCompose();
+      // Nettoyer le localStorage après lecture
+      localStorage.removeItem("artio-email-body");
+      localStorage.removeItem("artio-email-subject");
+      localStorage.removeItem("artio-email-client-nom");
+      localStorage.removeItem("artio-email-client-email");
+    }
+  }catch(e){console.warn("Prefill composer:",e);}
   // Activer la bonne classe sur les boutons de la topbar
   const ti=document.getElementById('t-inbox'),tc=document.getElementById('t-cmp');
   const cb=document.getElementById('crumb-sub');
