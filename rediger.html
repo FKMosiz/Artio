@@ -1526,6 +1526,16 @@ function renderCompose(){
     :`<textarea class="cmp-textarea" id="cmp-body" placeholder="Cliquez sur 'Générer' ou écrivez directement…" oninput="onComposerField('body',this.value)">${esc(c.body)}</textarea>`;
 
   el.innerHTML=`
+    <div class="cmp-topbar">
+      <label>À</label>
+      <div class="ac-wrap" style="max-width:280px">
+        <input class="ac-input" id="cmp-to" value="${esc(c.to)}" placeholder="Email ou nom du client…"
+          oninput="onComposerField('to',this.value)" autocomplete="off"/>
+      </div>
+      <div class="sep"></div>
+      <label>Sujet</label>
+      <input style="flex:1;min-width:180px;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);font-size:12.5px;color:var(--text);font-family:var(--fb)" id="cmp-subject" value="${esc(c.subject)}" placeholder="Objet du message…" oninput="onComposerField('subject',this.value)"/>
+    </div>
     <div class="cmp-body">
       <div class="cmp-editor">
         <div style="margin-bottom:14px">
@@ -1684,6 +1694,17 @@ async function initAuth(){
     gmailFetchEmails();
     startPolling();
   }
+
+  // ── Redirection depuis clients.html ──
+  // ?to=email&name=nom ouvre directement le compositeur avec le destinataire pré-rempli
+  const urlParams = new URLSearchParams(location.search);
+  const paramTo   = urlParams.get('to');
+  const paramName = urlParams.get('name');
+  if (paramTo) {
+    S.composer.to = paramName ? `${paramName} <${paramTo}>` : paramTo;
+    setTab('cmp');
+  }
+
   // Précharger les dossiers ET les clients pour la modale PJ et l'autocomplete Cc
   loadDossiers();
   loadClients();
