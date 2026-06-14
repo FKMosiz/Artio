@@ -1588,6 +1588,24 @@ function renderAll(){renderInbox();renderCompose();}
 
 /* ─── TAB SWITCHING ─── */
 window.setTab=function(t){
+  // Onglet "Nouveau message" réservé aux Pro
+  if(t==='cmp'){
+    const isPro=window.PlanGuard?.isPro?.()??false;
+    if(!isPro){
+      const el=document.createElement("div");
+      el.style.cssText="position:fixed;inset:0;z-index:9100;display:flex;align-items:center;justify-content:center;background:rgba(8,11,20,0.78);backdrop-filter:blur(8px);";
+      el.innerHTML=`<div style="background:var(--surface,#0e1220);border:1px solid rgba(245,167,66,0.25);border-radius:22px;padding:32px 28px;max-width:380px;width:90%;text-align:center;font-family:'Plus Jakarta Sans',sans-serif;">
+        <div style="font-size:36px;margin-bottom:12px;">✉️</div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--text,#e2e5f1);margin-bottom:8px;">Fonctionnalité Pro</div>
+        <div style="font-size:13px;color:var(--muted,#6b7494);line-height:1.65;margin-bottom:22px;">L'envoi d'emails via Gmail est réservé aux abonnés <strong style="color:#f5a742">Pro</strong>. Passe au Pro pour envoyer et recevoir des emails directement depuis Artio.</div>
+        <a href="settings.html?tab=abonnement" style="display:block;padding:12px;background:#f5a742;border-radius:12px;color:#080b14;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:10px;">⚡ Passer Pro</a>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="font-size:12px;color:var(--muted,#6b7494);cursor:pointer;background:none;border:none;">Fermer</button>
+      </div>`;
+      document.body.appendChild(el);
+      el.addEventListener("click",e=>{if(e.target===el)el.remove();});
+      return;
+    }
+  }
   S.tab=t;
   const inbox=document.getElementById('inbox');
   const compose=document.getElementById('compose');
@@ -1696,13 +1714,13 @@ async function initAuth(){
   }
 
   // ── Redirection depuis clients.html ──
-  // ?to=email&name=nom ouvre directement le compositeur avec le destinataire pré-rempli
+  // ?to=email&name=nom ouvre directement le compositeur (Pro uniquement)
   const urlParams = new URLSearchParams(location.search);
   const paramTo   = urlParams.get('to');
   const paramName = urlParams.get('name');
   if (paramTo) {
     S.composer.to = paramName ? `${paramName} <${paramTo}>` : paramTo;
-    setTab('cmp');
+    setTab('cmp'); // setTab gère lui-même le paywall Pro
   }
 
   // Précharger les dossiers ET les clients pour la modale PJ et l'autocomplete Cc
