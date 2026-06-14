@@ -248,8 +248,16 @@ body {
   box-shadow: 0 2px 14px var(--amber-glow);
   transition: transform .15s;
   white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 5px;
 }
 .dcrbtn:hover { transform: translateY(-1px); }
+.dcrbtn-mail {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.dcrbtn-mail:hover { border-color: var(--border-hi); background: var(--surface-2); transform: translateY(-1px); }
 
 .dcrb {
   flex: 1;
@@ -808,7 +816,10 @@ function renderDetail() {
         <div class="dcrname">${esc(c.nom)}</div>
         <div class="dcrsub">${c.email ? esc(c.email) : "Pas d'email"}${c.tel ? " · " + esc(c.tel) : ""}</div>
       </div>
-      <a href="app.html?client_nom=${encodeURIComponent(c.nom)}&client_email=${encodeURIComponent(c.email||"")}&client_tel=${encodeURIComponent(c.tel||"")}&client_adresse=${encodeURIComponent(c.adresse||"")}" class="dcrbtn">+ Nouveau devis</a>
+      <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+        <a href="app.html?client_nom=${encodeURIComponent(c.nom)}&client_email=${encodeURIComponent(c.email||"")}&client_tel=${encodeURIComponent(c.tel||"")}&client_adresse=${encodeURIComponent(c.adresse||"")}" class="dcrbtn">+ Nouveau devis</a>
+        ${c.email ? `<a href="rediger.html?to=${encodeURIComponent(c.email)}&name=${encodeURIComponent(c.nom)}" class="dcrbtn dcrbtn-mail">✉ Envoyer un email</a>` : ""}
+      </div>
     </div>
     <div class="dcrb">
       <div class="dcrsts">
