@@ -159,6 +159,12 @@ function _buildPDF(doc){
 }
 
 function toFilename(doc){
+  if(doc&&doc.label){
+    // Nettoyer le label pour nom de fichier : remplacer les caractères interdits
+    const clean=doc.label.replace(/[/\\:*?"<>|]/g,"-").replace(/\s+/g,"_").slice(0,50);
+    const num=doc.docNumber?doc.docNumber:"doc";
+    return num+"_"+clean+".pdf";
+  }
   return (doc&&doc.docNumber?doc.docNumber:"document")+".pdf";
 }
 

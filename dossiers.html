@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+<!D
+          ${!doc.paye&&Array.isArray(doc.relances_paiement)&&doc.relances_paiement.includes(30)?(isPro?`<button class="btn-small" style="background:rgba(220,38,38,.12);color:#dc2626;border-color:rgba(220,38,38,.3);" onclick="genererMiseEnDemeure('${dos.id}','${doc.docNumber}')">⚖️ Mise en demeure</button>`:""):""}OCTYPE html>
 <html lang="fr" data-theme="dark">
 <head>
   <meta charset="UTF-8"/>
@@ -296,12 +297,14 @@ async function genererRappelPaiement(dosId,docNum){
   const doc=dos?.documents?.find(d=>d.docNumber===docNum);
   if(!doc){alert("Document introuvable.");return;}
   const e=S.entreprise;
-  const joursEcoules=doc.date?Math.floor((Date.now()-new Date(doc.date.split("/").reverse().join("-")))/86400000):30;
+  const joursEcoules=doc.date?Math.floor((Date.now()-new Date(doc.date.split("/").reverse().join("-")).getTime())/86400000):30;
+  const delaiPaiement=parseInt(doc.delai_paiement||e.delai_paiement||"30")||30;
+  const joursRetard=Math.max(0,joursEcoules-delaiPaiement);
   const ibanInfo=e.iban?"Virement bancaire — IBAN : "+e.iban:"(IBAN non renseigné)";
   const contexte=e.contexte_ia?"\n\nContexte entreprise : "+e.contexte_ia:"";
   set({loading:true,rappelLoadingId:docNum});
   try{
-    const prompt="Tu es l'assistant de "+(e.nom||"un prestataire")+" (secteur: "+(e.secteur||"services")+")."+contexte+"\n\nRédige un email de rappel de paiement, professionnel mais direct.\n\nDonnées :\n- Client : "+(doc.client?.nom||dos.client||"le client")+"\n- Facture N° : "+docNum+"\n- Date d'émission : "+(doc.date||"date inconnue")+"\n- Montant : "+(doc.ttc||0).toFixed(2)+" € TTC\n- Impayée depuis : "+joursEcoules+" jour"+(joursEcoules>1?"s":"")+"\n- Prestation : "+(doc.description||dos.nom||"")+"\n- Coordonnées de paiement : "+ibanInfo+"\n- Conditions : "+(e.conditions_paiement||"paiement à réception")+"\n\nInstructions :\n- Inclus DIRECTEMENT les coordonnées de paiement\n- Ton : "+(joursEcoules<15?"courtois, premier rappel":joursEcoules<30?"ferme, deuxième rappel":"très ferme, dernier rappel")+"\n- Signe UNIQUEMENT avec \""+( e.nom||"l'entreprise")+"\"\n- Langue : français\n- Écris directement l'email, sans commentaire";
+    const prompt="Tu es l'assistant de "+(e.nom||"un prestataire")+" (secteur: "+(e.secteur||"services")+")."+contexte+"\n\nRédige un email de rappel de paiement, professionnel mais direct.\n\nDonnées :\n- Client : "+(doc.client?.nom||dos.client||"le client")+"\n- Facture N° : "+docNum+"\n- Date d'émission : "+(doc.date||"date inconnue")+"\n- Montant : "+(doc.ttc||0).toFixed(2)+" € TTC\n- Délai convenu : "+delaiPaiement+" jours\\n- En retard depuis : "+joursRetard+" jour"+(joursRetard>1?"s":"")+"\n- Prestation : "+(doc.description||dos.nom||"")+"\n- Coordonnées de paiement : "+ibanInfo+"\n- Conditions : "+(e.conditions_paiement||"paiement à réception")+"\n\nInstructions :\n- Inclus DIRECTEMENT les coordonnées de paiement\n- Ton : "+(joursRetard<8?"courtois, premier rappel":joursRetard<20?"ferme, deuxième rappel":"très ferme, dernier rappel")+"\n- Signe UNIQUEMENT avec \""+( e.nom||"l'entreprise")+"\"\n- Langue : français\n- Écris directement l'email, sans commentaire";
     const{text:txt,usage:ur}=await callClaude(prompt,400);
     logTokens("email",ur);
     localStorage.setItem("artio-email-body",txt);
@@ -309,6 +312,65 @@ async function genererRappelPaiement(dosId,docNum){
     localStorage.setItem("artio-email-client-email",doc.client?.email||"");
     set({loading:false,rappelLoadingId:null});
     showToast("💶 Email de rappel généré — ouverture Rédiger…");
+    setTimeout(()=>{location.href="rediger.html?mode=email";},800);
+  }catch(err){
+    set({loading:false,rappelLoadingId:null});
+    if(err.message!=="plan_required")alert("Erreur : "+err.message);
+  }
+}
+
+// ── Génération label lisible (appelée en arrière-plan à la création/conversion) ──
+async function genererLabelDoc(dosId,docNum){
+  try{
+    const dos=S.dossiers.find(d=>d.id===dosId);
+    const doc=dos?.documents?.find(d=>d.docNumber===docNum);
+    if(!doc)return;
+    const e=S.entreprise;
+    const prompt=`Génère un nom de fichier court et lisible (4 mots max, sans ponctuation spéciale, sans numéro de document) pour ce document professionnel.
+Type : ${doc.type==="facture"?"Facture":"Devis"}
+Client : ${doc.client?.nom||dos.client||""}
+Prestation : ${doc.description||dos.nom||""}
+Secteur : ${e.secteur||"services"}
+Réponds UNIQUEMENT avec le nom, sans guillemets, sans explication. Exemples : "Coaching sportif Martin", "Installation palette Wesley", "Conseil RH Dupont".`;
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session)return;
+    const res=await fetch(FUNCTIONS_URL+"/claude-proxy",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:30,messages:[{role:"user",content:prompt}]})});
+    if(!res.ok)return;
+    const json=await res.json();
+    const label=(json.content?.[0]?.text||"").trim().replace(/["""]/g,"").slice(0,60);
+    if(!label)return;
+    // Stocker le label dans le document
+    const dosRef=S.dossiers.find(d=>d.id===dosId);
+    if(!dosRef)return;
+    dosRef.documents=dosRef.documents.map(d=>d.docNumber===docNum?{...d,label}:d);
+    storeDoc({...DOC_STORE[docNum],label});
+    await upsertDossier(dosRef);
+    renderPage();
+  }catch(e){console.warn("genererLabelDoc:",e.message);}
+}
+
+// ── Mise en demeure ──────────────────────────────────────────────
+async function genererMiseEnDemeure(dosId,docNum){
+  if(!window.confirm("Envoyer une mise en demeure au client ?\n\nCette action est irréversible. L'email sera envoyé immédiatement."))return;
+  if(window.PlanGuard&&!window.PlanGuard.isPro()){window.PlanGuard.showProModal("Mise en demeure");return;}
+  const dos=S.dossiers.find(d=>d.id===dosId);
+  const doc=dos?.documents?.find(d=>d.docNumber===docNum);
+  if(!doc){alert("Document introuvable.");return;}
+  const e=S.entreprise;
+  const joursEcoules=doc.date?Math.floor((Date.now()-new Date(doc.date.split("/").reverse().join("-")).getTime())/86400000):30;
+  const ibanInfo=e.iban?"Virement bancaire — IBAN : "+e.iban:"(IBAN non renseigné)";
+  const contexte=e.contexte_ia?"\n\nContexte entreprise : "+e.contexte_ia:"";
+  set({loading:true,rappelLoadingId:docNum});
+  try{
+    const prompt="Tu es l'assistant de "+(e.nom||"un prestataire")+" (secteur: "+(e.secteur||"services")+")."+contexte+"\n\nRédige une lettre de mise en demeure formelle et rigoureuse.\n\nDonnées :\n- Client : "+(doc.client?.nom||dos.client||"le client")+"\n- Adresse client : "+(doc.client?.adresse||"non renseignée")+"\n- Facture N° : "+docNum+"\n- Date d'émission : "+(doc.date||"date inconnue")+"\n- Montant : "+(doc.ttc||0).toFixed(2)+" € TTC\n- Délai convenu : "+delaiPaiement+" jours\\n- En retard depuis : "+joursRetard+" jour"+(joursRetard>1?"s":"")+"\n- Prestation : "+(doc.description||dos.nom||"")+"\n- Coordonnées de paiement : "+ibanInfo+"\n\nInstructions :\n- Ton : juridique, formel, ferme mais sans agressivité\n- Mentionne les pénalités de retard légales (art. L441-10 du Code de commerce)\n- Accorde un délai de 8 jours pour régulariser avant procédure\n- Inclus les coordonnées de paiement\n- Signe au nom de \""+(e.nom||"l'entreprise")+"\"\n- Langue : français\n- Écris directement la lettre, sans commentaire";
+    const{text:txt,usage:ur}=await callClaude(prompt,600);
+    logTokens("email",ur);
+    localStorage.setItem("artio-email-body",txt);
+    localStorage.setItem("artio-email-client-nom",doc.client?.nom||dos.client||"");
+    localStorage.setItem("artio-email-client-email",doc.client?.email||"");
+    localStorage.setItem("artio-email-subject","Mise en demeure — Facture "+docNum);
+    set({loading:false,rappelLoadingId:null});
+    showToast("⚖️ Mise en demeure générée — ouverture Rédiger…");
     setTimeout(()=>{location.href="rediger.html?mode=email";},800);
   }catch(err){
     set({loading:false,rappelLoadingId:null});
@@ -433,6 +495,8 @@ async function _doConvert(dosId,docNum,dateFacture){
   await upsertDossier(dos);
   set({convertingId:null,pendingConvert:null,showDatePrestModal:false});
   checkDevisAConvertir();
+  // Générer le label lisible de la facture en arrière-plan
+  setTimeout(()=>genererLabelDoc(dosId,factNum),500);
   // Auto-émission FactPulse — déclenchée UNIQUEMENT si l'utilisateur a activé
   // la facturation électronique dans Paramètres → Facturation électronique.
   // La garde d'idempotence côté Edge Function empêche les doubles appels.
@@ -544,7 +608,7 @@ function renderDossierCard(dos){
     const isPro=window.PlanGuard?.isPro();
     return`<div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
-        <div><p style="font-size:13px;font-weight:500;color:var(--text);">${doc.docNumber||""}</p><p style="font-size:12px;color:#888;">${doc.date||""} · ${(doc.ttc||0).toFixed(2)} € TTC</p></div>
+        <div><p style="font-size:13px;font-weight:500;color:var(--text);">${doc.label||doc.docNumber||""}</p><p style="font-size:12px;color:#888;">${doc.docNumber||""} · ${doc.date||""} · ${(doc.ttc||0).toFixed(2)} € TTC</p></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn-small" onclick="downloadPDF('${doc.docNumber}')">⬇ PDF</button>
           ${doc.type==="devis"&&!doc.accepte?`<button class="btn-small" style="background:rgba(62,207,207,.12);color:var(--teal);border-color:rgba(62,207,207,.3);" onclick="markAccepte('${dos.id}','${doc.docNumber}')">Marquer accepté</button>`:""}
