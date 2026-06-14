@@ -1258,6 +1258,39 @@ window.composerCopy=async function(btn){
   }
 };
 
+window.composerSend=async function(btn){
+  // Lire les valeurs actuelles des inputs (l'utilisateur a peut-être tapé directement)
+  const to      = document.getElementById("cmp-to")?.value.trim()      || S.composer.to;
+  const subject = document.getElementById("cmp-subject")?.value.trim() || S.composer.subject;
+  const body    = document.getElementById("cmp-body")?.value.trim()    || S.composer.body;
+
+  if(!to)    { showToast("⚠️ Renseigne le destinataire (champ À)"); return; }
+  if(!body)  { showToast("⚠️ Le message est vide"); return; }
+  if(!S.gmailEmail){ showToast("⚠️ Gmail non connecté — connecte ta boîte dans les Paramètres"); return; }
+
+  if(btn){ btn.disabled=true; btn.textContent="Envoi…"; }
+
+  // Extraire l'email pur si format "Nom <email>"
+  const emailMatch = to.match(/<([^>]+)>/);
+  const toEmail = emailMatch ? emailMatch[1] : to;
+
+  const ok = await gmailSendEmail({
+    to: toEmail,
+    subject: subject || "(sans objet)",
+    body,
+    attachments: S.composer.attachments,
+  });
+
+  if(ok){
+    // Réinitialiser le compositeur
+    S.composer = {to:"",cc:"",subject:"",body:"",tons:["Vouvoiement","Chaleureux"],mode:"ia",contexte:"",message_recu:"",attachments:[],generating:false};
+    renderCompose();
+  } else if(btn){
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer';
+  }
+};
+
 window.composerReformulate=async function(instruction){
   const body=document.getElementById("cmp-body")?.value||S.composer.body;
   if(!body.trim()){showToast("⚠️ Aucun texte à reformuler");return;}
@@ -1577,9 +1610,13 @@ function renderCompose(){
         ${c.body?"Régénérer":"Générer"}
       </button>
       <div class="sp"></div>
-      <button class="btn-send" onclick="composerCopy(this)" ${!c.body?"disabled style=\"opacity:.5;cursor:not-allowed\"":""}>
+      <button class="btn-ghost" onclick="composerCopy(this)" ${!c.body?"disabled style=\"opacity:.5;cursor:not-allowed\"":""}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        Copier le texte
+        Copier
+      </button>
+      <button class="btn-send" onclick="composerSend(this)" ${(!c.body||!c.to)?"disabled style=\"opacity:.5;cursor:not-allowed\"":""}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Envoyer
       </button>
     </div>`;
 }
