@@ -332,8 +332,20 @@ function renderProfil() {
       <div class="field"><label class="field-label">Nom de l'entreprise *</label><input class="pi field-input" data-k="nom" type="text" value="${esc(e.nom||"")}" placeholder="Ex: Dupont Services"/></div>
       <div class="field"><label class="field-label">Secteur d'activité</label><select class="pi field-input" data-k="secteur"><option value="">-- Choisir --</option>${SECTEURS.map(s=>`<option value="${s}" ${e.secteur===s?"selected":""}>${s}</option>`).join("")}</select></div>
       <div class="fields-2">
-        <div class="field"><label class="field-label">SIRET *</label><input class="pi field-input" data-k="siret" type="text" value="${esc(e.siret||"")}" placeholder="123 456 789 00012"/></div>
+        <div class="field">
+          <label class="field-label">SIRET * <span id="siret-status" style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px;"></span></label>
+          <input class="pi field-input" data-k="siret" id="profil-siret-input" type="text" value="${esc(e.siret||"")}" placeholder="123 456 789 00012" oninput="lookupSiretProfil(this.value)" autocomplete="off"/>
+        </div>
         <div class="field"><label class="field-label">Taux horaire (€ HT) *</label><input class="pi field-input" data-k="taux_horaire" type="number" value="${esc(e.taux_horaire||"")}" placeholder="50"/></div>
+      </div>
+      <div class="fields-2">
+        <div class="field"><label class="field-label">Forme juridique</label><input class="pi field-input" data-k="forme_juridique" type="text" value="${esc(e.forme_juridique||"")}" placeholder="SASU, EURL, Micro-entreprise…"/></div>
+        <div class="field"><label class="field-label">Code APE / NAF</label><input class="pi field-input" data-k="code_naf" type="text" value="${esc(e.code_naf||"")}" placeholder="6201Z"/></div>
+      </div>
+      <div class="field"><label class="field-label">Libellé activité (NAF)</label><input class="pi field-input" data-k="libelle_code_naf" type="text" value="${esc(e.libelle_code_naf||"")}" placeholder="Programmation informatique"/></div>
+      <div class="fields-2">
+        <div class="field"><label class="field-label">N° TVA intracommunautaire</label><input class="pi field-input" data-k="tva_intracom" type="text" value="${esc(e.tva_intracom||"")}" placeholder="FR12345678901"/></div>
+        <div class="field"><label class="field-label">Date de création</label><input class="pi field-input" data-k="date_creation_entreprise" type="date" value="${esc(e.date_creation_entreprise||"")}"/></div>
       </div>
       <div class="fields-2">
         <div class="field"><label class="field-label">Téléphone</label><input class="pi field-input" data-k="tel" type="tel" value="${esc(e.tel||"")}" placeholder="06 12 34 56 78"/></div>
@@ -1066,6 +1078,69 @@ async function removeLogo() {
   render();
 }
 
+/* ── SIRET LOOKUP (data.gouv.fr) ── */
+let _siretTimer = null;
+let _lastSiretLookup = "";
+
+async function lookupSiretProfil(rawValue) {
+  const status = document.getElementById("siret-status");
+  if (!status) return;
+  const clean = String(rawValue||"").replace(/\D/g, "");
+  if (clean.length < 14) {
+    status.textContent = clean.length > 0 ? `${clean.length}/14 chiffres` : "";
+    status.style.color = "var(--muted)";
+    return;
+  }
+  if (clean.length > 14) return;
+  if (clean === _lastSiretLookup) return;
+  _lastSiretLookup = clean;
+
+  clearTimeout(_siretTimer);
+  _siretTimer = setTimeout(async () => {
+    status.textContent = "⏳ Recherche SIRENE…";
+    status.style.color = "var(--muted)";
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const r = await fetch(SB_URL + "/functions/v1/siret-lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + session.access_token },
+        body: JSON.stringify({ siret: clean }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        status.textContent = "✗ " + (data.error || "Erreur");
+        status.style.color = "#dc2626";
+        return;
+      }
+      const fill = (key, value, force = false) => {
+        const el = document.querySelector(`[data-k="${key}"]`);
+        if (!el) return;
+        if (!force && el.value && el.value.trim() !== "") return;
+        el.value = value || "";
+        profil[key] = el.value;
+      };
+      fill("nom", data.nom_entreprise);
+      fill("adresse", data.adresse_complete);
+      fill("forme_juridique", data.forme_juridique, true);
+      fill("code_naf", data.code_naf, true);
+      fill("libelle_code_naf", data.libelle_code_naf, true);
+      fill("tva_intracom", data.tva_intracom, true);
+      fill("date_creation_entreprise", data.date_creation_entreprise, true);
+
+      if (data.entreprise_cessee) {
+        status.textContent = "⚠️ Entreprise cessée";
+        status.style.color = "#d97706";
+      } else {
+        status.textContent = data.cached ? "✓ Vérifié (cache)" : "✓ Vérifié SIRENE";
+        status.style.color = "#16a34a";
+      }
+    } catch (e) {
+      status.textContent = "✗ Erreur réseau";
+      status.style.color = "#dc2626";
+    }
+  }, 350);
+}
+
 async function saveProfil() {
   document.querySelectorAll(".pi").forEach(el => {
     if (el.type === "checkbox") profil[el.dataset.k] = el.checked;
@@ -1146,7 +1221,7 @@ function downloadFacture(index) {
   user = session.user;
   const { data: p } = await sb.from("profils").select("*").eq("user_id", user.id).single();
   if (p) {
-    profil = { nom:p.nom||"", adresse:p.adresse||"", tel:p.tel||"", email:p.email||"", siret:p.siret||"", taux_horaire:p.taux_horaire||"", assujetti_tva:p.assujetti_tva||false, tva_frequence:p.tva_frequence||"trimestrielle", tva_regime:p.tva_regime||"encaissements", secteur:p.secteur||"", conditions_paiement:p.conditions_paiement||"", delai_paiement:p.delai_paiement||"30", validite_devis:p.validite_devis||3, iban:p.iban||"", contexte_ia:p.contexte_ia||"", couleur_pdf:p.couleur_pdf||"#378ADD" };
+    profil = { nom:p.nom||"", adresse:p.adresse||"", tel:p.tel||"", email:p.email||"", siret:p.siret||"", taux_horaire:p.taux_horaire||"", assujetti_tva:p.assujetti_tva||false, tva_frequence:p.tva_frequence||"trimestrielle", tva_regime:p.tva_regime||"encaissements", secteur:p.secteur||"", conditions_paiement:p.conditions_paiement||"", delai_paiement:p.delai_paiement||"30", validite_devis:p.validite_devis||3, iban:p.iban||"", contexte_ia:p.contexte_ia||"", couleur_pdf:p.couleur_pdf||"#378ADD", forme_juridique:p.forme_juridique||"", code_naf:p.code_naf||"", libelle_code_naf:p.libelle_code_naf||"", tva_intracom:p.tva_intracom||"", date_creation_entreprise:p.date_creation_entreprise||"" };
     logoBase64 = p.logo_base64 || null;
     isAdmin = p.is_admin === true;
     subscriptionStatus = p.subscription_status || "free";

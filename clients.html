@@ -661,7 +661,21 @@ textarea.field-input { resize: vertical; min-height: 60px; }
       <div class="field"><label class="field-label">Adresse</label><input id="new-adresse" class="field-input" type="text" placeholder="12 rue de la Paix…"/></div>
       <div class="field"><label class="field-label">Notes</label><textarea id="new-notes" class="field-input" placeholder="Informations utiles…"></textarea></div>
       <div class="field"><label class="check-row"><input id="new-professionnel" type="checkbox" onchange="document.getElementById('new-siret-field').style.display=this.checked?'block':'none'"/><span>Client professionnel (B2B)</span></label></div>
-      <div class="field" id="new-siret-field" style="display:none"><label class="field-label">SIRET</label><input id="new-siret" class="field-input" type="text" placeholder="123 456 789 00012"/></div>
+      <div id="new-siret-field" style="display:none">
+        <div class="field">
+          <label class="field-label">SIRET <span id="new-siret-status" style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px;"></span></label>
+          <input id="new-siret" class="field-input" type="text" placeholder="123 456 789 00012" oninput="lookupSiretClient(this.value,'new')" autocomplete="off"/>
+        </div>
+        <div class="fields-2">
+          <div class="field"><label class="field-label">Forme juridique</label><input id="new-forme-juridique" class="field-input" type="text" placeholder="SAS, SARL…"/></div>
+          <div class="field"><label class="field-label">Code APE / NAF</label><input id="new-code-naf" class="field-input" type="text" placeholder="6201Z"/></div>
+        </div>
+        <div class="field"><label class="field-label">Libellé activité</label><input id="new-libelle-naf" class="field-input" type="text" placeholder="Programmation informatique"/></div>
+        <div class="fields-2">
+          <div class="field"><label class="field-label">N° TVA intracom</label><input id="new-tva-intracom" class="field-input" type="text" placeholder="FR12345678901"/></div>
+          <div class="field"><label class="field-label">Date de création</label><input id="new-date-creation" class="field-input" type="date"/></div>
+        </div>
+      </div>
       <button class="btn-save" onclick="createClient()">Créer le client</button>
     </div>
   </div>
@@ -788,7 +802,21 @@ function renderDetail() {
       <div class="field"><label class="field-label">Adresse</label><input id="edit-adresse" class="field-input" type="text" value="${esc(c.adresse||"")}"/></div>
       <div class="field"><label class="field-label">Notes</label><textarea id="edit-notes" class="field-input">${esc(c.notes||"")}</textarea></div>
       <div class="field"><label class="check-row"><input id="edit-professionnel" type="checkbox" ${c.is_professionnel?"checked":""} onchange="document.getElementById('edit-siret-field').style.display=this.checked?'block':'none'"/><span>Client professionnel (B2B)</span></label></div>
-      <div class="field" id="edit-siret-field" style="display:${c.is_professionnel?"block":"none"}"><label class="field-label">SIRET</label><input id="edit-siret" class="field-input" type="text" value="${esc(c.siret||"")}" placeholder="123 456 789 00012"/></div>
+      <div id="edit-siret-field" style="display:${c.is_professionnel?"block":"none"}">
+        <div class="field">
+          <label class="field-label">SIRET <span id="edit-siret-status" style="font-size:11px;font-weight:400;color:var(--muted);margin-left:6px;"></span></label>
+          <input id="edit-siret" class="field-input" type="text" value="${esc(c.siret||"")}" placeholder="123 456 789 00012" oninput="lookupSiretClient(this.value,'edit')" autocomplete="off"/>
+        </div>
+        <div class="fields-2">
+          <div class="field"><label class="field-label">Forme juridique</label><input id="edit-forme-juridique" class="field-input" type="text" value="${esc(c.forme_juridique||"")}" placeholder="SAS, SARL…"/></div>
+          <div class="field"><label class="field-label">Code APE / NAF</label><input id="edit-code-naf" class="field-input" type="text" value="${esc(c.code_naf||"")}" placeholder="6201Z"/></div>
+        </div>
+        <div class="field"><label class="field-label">Libellé activité</label><input id="edit-libelle-naf" class="field-input" type="text" value="${esc(c.libelle_code_naf||"")}" placeholder="Programmation informatique"/></div>
+        <div class="fields-2">
+          <div class="field"><label class="field-label">N° TVA intracom</label><input id="edit-tva-intracom" class="field-input" type="text" value="${esc(c.tva_intracom||"")}" placeholder="FR12345678901"/></div>
+          <div class="field"><label class="field-label">Date de création</label><input id="edit-date-creation" class="field-input" type="date" value="${esc(c.date_creation_entreprise||"")}"/></div>
+        </div>
+      </div>
       <button class="btn-save" onclick="saveClient('${c.id}')">Enregistrer</button>
       <button class="btn-danger" onclick="deleteClient('${c.id}')">Supprimer</button>
     </div>
@@ -957,7 +985,7 @@ function openNewModal() {
     el.addEventListener("click",e=>{if(e.target===el)el.remove();});
     return;
   }
-  ["new-nom","new-email","new-tel","new-adresse","new-notes","new-siret"].forEach(id => {
+  ["new-nom","new-email","new-tel","new-adresse","new-notes","new-siret","new-forme-juridique","new-code-naf","new-libelle-naf","new-tva-intracom","new-date-creation"].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   document.getElementById("new-professionnel").checked = false;
@@ -982,7 +1010,12 @@ window.createClient = async function() {
     adresse: document.getElementById("new-adresse")?.value.trim()||"",
     notes: document.getElementById("new-notes")?.value.trim()||"",
     is_professionnel,
-    siret: is_professionnel ? (document.getElementById("new-siret")?.value.trim()||"") : "",
+    siret:                    is_professionnel ? (document.getElementById("new-siret")?.value.trim()||"") : "",
+    forme_juridique:          is_professionnel ? (document.getElementById("new-forme-juridique")?.value.trim()||"") : "",
+    code_naf:                 is_professionnel ? (document.getElementById("new-code-naf")?.value.trim()||"") : "",
+    libelle_code_naf:         is_professionnel ? (document.getElementById("new-libelle-naf")?.value.trim()||"") : "",
+    tva_intracom:             is_professionnel ? (document.getElementById("new-tva-intracom")?.value.trim()||"") : "",
+    date_creation_entreprise: is_professionnel ? (document.getElementById("new-date-creation")?.value||null) : null,
   }]).select();
   if (error) { alert("Erreur : "+error.message); return; }
   if (data?.[0]) {
@@ -995,6 +1028,68 @@ window.createClient = async function() {
   closeNewModal();
   renderList(); renderDetail();
   showToast("✓ Client "+nom+" créé");
+};
+
+/* ── SIRET LOOKUP (data.gouv.fr) ── */
+const _siretTimers = { new: null, edit: null };
+const _lastSiretLookups = { new: "", edit: "" };
+
+window.lookupSiretClient = async function(rawValue, mode) {
+  const status = document.getElementById(`${mode}-siret-status`);
+  if (!status) return;
+  const clean = String(rawValue||"").replace(/\D/g, "");
+  if (clean.length < 14) {
+    status.textContent = clean.length > 0 ? `${clean.length}/14 chiffres` : "";
+    status.style.color = "var(--muted)";
+    return;
+  }
+  if (clean.length > 14) return;
+  if (clean === _lastSiretLookups[mode]) return;
+  _lastSiretLookups[mode] = clean;
+
+  clearTimeout(_siretTimers[mode]);
+  _siretTimers[mode] = setTimeout(async () => {
+    status.textContent = "⏳ Recherche SIRENE…";
+    status.style.color = "var(--muted)";
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const r = await fetch(SUPABASE_URL + "/functions/v1/siret-lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + session.access_token },
+        body: JSON.stringify({ siret: clean }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        status.textContent = "✗ " + (data.error || "Erreur");
+        status.style.color = "#dc2626";
+        return;
+      }
+      const fill = (id, value, force = false) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (!force && el.value && el.value.trim() !== "") return;
+        el.value = value || "";
+      };
+      fill(`${mode}-nom`,             data.nom_entreprise);
+      fill(`${mode}-adresse`,         data.adresse_complete);
+      fill(`${mode}-forme-juridique`, data.forme_juridique, true);
+      fill(`${mode}-code-naf`,        data.code_naf, true);
+      fill(`${mode}-libelle-naf`,     data.libelle_code_naf, true);
+      fill(`${mode}-tva-intracom`,    data.tva_intracom, true);
+      fill(`${mode}-date-creation`,   data.date_creation_entreprise, true);
+
+      if (data.entreprise_cessee) {
+        status.textContent = "⚠️ Entreprise cessée";
+        status.style.color = "#d97706";
+      } else {
+        status.textContent = data.cached ? "✓ Vérifié (cache)" : "✓ Vérifié SIRENE";
+        status.style.color = "#16a34a";
+      }
+    } catch (e) {
+      status.textContent = "✗ Erreur réseau";
+      status.style.color = "#dc2626";
+    }
+  }, 350);
 };
 
 window.registerImplicitClient = async function(nom) {
@@ -1021,7 +1116,12 @@ window.saveClient = async function(id) {
     adresse: document.getElementById("edit-adresse")?.value.trim()||"",
     notes: document.getElementById("edit-notes")?.value.trim()||"",
     is_professionnel,
-    siret: is_professionnel ? (document.getElementById("edit-siret")?.value.trim()||"") : "",
+    siret:                    is_professionnel ? (document.getElementById("edit-siret")?.value.trim()||"") : "",
+    forme_juridique:          is_professionnel ? (document.getElementById("edit-forme-juridique")?.value.trim()||"") : "",
+    code_naf:                 is_professionnel ? (document.getElementById("edit-code-naf")?.value.trim()||"") : "",
+    libelle_code_naf:         is_professionnel ? (document.getElementById("edit-libelle-naf")?.value.trim()||"") : "",
+    tva_intracom:             is_professionnel ? (document.getElementById("edit-tva-intracom")?.value.trim()||"") : "",
+    date_creation_entreprise: is_professionnel ? (document.getElementById("edit-date-creation")?.value||null) : null,
     updated_at: new Date().toISOString(),
   };
   if (!patch.nom) { return; }
