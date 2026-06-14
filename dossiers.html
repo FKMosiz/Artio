@@ -196,7 +196,7 @@ let S={
   dossiers:[],clients:[],
   openDossier:null,previewDocNum:null,deleteConfirm:null,
   convertingId:null,devisAConvertir:[],
-  showDatePrestModal:false,showSiretModal:null,pendingConvert:null,
+  showDatePrestModal:false,showSiretModal:null,showMiseEnDemeureModal:null,pendingConvert:null,
   signatureLink:null,signatureLinkCopied:false,
   emettreId:null,renamingDossierId:null,renamingDossierVal:"",
   rappelLoadingId:null,loading:false,
@@ -349,19 +349,26 @@ Réponds UNIQUEMENT avec le nom, sans guillemets, sans explication. Exemples : "
 }
 
 // ── Mise en demeure ──────────────────────────────────────────────
-async function genererMiseEnDemeure(dosId,docNum){
-  if(!window.confirm("Envoyer une mise en demeure au client ?\n\nCette action est irréversible. L'email sera envoyé immédiatement."))return;
+// Étape 1 : afficher le modal de confirmation interne
+window.showMiseEnDemeureModal=function(dosId,docNum){
   if(window.PlanGuard&&!window.PlanGuard.isPro()){window.PlanGuard.showProModal("Mise en demeure");return;}
+  set({showMiseEnDemeureModal:{dosId,docNum}});
+};
+// Étape 2 : générer après confirmation dans le modal
+async function genererMiseEnDemeure(dosId,docNum){
+  set({showMiseEnDemeureModal:null});
   const dos=S.dossiers.find(d=>d.id===dosId);
   const doc=dos?.documents?.find(d=>d.docNumber===docNum);
-  if(!doc){alert("Document introuvable.");return;}
+  if(!doc){showToast("Document introuvable.");return;}
   const e=S.entreprise;
   const joursEcoules=doc.date?Math.floor((Date.now()-new Date(doc.date.split("/").reverse().join("-")).getTime())/86400000):30;
+  const delaiPaiement=parseInt(doc.delai_paiement||e.delai_paiement||"30")||30;
+  const joursRetard=Math.max(0,joursEcoules-delaiPaiement);
   const ibanInfo=e.iban?"Virement bancaire — IBAN : "+e.iban:"(IBAN non renseigné)";
   const contexte=e.contexte_ia?"\n\nContexte entreprise : "+e.contexte_ia:"";
   set({loading:true,rappelLoadingId:docNum});
   try{
-    const prompt="Tu es l'assistant de "+(e.nom||"un prestataire")+" (secteur: "+(e.secteur||"services")+")."+contexte+"\n\nRédige une lettre de mise en demeure formelle et rigoureuse.\n\nDonnées :\n- Client : "+(doc.client?.nom||dos.client||"le client")+"\n- Adresse client : "+(doc.client?.adresse||"non renseignée")+"\n- Facture N° : "+docNum+"\n- Date d'émission : "+(doc.date||"date inconnue")+"\n- Montant : "+(doc.ttc||0).toFixed(2)+" € TTC\n- Délai convenu : "+delaiPaiement+" jours\\n- En retard depuis : "+joursRetard+" jour"+(joursRetard>1?"s":"")+"\n- Prestation : "+(doc.description||dos.nom||"")+"\n- Coordonnées de paiement : "+ibanInfo+"\n\nInstructions :\n- Ton : juridique, formel, ferme mais sans agressivité\n- Mentionne les pénalités de retard légales (art. L441-10 du Code de commerce)\n- Accorde un délai de 8 jours pour régulariser avant procédure\n- Inclus les coordonnées de paiement\n- Signe au nom de \""+(e.nom||"l'entreprise")+"\"\n- Langue : français\n- Écris directement la lettre, sans commentaire";
+    const prompt="Tu es l'assistant de "+(e.nom||"un prestataire")+" (secteur: "+(e.secteur||"services")+")."+contexte+"\n\nRédige une lettre de mise en demeure formelle et rigoureuse.\n\nDonnées :\n- Client : "+(doc.client?.nom||dos.client||"le client")+"\n- Adresse client : "+(doc.client?.adresse||"non renseignée")+"\n- Facture N° : "+docNum+"\n- Date d'émission : "+(doc.date||"date inconnue")+"\n- Montant : "+(doc.ttc||0).toFixed(2)+" € TTC\n- Délai convenu : "+delaiPaiement+" jours\n- En retard depuis : "+joursRetard+" jour"+(joursRetard>1?"s":"")+"\n- Prestation : "+(doc.description||dos.nom||"")+"\n- Coordonnées de paiement : "+ibanInfo+"\n\nInstructions :\n- Ton : juridique, formel, ferme mais sans agressivité\n- Mentionne les pénalités de retard légales (art. L441-10 du Code de commerce)\n- Accorde un délai de 8 jours pour régulariser avant procédure\n- Inclus les coordonnées de paiement\n- Signe au nom de \""+(e.nom||"l'entreprise")+"\"\n- Langue : français\n- Écris directement la lettre, sans commentaire";
     const{text:txt,usage:ur}=await callClaude(prompt,600);
     logTokens("email",ur);
     localStorage.setItem("artio-email-body",txt);
@@ -616,7 +623,7 @@ function renderDossierCard(dos){
           ${doc.type==="devis"&&!doc.accepte?(isPro?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);opacity:.45;" onclick="window.PlanGuard?.showProModal('Signature électronique')">🔒 Signature</button>`):""}
           ${doc.type==="devis"&&!doc.accepte?(isPro?`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);opacity:.45;" onclick="window.PlanGuard?.showProModal('Relances clients IA')">🔒 Relance</button>`):""}
           ${doc.type==="facture"?`${doc.paye?`<span class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;">✓ Payée le ${doc.date_paye}</span>`:`<button class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border-color:rgba(74,222,128,.3);" onclick="markPaye('${dos.id}','${doc.docNumber}')">💶 Marquer payée</button>`}${!doc.paye?(S.rappelLoadingId===doc.docNumber?`<button class="btn-small" disabled>⏳ Génération...</button>`:isPro?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);" onclick="genererRappelPaiement('${dos.id}','${doc.docNumber}')">📨 Rappel</button>`:`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);opacity:.45;" onclick="window.PlanGuard?.showProModal('Rappels de paiement IA')">🔒 Rappel</button>`):""}
-          ${!doc.paye&&Array.isArray(doc.relances_paiement)&&doc.relances_paiement.includes(30)?(isPro?`<button class="btn-small" style="background:rgba(220,38,38,.12);color:#dc2626;border-color:rgba(220,38,38,.3);" onclick="genererMiseEnDemeure('${dos.id}','${doc.docNumber}')">⚖️ Mise en demeure</button>`:""):""}
+          ${!doc.paye&&Array.isArray(doc.relances_paiement)&&doc.relances_paiement.includes(30)?(isPro?`<button class="btn-small" style="background:rgba(220,38,38,.12);color:#dc2626;border-color:rgba(220,38,38,.3);" onclick="showMiseEnDemeureModal('${dos.id}','${doc.docNumber}')">⚖️ Mise en demeure</button>`:""):""}
           ${(() => {
             const autoActive = S.entreprise?.facturation_electronique_active === true;
             // Si la facturation électronique n'est pas activée → rien (feature désactivée)
@@ -726,6 +733,33 @@ function renderModals(){
 function renderPage(){
   const root=document.getElementById("app-root");if(!root)return;
   root.innerHTML=`<div style="font-family:var(--fh);font-size:22px;font-weight:700;margin-bottom:20px;margin-top:8px;">📁 Dossiers</div>`+renderHistorique();
+  if(S.showMiseEnDemeureModal){
+    const {dosId,docNum}=S.showMiseEnDemeureModal;
+    m+=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)set({showMiseEnDemeureModal:null})">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:420px;max-width:100%;box-shadow:0 24px 64px rgba(0,0,0,.4);">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.25);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">⚖️</div>
+          <div>
+            <p style="font-size:16px;font-weight:700;color:var(--text);margin:0;">Envoyer une mise en demeure</p>
+            <p style="font-size:12px;color:var(--muted);margin:2px 0 0;">Facture ${docNum}</p>
+          </div>
+        </div>
+        <div style="background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2);border-radius:10px;padding:14px;margin-bottom:20px;">
+          <p style="font-size:13px;color:#dc2626;line-height:1.6;margin:0;">
+            <strong>Cette action est irréversible.</strong><br>
+            Artio va générer une lettre de mise en demeure formelle et l'ouvrir dans l'éditeur pour que vous puissiez la relire avant envoi.
+          </p>
+        </div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 20px;">
+          La lettre mentionnera les pénalités de retard légales et accordera un délai de 8 jours au client pour régulariser.
+        </p>
+        <div style="display:flex;gap:10px;">
+          <button onclick="set({showMiseEnDemeureModal:null})" style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:14px;">Annuler</button>
+          <button onclick="genererMiseEnDemeure('${dosId}','${docNum}')" style="flex:1.4;padding:12px;border-radius:10px;background:#dc2626;color:#fff;border:none;cursor:pointer;font-size:14px;font-weight:700;">⚖️ Générer la lettre</button>
+        </div>
+      </div>
+    </div>`;
+  }
   renderModals();
 }
 
