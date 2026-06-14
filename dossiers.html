@@ -1,5 +1,4 @@
-<!D
-          ${!doc.paye&&Array.isArray(doc.relances_paiement)&&doc.relances_paiement.includes(30)?(isPro?`<button class="btn-small" style="background:rgba(220,38,38,.12);color:#dc2626;border-color:rgba(220,38,38,.3);" onclick="genererMiseEnDemeure('${dos.id}','${doc.docNumber}')">⚖️ Mise en demeure</button>`:""):""}OCTYPE html>
+<!DOCTYPE html>
 <html lang="fr" data-theme="dark">
 <head>
   <meta charset="UTF-8"/>
@@ -617,6 +616,7 @@ function renderDossierCard(dos){
           ${doc.type==="devis"&&!doc.accepte?(isPro?`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);" onclick="sendForSignature('${dos.id}','${doc.docNumber}')">✍️ Signature</button>`:`<button class="btn-small" style="background:rgba(83,74,183,.15);color:#9d95f5;border-color:rgba(83,74,183,.3);opacity:.45;" onclick="window.PlanGuard?.showProModal('Signature électronique')">🔒 Signature</button>`):""}
           ${doc.type==="devis"&&!doc.accepte?(isPro?`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);" onclick="genererRelance('${dos.id}','${doc.docNumber}')">📩 Relance</button>`:`<button class="btn-small" style="background:rgba(245,158,11,.12);color:#f59e0b;border-color:rgba(245,158,11,.3);opacity:.45;" onclick="window.PlanGuard?.showProModal('Relances clients IA')">🔒 Relance</button>`):""}
           ${doc.type==="facture"?`${doc.paye?`<span class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.3);cursor:default;">✓ Payée le ${doc.date_paye}</span>`:`<button class="btn-small" style="background:rgba(74,222,128,.12);color:var(--green);border-color:rgba(74,222,128,.3);" onclick="markPaye('${dos.id}','${doc.docNumber}')">💶 Marquer payée</button>`}${!doc.paye?(S.rappelLoadingId===doc.docNumber?`<button class="btn-small" disabled>⏳ Génération...</button>`:isPro?`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);" onclick="genererRappelPaiement('${dos.id}','${doc.docNumber}')">📨 Rappel</button>`:`<button class="btn-small" style="background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.25);opacity:.45;" onclick="window.PlanGuard?.showProModal('Rappels de paiement IA')">🔒 Rappel</button>`):""}
+          ${!doc.paye&&Array.isArray(doc.relances_paiement)&&doc.relances_paiement.includes(30)?(isPro?`<button class="btn-small" style="background:rgba(220,38,38,.12);color:#dc2626;border-color:rgba(220,38,38,.3);" onclick="genererMiseEnDemeure('${dos.id}','${doc.docNumber}')">⚖️ Mise en demeure</button>`:""):""}
           ${(() => {
             const autoActive = S.entreprise?.facturation_electronique_active === true;
             // Si la facturation électronique n'est pas activée → rien (feature désactivée)
